@@ -1,0 +1,2 @@
+include versioneer.py
+include dfttk/_version.py

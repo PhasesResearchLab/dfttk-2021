@@ -1,0 +1,95 @@
+#Template of SETTINGS.yaml
+#All the value listed here is the default value
+
+#############The following is the parameters###################
+#list, the MAGMOM of the structure, e.g. [4.0, 4.0, -4.0, -4.0]
+# *NOTE* The length must agree with the sites in structure
+#magmom : 
+
+#bool, run phonon(True) or not(False)
+phonon : False
+
+#list(3x3), the supercell matrix for phonon, e.g. [[2.0, 0, 0], [0, 2.0, 0], [0, 0, 2.0]]
+#or string, which means determining the matrix automatically, 
+#   if string, choose from 'atoms', 'lattice' or 'volume' (only the first letter works, case insensitive), 
+#       which determine who to determin the matrix
+#If the phonon is True, you must set this value
+phonon_supercell_matrix : 'atoms'
+
+#The following two parameters is used to when phomon_supercel_matrix is a string
+#phonon_supercell_matrix_min/max determines the range of the type
+#units: number of atoms for 'atoms', A and A^3 for 'lattice' and 'volume', respectively
+phonon_supercell_matrix_min : 60
+phonon_supercell_matrix_max : 130
+
+#int, the number of initial deformations, e.g. 7
+num_deformations : 7
+
+#list/tuple(min, max) or float(-max, max), the maximum amplitude of deformation, e.g. (-0.05, 0.1) means (0.95, 1.1) in volume
+deformation_fraction : [-0.1, 0.1]
+
+#float, minimum ratio of Volumes spacing, e.g. 0.03
+volume_spacing_min : 0.03
+
+#float, the mimimum of temperature in QHA process, e.g. 5
+t_min : 5
+
+#float, the maximum of temperature in QHA process, e.g. 2000
+t_max : 2000
+
+#float, the step of temperature in QHA process, e.g. 5
+t_step : 5
+
+#float, acceptable value for average RMS, recommend >: 0.005
+eos_tolerance : 0.01
+
+#dict, metadata to be included, this parameter is useful for filter the data, e.g. metadata:{"phase": "BCC_A2", "tag": "AFM"}
+#By default, it will generate the metadata['tag'] by uuid4
+#metadata : 
+
+#float, the tolerannce for symmetry, e.g. 0.05
+symmetry_tolerance : 0.05
+
+#It is for RobustOptimizeFW, if run ISIF=4 followed ISIF=7.
+isif4 : False
+#The optimization level(Run ISIF=4 after ISIF=2 (2) or not(1)) for RobustOptimizeFW
+level : 1
+
+#bool, set True to pass initial VASP running if the results exist in DB, use carefully to keep data consistent.
+passinitrun : False
+
+#bool, Whether run isif:2 calculation before isif:4 running
+run_isif2 : False
+
+#bool, Whether pass isif:4 calculation.
+pass_isif4 : False
+
+#Set the path already exists for new static calculations; if set as '', will try to get the path from db_file
+relax_path : ''
+
+#The symmetry tolerance, including three keys, 
+#e.g. override_symmetry_tolerances={'tol_strain': 0.05, 'tol_energy': 0.025, 'tol_bond': 0.10}
+override_symmetry_tolerances : None
+
+#Global settings for all vasp job, e.g.
+#override_default_vasp_params = {'user_incar_settings': {}, 'user_kpoints_settings': {}, 'user_potcar_functional': str}
+#If some value in 'user_incar_settings' is set to None, it will use vasp's default value
+override_default_vasp_params : {}
+
+#dict, dict of class ModifyIncar with keywords in Workflow name. e.g.
+modify_incar_params : {}
+
+#dict, dict of class ModifyKpoints with keywords in Workflow name, similar with modify_incar_params
+modify_kpoints_params : {}
+
+#bool, print(True) or not(False) some informations, used for debug
+verbose : False
+
+#str, the absolute path of db.json file, e.g. '/storage/home/mjl6505/atomate/config/db.json'
+#By default, it will use the configuration in fireworks 
+#  If you want to use your local db_file, please set this value. 
+#db_file: 
+
+#str, the vasp command, e.g. 'vasp_std'
+#By default, it will use the configuration in fireworks 
+#vasp_cmd : 

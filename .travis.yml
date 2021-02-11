@@ -1,0 +1,13 @@
+language: python
+python:
+  - 3.6
+  - 3.7
+  - 3.8
+cache: pip
+install:
+  - pip install -e '.[dev]'
+script:
+  - pytest -v tests/test_*
+notifications:
+  email: False
+services: mongodb

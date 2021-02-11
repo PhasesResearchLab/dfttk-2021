@@ -1,0 +1,7 @@
+{
+    "aliases": {},
+    "collection": "tasks",
+    "database": "dfttk_tests",
+    "host": "localhost",
+    "port": 27017
+}
