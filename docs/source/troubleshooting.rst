@@ -33,6 +33,17 @@ Common troubleshooting
 7.      For phonon calculations, due to certain reasons (such as temperature range too high), one may not see results in the ``qha_phonon`` or ``qha`` MongoDB collections. In this case, the subcommand ``dfttk thfind`` will try to find results from the ``phonon`` collection and process the data by calling ``Yphon``
 8.      When you are interesting in revising the code, if have job running in the system before your changes, the codes in the batch system might not be updated and the results might be not as you assumed. It takes me two days to figure out this problem. The solution is to kill all the dfttk running job and resubmit them.
 
+conda issues
+============
+
+In some cases, such as in the Windows environment, one may meet the error::
+
+    ModuleNotFoundError: No module named 'ruamel' #106
+
+This is due to ``conda`` bug on namespace of ruamel_yaml vs ruamel.yaml. It takes me a week to find out the solution. One can resolve this by open the Annaconda Powershell Prompt as adminstrator and reinstall ruamel.yaml by::
+
+    conda install ruamel.yaml
+
 
 Troubleshooting Workflow
 ========================
@@ -48,9 +59,9 @@ Troubleshooting Workflow
 
    *TIP:*: Searching works well when you pipe the output to ``less`` with ``lpad get_fws -i <ID> -d more | less`` and search using ``/``.
 
-   .. todo:: If you don't see a traceback, that means... (this is the first step, but does this actually happen?)
+   *todo:*: If you don't see a traceback, that means... (this is the first step, but does this actually happen?)
 
-   
+
 2. Check the traceback is not a common error.
 
    See the `Common Errors section <CommonErrors>`_
