@@ -68,15 +68,19 @@ class thfindMDB ():
         if args.qhamode == 'debye' : self.qhamode = 'qha'
         from fireworks.fw_config import config_to_dict
         from monty.serialization import loadfn
-        db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+        try:
+            db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+        except:
+            db_file="db.json"
+
         if not self.plotonly:
             try:
-                self.vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)
+                self.vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
                 self.items = (self.vasp_db).db[self.qhamode].find({})
                 if self.qhamode=='phonon':
                     self.items = list((self.vasp_db).db['phonon'].find({"S_vib": { "$exists": True } },\
                         {'metadata':1, 'unitcell':1, 'volume':1, 'supercell_matrix':1}))
-                else: 
+                else:
                     self.items = list((self.vasp_db).db['qha'].find({"debye": { "$exists": True } },\
                         {'metadata':1, 'structure':1}))
             except:
@@ -144,7 +148,7 @@ class thfindMDB ():
 
     def find_plotfiles(self):
         if self.jobpath!=None:
-            jobpath = os.listdir(self.jobpath) 
+            jobpath = os.listdir(self.jobpath)
         else:
             self.jobpath='./'
             jobpath = os.listdir('./')
@@ -174,7 +178,7 @@ class thfindMDB ():
             #print (self.metatag,metatag)
             self.tags.append([metatag, thermofile, volumes, energies, dir, formula])
 
-    
+
     def run_console(self):
         if self.plotonly: self.find_plotfiles()
         elif self.vasp_db==None: self.find_plotfiles()
@@ -198,7 +202,7 @@ class thfindMDB ():
                 mm = i['metadata']
             except:
                 continue
-            if ii <= 0: continue 
+            if ii <= 0: continue
             """
             mm = i['metadata']
             if mm in hit:

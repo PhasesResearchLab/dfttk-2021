@@ -67,7 +67,7 @@ def ext_thelec(args, plotfiles=None):
     if abs(dope)<5.e-9:
         ndosmx = max(100001, int(ndosmx))
         gaussian = max(10000., float(gaussian))
-        
+
     formula = None
     vasp_db = None
     if not args.plotonly:
@@ -76,7 +76,10 @@ def ext_thelec(args, plotfiles=None):
             from atomate.vasp.database import VaspCalcDb
             from fireworks.fw_config import config_to_dict
             from monty.serialization import loadfn
-            db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+            try:
+                db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+            except:
+                db_file="db.json"
             vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)
             static_calculations = vasp_db.collection.\
                 find({'$and':[ {'metadata.tag': metatag}, {'adopted': True} ]})
@@ -96,75 +99,75 @@ def ext_thelec(args, plotfiles=None):
         #print(thermofile, dir, formula)
         readme={}
         from dfttk.analysis.ywplot import plotAPI
-        plotAPI(readme, thermofile, None, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp, 
+        plotAPI(readme, thermofile, None, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp,
             formula = formula, vtof=None, plotlabel=args.plot)
     elif vasp_db==None and plotfiles!=None:
         metatag, thermofile, volumes, energies, dir, formula = plotfiles
         print('eeeeeeeeeee', plotfiles)
-        if expt!=None: 
+        if expt!=None:
             _t1 = get_melting_temperature(expt, formula)
             if _t1!=None: t1 = _t1
 
         readme = {}
         record_cmd(readme)
-        proc = thelecMDB(t0, t1, td, xdn, xup, dope, ndosmx, gaussian, natom, outf, vasp_db=vasp_db, 
-            noel=noel, metatag=metatag, qhamode=qhamode, eqmode=eqmode, elmode=elmode, everyT=everyT, 
-            smooth=smooth, debug=args.debug, 
+        proc = thelecMDB(t0, t1, td, xdn, xup, dope, ndosmx, gaussian, natom, outf, vasp_db=vasp_db,
+            noel=noel, metatag=metatag, qhamode=qhamode, eqmode=eqmode, elmode=elmode, everyT=everyT,
+            smooth=smooth, debug=args.debug,
             phasename=dir, pyphon=args.pyphon, renew=args.renew, fitF=args.fitF, args=args)
         volumes, energies, thermofile, comments = proc.run_console()
 
         if comments!=None: readme.update(comments)
         else: return
-        if "ERROR" in readme.keys(): 
+        if "ERROR" in readme.keys():
             #record_cmd_print(thermofile, readme, dir=args.phasename)
             return
 
-        print("\nFull thermodynamic properties have outputed into:", thermofile) 
+        print("\nFull thermodynamic properties have outputed into:", thermofile)
         #print(args.plot, "eeeeeeeee", volumes, energies, thermofile, comments)
         if args.plot==None: print("\nSupply '-plot phasename' for plot\n")
-        else: 
+        else:
             from dfttk.analysis.ywplot import plotAPI
-            if plotAPI(readme, thermofile, volumes, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp, 
+            if plotAPI(readme, thermofile, volumes, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp,
                 formula = proc.get_formula(), debug=args.debug,
                 plotlabel=args.plot):
                 vtof = proc.get_free_energy_for_plot(readme)
                 if vtof is not None:
-                    plotAPI(readme, thermofile, volumes, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp, 
+                    plotAPI(readme, thermofile, volumes, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp,
                     formula = proc.get_formula(), vtof=vtof, plotlabel=args.plot)
             """
             """
         #record_cmd_print(thermofile, readme)
 
     elif metatag != None:
-        if expt!=None: 
+        if expt!=None:
             _t1 = get_melting_temperature(expt, formula)
             if _t1!=None: t1 = _t1
 
         readme = {}
         record_cmd(readme)
-        proc = thelecMDB(t0, t1, td, xdn, xup, dope, ndosmx, gaussian, natom, outf, vasp_db=vasp_db, 
-            noel=noel, metatag=metatag, qhamode=qhamode, eqmode=eqmode, elmode=elmode, everyT=everyT, 
-            smooth=smooth, debug=args.debug, 
+        proc = thelecMDB(t0, t1, td, xdn, xup, dope, ndosmx, gaussian, natom, outf, vasp_db=vasp_db,
+            noel=noel, metatag=metatag, qhamode=qhamode, eqmode=eqmode, elmode=elmode, everyT=everyT,
+            smooth=smooth, debug=args.debug,
             phasename=args.phasename, pyphon=args.pyphon, renew=args.renew, fitF=args.fitF, args=args)
         volumes, energies, thermofile, comments = proc.run_console()
 
         if comments!=None: readme.update(comments)
         else: return
-        if "ERROR" in readme.keys(): 
+        if "ERROR" in readme.keys():
             record_cmd_print(thermofile, readme, dir=args.phasename)
             return
 
-        print("\nFull thermodynamic properties have outputed into:", thermofile) 
+        print("\nFull thermodynamic properties have outputed into:", thermofile)
         #print(args.plot, "eeeeeeeee", volumes, energies, thermofile, comments)
         if args.plot==None: print("\nSupply '-plot phasename' for plot\n")
         else:
             from dfttk.analysis.ywplot import plotAPI
-            if plotAPI(readme, thermofile, volumes, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp, 
+            if plotAPI(readme, thermofile, volumes, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp,
                 formula = proc.get_formula(), debug=args.debug,
                 plotlabel=args.plot):
                 vtof = proc.get_free_energy_for_plot(readme)
                 if vtof is not None:
-                    plotAPI(readme, thermofile, volumes, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp, 
+                    plotAPI(readme, thermofile, volumes, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp,
                     formula = proc.get_formula(), vtof=vtof, plotlabel=args.plot)
             """
             """
@@ -178,8 +181,8 @@ def ext_thelec(args, plotfiles=None):
         readme.update(comments)
         #record_cmd(thermofile, readme)
 
-        print("\nFull thermodynamic properties have outputed into:", thermofile) 
-        if args.plot!=None: 
+        print("\nFull thermodynamic properties have outputed into:", thermofile)
+        if args.plot!=None:
             from dfttk.analysis.ywplot import plotAPI
             if plotAPI(readme, thermofile, None, None, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp,
                 formula = proc.get_formula(), debug=args.debug,
@@ -208,7 +211,7 @@ def record_cmd_print(fdir, readme, dir=None):
         with open (dir+"/readme", "w") as fp:
             myjsonout(readme, fp, indent="", comma="")
 
-        if "ERROR" in readme.keys(): 
+        if "ERROR" in readme.keys():
             error ="**********FETAL ERROR encountered, you may check readme and E-V plot in the folder "+dir+"/figures"
             volumes = readme['E-V']['volumes']
             energies = readme['E-V']['energies']
@@ -353,7 +356,7 @@ def run_ext_thelec(subparsers):
     shared_aguments(pthelec)
     pthelec.set_defaults(func=ext_thelec)
     # end process by Yi Wang, July 23, 2020
- 
+
     #further extension for finding phonon calculation
     run_ext_thfind(subparsers)
     run_ext_EVfind(subparsers)
@@ -421,8 +424,8 @@ def ext_thfind(args):
         for t in tags:
             if isinstance(t,dict):
                 print("\nDownloading data by metadata tag:", t['tag'], "\n")
-                args.metatag = t['tag'] 
-                args.phasename = t['phasename'] 
+                args.metatag = t['tag']
+                args.phasename = t['phasename']
                 ext_thelec(args)
             else:
                 ext_thelec(args,plotfiles=t)
