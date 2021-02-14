@@ -4,7 +4,6 @@ import sys
 from datetime import datetime
 
 import os, fnmatch
-from shutil import move
 import copy
 import time
 import datetime
@@ -44,47 +43,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
-def pngplot(cmd):
-    item = [s for s in cmd.split() if s!=""]
-    cmdfile = item[1].replace(";","")
-    with open(cmdfile,"r") as f:
-        lines = f.readlines()
-    pngfile = cmdfile.replace(".plt","_png.plt")
-
-    with open (pngfile,"w") as f:
-      for line in lines:
-        if line.startswith("set terminal"):
-            f.write('{}\n'.format("set terminal png font Times_Roman 96 size 4096,3072 linewidth 7"))
-        elif line.startswith("set encoding"):
-            f.write('{}\n'.format("set encoding utf8"))
-        elif line.startswith("set output"):
-            f.write('{}\n'.format(line.replace(".eps",".png")))
-            if cmdfile == "vdos.plt":
-                f.write('{}\n'.format('set xlabel "Phonon frequncy (THz)"'))
-                f.write('{}\n'.format('set ylabel "Phonon DOS (1/THz/cell)"'))
-            elif cmdfile == "vdis.plt":
-                f.write('{}\n'.format('set xlabel "Direction"'))
-                f.write('{}\n'.format('set ylabel "Phonon frequncy (THz)"'))
-        else:
-            f.write('{}'.format(line))
-    #return "gnuplot "+cmdfile+"; gnuplot "+pngfile
-    return "wgnuplot "+cmdfile, "wgnuplot "+pngfile
-
-
 import platform
-def plot(cmd):
-    if platform.system()=="Windows":
-        cmd0, cmd1 = pngplot(cmd)
-        output0 = subprocess.run(cmd0, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            universal_newlines=True)
-        print(output0)
-        output1 = subprocess.run(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            universal_newlines=True)
-        print(output1)
-    else:
-        output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            universal_newlines=True)
-
+if platform.system()=="Windows":
+    gnuplot_cmd = "wgnuplot"
+    gnuplot_cmd = ""
+else:
+    gnuplot_cmd = "gnuplot"
 
 #from elements import elements
 
@@ -622,7 +586,7 @@ class thermoplot:
         if self.plottitle!=None: plt.title(self.plottitle)
         plt.xlabel(self._xlabel)
         plt.ylabel(self._ylabel)
-        #self.ax.legend(loc=0, prop={'size': 24})
+        self.ax.legend(loc=0, prop={'size': 24})
         self.fig.savefig(self.fname,bbox_inches='tight')
         plt.close(self.fig)
 
@@ -1232,8 +1196,9 @@ def Genergy(thermofile,dir0):
     f.write('plot "../E-V.dat" title "calculated" w p pt 7, \\\n')
     f.write('     f_expr(x) title "'+ffun+'" w l lt -1\n')
   #cmd = "gnuplot E-V.plt; convert -fuzz 100% -transparent white -rotate 90 -density 120x120 E-V.eps E-V.png"
-  cmd = "gnuplot E-V.plt; convert -background white -alpha remove -rotate 90 -density 120x120 E-V.eps E-V.png"
-  plot(cmd)
+  cmd = gnuplot_cmd+" E-V.plt; convert -background white -alpha remove -rotate 90 -density 120x120 E-V.eps E-V.png"
+  output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                      universal_newlines=True)
 
   figures.update({"static E-V curve": "figures/E-V.png"})
   threcord.update({"figures":figures})
@@ -1683,8 +1648,9 @@ def Phonon298(dir0, pvdos=False):
   print(cmd)
   output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
-  cmd = "gnuplot vdos.plt; convert background white -alpha remove -rotate 90 -density 120x120 vdos.eps vdos.png"
-  plot(cmd)
+  cmd = gnuplot_cmd+" vdos.plt; convert background white -alpha remove -rotate 90 -density 120x120 vdos.eps vdos.png"
+  output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    universal_newlines=True)
   figures = threcord.get("figures")
   figures.update({"phonon DOS at 298.15 K": "phonon298.15K/vdos.png"})
 
@@ -1694,8 +1660,9 @@ def Phonon298(dir0, pvdos=False):
     print(cmd)
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
-    cmd = "gnuplot pvdos.plt; convert background white -alpha remove -rotate 90 -density 120x120 pvdos.eps pvdos.png"
-    plot(cmd)
+    cmd = gnuplot_cmd+" pvdos.plt; convert background white -alpha remove -rotate 90 -density 120x120 pvdos.eps pvdos.png"
+    output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                      universal_newlines=True)
     figures = threcord.get("figures")
     figures.update({"generalized phonon DOS at 298.15 K": "phonon298.15K/pvdos.png"})
   os.chdir( cwd )
@@ -1752,8 +1719,9 @@ def Phonon298(dir0, pvdos=False):
     if Gph:
       extractGph()
 
-    cmd = "gnuplot vdis.plt; convert -background white -alpha remove -rotate 90 -density 120x120 vdis.eps vdis.png"
-    plot(cmd)
+    cmd = gnuplot_cmd+" vdis.plt; convert -background white -alpha remove -rotate 90 -density 120x120 vdis.eps vdis.png"
+    output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                      universal_newlines=True)
     figures.update({"phonon dispersion at 298.15 K": "phonon298.15K/vdis.png"})
     os.chdir( cwd )
 
@@ -2333,7 +2301,7 @@ def plotRaman(folder, fp, vdos, plottitle=None):
       reflin=list(y), xlabel="Phonon frequency($cm^{-1}$)", ytext=[nx0,ny0,ns0], ylabel="Phonon DOS ($states.cm$)",plottitle=plottitle)
       #reflin=list(y), xlabel="Phonon frequency(THz)", ytext=[nx0,ny0,ns0], ylabel="Phonon DOS ($THz^{-1}$)")
     fn = "Gamma_point_phonons.png"
-    move(fn, folder+'/'+fn)
+    os.rename(fn, folder+'/'+fn)
 
 def Plot298(folder, V298, volumes, debug=False, plottitle=None):
   import dfttk.scripts.config_dfttk as dfttkconfig
@@ -2403,13 +2371,15 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None):
       print(cmd)
       output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
-      cmd = "gnuplot vdos.plt; convert -flatten -rotate 90 -density 120x120 vdos.eps vdos.png"
+      cmd = gnuplot_cmd+" vdos.plt; convert -flatten -rotate 90 -density 120x120 vdos.eps vdos.png"
       #cmd = " vdos.plt"
-      plot(cmd)
+      print(cmd)
+      output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    universal_newlines=True)
 
       #copyfile("vdos.png", folder+'/vdos298.15.png')
-      move("vdos.eps", cwd+'/'+folder+'/vdos298.15.eps')
-      move("vdos.png", cwd+'/'+folder+'/vdos298.15.png')
+      os.rename("vdos.eps", cwd+'/'+folder+'/vdos298.15.eps')
+      os.rename("vdos.png", cwd+'/'+folder+'/vdos298.15.png')
 
   if not os.path.exists('symmetry.mode'):
       cmd = "pos2s Symmetry.pos -THR 0.001"
@@ -2424,10 +2394,10 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None):
   if os.path.exists("vdos.out") :
     cmd = "Yphon -tranI 2 -eps -nqwave 100 -Gfile symmetry.mode <superfij.out >Raman.mode"
     if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
-    move("vdos.out", 'vdos.sav')
+    os.rename("vdos.out", 'vdos.sav')
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
-    move("vdos.sav", 'vdos.out')
+    os.rename("vdos.sav", 'vdos.out')
     vdos = np.loadtxt("vdos.out", comments="#", dtype=np.float)
     if os.path.exists("Raman.mode") :
       with open ("Raman.mode", "r") as fp:
@@ -2461,11 +2431,13 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None):
     print(cmd)
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
-    cmd = "gnuplot vdis.plt; convert -flatten -rotate 90 -density 120x120 vdis.eps vdis.png"
+    cmd = gnuplot_cmd+" vdis.plt; convert -flatten -rotate 90 -density 120x120 vdis.eps vdis.png"
     #cmd = gnuplot_cmd+" vdis.plt"
-    plot(cmd)
-    move("vdis.eps", cwd+'/'+folder+'/vdis298.15.eps')
-    move("vdis.png", cwd+'/'+folder+'/vdis298.15.png')
+    print(cmd)
+    output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                      universal_newlines=True)
+    os.rename("vdis.eps", cwd+'/'+folder+'/vdis298.15.eps')
+    os.rename("vdis.png", cwd+'/'+folder+'/vdis298.15.png')
   os.chdir( cwd )
 
 
@@ -2503,11 +2475,12 @@ def PlotVol(folder, vdos):
   print(cmd)
   output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
-  cmd = "gnuplot vdos.plt; convert -flatten -rotate 90 -density 120x120 vdos.eps vdos.png"
+  cmd = gnuplot_cmd+" vdos.plt; convert -flatten -rotate 90 -density 120x120 vdos.eps vdos.png"
   #print(cmd)
-  plot(cmd)
-  move("vdos.eps", cwd+'/'+folder+'/vdos.eps')
-  move("vdos.png", cwd+'/'+folder+'/vdos.png')
+  output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    universal_newlines=True)
+  os.rename("vdos.eps", cwd+'/'+folder+'/vdos.eps')
+  os.rename("vdos.png", cwd+'/'+folder+'/vdos.png')
 
   if not os.path.exists('symmetry.mode'):
       cmd = "pos2s Symmetry.pos -THR 0.001"
@@ -2520,12 +2493,12 @@ def PlotVol(folder, vdos):
   #temp for debug
 
   if os.path.exists("vdos.out") :
-    move("vdos.out", 'vdos.sav')
+    os.rename("vdos.out", 'vdos.sav')
     cmd = "Yphon -tranI 2 -eps -nqwave 100 -Gfile symmetry.mode <superfij.out >Raman.mode"
     if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
-    move("vdos.sav", 'vdos.out')
+    os.rename("vdos.sav", 'vdos.out')
     vdos = np.loadtxt("vdos.out", comments="#", dtype=np.float)
     if os.path.exists("Raman.mode") :
       with open ("Raman.mode", "r") as fp:
@@ -2558,10 +2531,11 @@ def PlotVol(folder, vdos):
     if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
-    cmd = "gnuplot vdis.plt; convert -flatten -rotate 90 -density 120x120 vdis.eps vdis.png"
-    plot(cmd)
-    move("vdis.eps", cwd+'/'+folder+'/vdis.eps')
-    move("vdis.png", cwd+'/'+folder+'/vdis.png')
+    cmd = gnuplot_cmd+" vdis.plt; convert -flatten -rotate 90 -density 120x120 vdis.eps vdis.png"
+    output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                      universal_newlines=True)
+    os.rename("vdis.eps", cwd+'/'+folder+'/vdis.eps')
+    os.rename("vdis.png", cwd+'/'+folder+'/vdis.png')
   os.chdir( cwd )
 
 

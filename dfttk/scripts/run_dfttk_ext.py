@@ -80,7 +80,7 @@ def ext_thelec(args, plotfiles=None):
                 db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
             except:
                 db_file="db.json"
-            vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)
+            vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
             static_calculations = vasp_db.collection.\
                 find({'$and':[ {'metadata.tag': metatag}, {'adopted': True} ]})
             structure = Structure.from_dict(static_calculations[0]['output']['structure'])
@@ -103,7 +103,6 @@ def ext_thelec(args, plotfiles=None):
             formula = formula, vtof=None, plotlabel=args.plot)
     elif vasp_db==None and plotfiles!=None:
         metatag, thermofile, volumes, energies, dir, formula = plotfiles
-        print('eeeeeeeeeee', plotfiles)
         if expt!=None:
             _t1 = get_melting_temperature(expt, formula)
             if _t1!=None: t1 = _t1

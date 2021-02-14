@@ -379,7 +379,7 @@ def caclf(pe, pdos, NELECTRONS, Beta, mu_ref=0.0, dF=0.0, IntegrationFunc=trapz)
                 mu_el = 0.5*(t0+t1)
                 break
         #mu_el = brentq(gfind, t0, t1, args=(pe, pdos, NELECTRONS, Beta), maxiter=10000)
-        print("xxxxxxx", mu_el,mu_old)
+        #print("xxxxxxx", mu_el,mu_old)
     tc = Beta*(pe-mu_el)
     tc = tc[np.where(tc<200)]
     k1 = len(tc)
@@ -1172,6 +1172,8 @@ class thelecMDB():
 
         self.Cij = []
         self.VCij = []
+
+        if not os.path.exists(phdir): os.mkdir(phdir)
         for i in volumes_c:
             vol  = float(i['initial_structure']['lattice']['volume'])
             if vol in self.VCij: continue
@@ -1546,7 +1548,7 @@ class thelecMDB():
             try:
                 self.qhamode='phonon'
                 self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata.tag': self.tag})
-                print("xxxx=", self.qha_items, self.everyT)
+                #print("xxxx=", self.qha_items, self.everyT)
             except:
                 self.qhamode='debye'
                 self.qha_items = self.vasp_db.db['qha'].find({'metadata.tag': self.tag})
@@ -1554,7 +1556,7 @@ class thelecMDB():
         try:
             sys.stdout.write("\nTrying to get quasiharmonic mode : {}... \n".format(self.qhamode))
             self.T_vib = self.qha_items[0][self.qhamode]['temperatures'][::self.everyT]
-            print("xxxx=",self.T_vib)
+            #print("xxxx=",self.T_vib)
         except:
             try:
                 self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata.tag': self.tag})
@@ -1700,7 +1702,7 @@ class thelecMDB():
         with open(thermofile, 'w') as fvib:
             fvib.write('#Found quasiharmonic mode : {}\n'.format(self.qhamode))
             if self.hasSCF:
-                fvib.write('#T(K), volume, F(eV), S(J/K), H(J/K), a(-6/K), Cp(J/mol), Cv, Cpion, Bt(GPa), T_ph-D(K), T-D(K), F_el_atom, S_el_atom, C_el_atom, M_el, Seebeck_coefficients(μV/K), Lorenz_number(WΩK^{−2}), Q_el, Q_p, Q_e, C_mu, W_p, W_e, Y_p, Y_e\n')
+                fvib.write('#T(K), volume, F(eV), S(J/K), H(J/K), a(-6/K), Cp(J/mol), Cv, Cpion, Bt(GPa), T_ph-D(K), T-D(K), F_el_atom, S_el_atom, C_el_atom, M_el, Seebeck_coefficients(10**-6 V/K), Lorenz_number(WOK^{-2}), Q_el, Q_p, Q_e, C_mu, W_p, W_e, Y_p, Y_e\n')
             else:
                 fvib.write('#T, F_el_atom, S_el_atom, C_el_atom, M_el, seebeck_coefficients, Lorenz_number[WΩK−2], Q_el, Q_p, Q_e, C_mu, W_p, W_e, Y_p, Y_e Vol Gibbs_energy\n')
 
@@ -1824,7 +1826,7 @@ class thelecMDB():
                 get_rec_from_metatag(self.vasp_db, self.tag)
             with open (self.phasename+'/POSCAR', 'w') as fp:
                 fp.write(self.key_comments['POSCAR'])
-        nT = len(self.volT)
+        nT = min(len(self.volT),len(self.blat))
         for i in range(nT):
             if self.blat[i] < 0:
                 nT = i
