@@ -671,7 +671,7 @@ def alt_curve_fit(BMfunc, x, y):
   if 1==0: return curve_fit(BMfunc, x, y)
 
   #change back to linear fitting to avoid numerical instability
-  xx = x**(-1/3)
+  xx = np.array(x)**(-1/3)
   if BMfunc.__name__=="BMvol4":
     return np.polyfit(xx, y, 3)[::-1], 0
   elif BMfunc.__name__=="BMvol5":
@@ -942,11 +942,15 @@ class thelecMDB():
         self.fitF=fitF
         if self.debug:
             if self.dope==0.0: self.dope=-1.e-5
+
+        self.local=""
         if args!=None:
             self.nT = args.nT
             self.doscar=args.doscar
             self.poscar=args.poscar
             self.vdos=args.vdos
+            self.local=args.local
+
         if self.vasp_db==None: self.pyphon=True
         #print ("iiiii=",len(self._Yphon))
 
@@ -1218,7 +1222,7 @@ class thelecMDB():
 
 
     def toYphon(self, _T=None, for_plot=False):
-        if self.vasp_db==None:
+        if self.vasp_db==None or self.local!="":
             self.toYphon_without_DB(_T=_T, for_plot=for_plot)
             return
 
@@ -1284,7 +1288,8 @@ class thelecMDB():
 
         if len(self.Vlat)<=0:
             print("\nFATAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
-            sys.exit()
+            raise ValueError()
+            #sys.exit()
         self.Slat = np.array(sort_x_by_y(self.Slat, self.Vlat))
         self.Clat = np.array(sort_x_by_y(self.Clat, self.Vlat))
         self.Flat = np.array(sort_x_by_y(self.Flat, self.Vlat))
@@ -1310,9 +1315,14 @@ class thelecMDB():
 
         print ("extract the superfij.out used by Yphon ...")
         for i, vol in enumerate(self.volumes):
-            dir = self.phasename+'/Yphon/'+'V{:010.6f}'.format(vol)
+            if self.local!="":
+                dir = self.local+'/Yphon/'+'V{:010.6f}'.format(vol)
+            else:
+                dir = self.phasename+'/Yphon/'+'V{:010.6f}'.format(vol)
             cwd = os.getcwd()
+            #print ("dir=",dir,vol,cwd)
             if not os.path.exists(dir): continue
+
             os.chdir( dir)
             if not os.path.exists('vdos.out'):
                 cmd = "Yphon -tranI 2 -DebCut 0.5 " + " <superfij.out"
@@ -1334,7 +1344,8 @@ class thelecMDB():
 
         if len(self.Vlat)<=0:
             print("\nFATAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
-            sys.exit()
+            raise ValueError()
+            #sys.exit()
         self.Slat = np.array(sort_x_by_y(self.Slat, self.Vlat))
         self.Clat = np.array(sort_x_by_y(self.Clat, self.Vlat))
         self.Flat = np.array(sort_x_by_y(self.Flat, self.Vlat))
@@ -1349,10 +1360,19 @@ class thelecMDB():
         print ("\nChecking compatibility between qha/Yphon data and static calculation:\n")
 
         for i,v in enumerate (self.Vlat):
+            """
             try:
-                print (v, self.energies[list(self.volumes).index(v)])
+                print (v, self.energies[list(self.volumes).index(round(v,8))])
             except:
                 print("\nWarning! The static/qha calculations are not inconsistent! Let me see if I can resolve it\n")
+            """
+            fvol = False
+            for j,vol in enumerate(self.volumes):
+                if abs(vol-v)<1.e-12:
+                    print (v, self.energies[j])
+                    fvol = True
+            if not fvol:
+                print("\nWarning! Not found v=",v,"\n")
         if len(self.Vlat)!=len(self.volumes):
             print("\nWarning! The static/qha calculations are not inconsistent! Let me see if I can resolve it\n")
 
@@ -1463,6 +1483,94 @@ class thelecMDB():
         #self.volumes = sort_x_by_y(volumes,volumes)
         self.volumes = np.array(list(map(float,sorted(volumes))))
         print ("found volumes from static calculations:", volumes)
+
+        if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
+        if not os.path.exists(self.phasename):
+            os.mkdir(self.phasename)
+
+
+    # get the energies, volumes and DOS objects by searching for the tag
+    def find_static_calculations_local(self):
+        from os import walk
+        yphondir = self.local+"/Yphon"
+        _, static_calculations, _ = next(walk(yphondir))
+
+        energies = []
+        volumes = []
+        lattices = []
+        _matrixs = []
+        dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
+        _structure = None  # single Structure for QHA calculation
+        for calc in static_calculations:
+            poscar = yphondir + '/' + calc + '/POSCAR'
+            if not os.path.exists(poscar) : continue
+            oszicar = yphondir + '/' + calc + '/OSZICAR'
+            if not os.path.exists(oszicar) : continue
+            print ("Handling data in ", yphondir + '/' + calc)
+            structure = Structure.from_file(poscar)
+            vol = structure.volume
+            sss = (structure.lattice.matrix).tolist()
+            #print(sss)
+            lattices.append(sss)
+            #print(sss)
+            #print(lattices)
+
+            #if vol_within (vol, volumes):
+            if vol in volumes:
+                print ("WARNING: skipped volume =", vol)
+                continue
+            volumes.append(vol)
+            with open(oszicar,"r") as fp:
+                lines = fp.readlines()
+                for line in lines:
+                    dat = [s for s in line.split() if s!=""]
+                    if len(dat) < 5: continue
+                    if dat[1]!="F=" or dat[3]!="E0=": continue
+                    energies.append(float(dat[4]))
+                    break
+
+            # get a Structure. We only need one for the masses and number of atoms in the unit cell.
+            if _structure is None:
+                _structure = structure
+                print(structure)
+                print ("\n")
+                reduced_structure = structure.get_reduced_structure(reduction_algo='niggli')
+                print ('niggli reduced structure', reduced_structure)
+                print ("\n")
+                self.formula_pretty = structure.composition.reduced_formula
+                #print ("xxxxxx=", self.formula_pretty)
+                try:
+                    formula2composition(formula_pretty)
+                except:
+                    self.formula_pretty = reduced_formula(reduced_structure.composition.alphabetical_formula)
+                self.natoms = len(structure.sites)
+                sa = SpacegroupAnalyzer(structure)
+                self.phase = sa.get_space_group_symbol().replace('/','.')+'_'+str(sa.get_space_group_number())
+                if self.phasename==None:
+                    self.phasename = self.formula_pretty+'_'+self.phase
+                self.space_group_number = sa.get_space_group_number()
+
+                key_comments ={}
+                key_comments['comments'] = 'local calculations'
+                self.key_comments = key_comments
+
+            doscar = yphondir + '/' + calc + '/DOSCAR.gz'
+            if not os.path.exists(doscar) : continue
+            dos_objs.append(doscar)
+
+        # sort everything in volume order
+        # note that we are doing volume last because it is the thing we are sorting by!
+
+        from dfttk.utils import sort_x_by_y
+        self.energies = sort_x_by_y(energies, volumes)
+        self.dos_objs = sort_x_by_y(dos_objs, volumes)
+        self.volumes = sort_x_by_y(volumes,volumes)
+        self.key_comments['E-V'] = {'lattices':sort_x_by_y(lattices, volumes),
+            'volumes':self.volumes, 'energies':self.energies,
+            'natoms':self.natoms}
+        #print (self.key_comments)
+        #self.volumes = np.array(list(map(float,sorted(volumes))))
+        print ("found volumes from static calculations:", self.volumes)
 
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
         if not os.path.exists(self.phasename):
@@ -1900,6 +2008,7 @@ class thelecMDB():
 
     def calc_eij(self):
         R = []
+        #print (self.key_comments)
         lat = self.key_comments['E-V']['lattices']
         for vol in self.volumes:
             idx = self.key_comments['E-V']['volumes'].index(vol)
@@ -2175,7 +2284,8 @@ class thelecMDB():
 
 
     def run_console(self):
-        if self.vasp_db!=None: self.find_static_calculations()
+        if self.local!="": self.find_static_calculations_local()
+        elif self.vasp_db!=None: self.find_static_calculations()
         else: self.find_static_calculations_without_DB()
         if not self.fitF:
             if os.path.exists(self.phasename+'/fitF'):
@@ -2280,7 +2390,9 @@ class thelecMDB():
 
 
     def get_formula(self):
-        if self.vasp_db==None:
+        if self.local!="":
+            return self.formula_pretty
+        elif self.vasp_db==None:
             ss = [s for s in self.phasename.split('/') if s!=""]
             return ss[-1].split('_')[0]
         else:
