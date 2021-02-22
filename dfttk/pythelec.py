@@ -1287,9 +1287,9 @@ class thelecMDB():
             os.chdir( cwd )
 
         if len(self.Vlat)<=0:
-            print("\nFATAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
-            raise ValueError()
-            #sys.exit()
+            print("\nFETAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
+            #raise ValueError()
+            sys.exit()
         self.Slat = np.array(sort_x_by_y(self.Slat, self.Vlat))
         self.Clat = np.array(sort_x_by_y(self.Clat, self.Vlat))
         self.Flat = np.array(sort_x_by_y(self.Flat, self.Vlat))
@@ -1343,9 +1343,9 @@ class thelecMDB():
             os.chdir( cwd )
 
         if len(self.Vlat)<=0:
-            print("\nFATAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
-            raise ValueError()
-            #sys.exit()
+            print("\nFETAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
+            #raise ValueError()
+            sys.exit()
         self.Slat = np.array(sort_x_by_y(self.Slat, self.Vlat))
         self.Clat = np.array(sort_x_by_y(self.Clat, self.Vlat))
         self.Flat = np.array(sort_x_by_y(self.Flat, self.Vlat))
@@ -1400,7 +1400,7 @@ class thelecMDB():
 
         if not good:
             print("xxxxxx", self.Vlat, self.volumes)
-            print("\nFATAL ERROR! It appears that the calculations are not all done!\n")
+            print("\nFETAL ERROR! It appears that the calculations are not all done!\n")
             sys.exit()
 
 

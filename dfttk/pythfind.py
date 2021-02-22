@@ -153,6 +153,7 @@ class thfindMDB ():
             self.jobpath='./'
             jobpath = os.listdir('./')
 
+        print("\nfound complete local calculations ...\n")
         for _dir in jobpath:
             dir = self.jobpath+_dir
             thermofile = dir+"/fvib_ele"
@@ -176,6 +177,7 @@ class thfindMDB ():
                         pass
             if self.skipby(formula, metatag): continue
             #print (self.metatag,metatag)
+            sys.stdout.write('{}, dir: {}, formula: {}\n'.format(metatag, dir, formula))
             self.tags.append([metatag, thermofile, volumes, energies, dir, formula])
 
 

@@ -138,6 +138,8 @@ def ext_thelec(args, plotfiles=None):
     #call API
     if args.plotonly and plotfiles!=None:
         metatag, thermofile, volumes, energies, dir, formula = plotfiles
+        sys.stdout.write('Processing {}, dir: {}, formula: {}\n'.format(metatag, dir, formula))
+
         #print(thermofile, volumes, energies, formula)
         #print(thermofile, dir, formula)
         readme={}
@@ -146,6 +148,8 @@ def ext_thelec(args, plotfiles=None):
             formula = formula, vtof=None, plotlabel=args.plot)
     elif vasp_db==None and plotfiles!=None:
         metatag, thermofile, volumes, energies, dir, formula = plotfiles
+        sys.stdout.write('Processing {}, dir: {}, formula: {}\n'.format(metatag, dir, formula))
+        #print("xxxxxxxxxx", plotfiles)
         if expt!=None:
             _t1 = get_melting_temperature(expt, formula)
             if _t1!=None: t1 = _t1
@@ -157,7 +161,7 @@ def ext_thelec(args, plotfiles=None):
             smooth=smooth, debug=args.debug,
             phasename=dir, pyphon=args.pyphon, renew=args.renew, fitF=args.fitF, args=args)
         volumes, energies, thermofile, comments = proc.run_console()
-
+        #print ("xxxxxxx", comments)
         if comments!=None: readme.update(comments)
         else: return
         if "ERROR" in readme.keys():
