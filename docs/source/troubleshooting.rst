@@ -16,11 +16,17 @@ Common troubleshooting
 
 2.      Make the latest `automate <https://atomate.org/>`_ installed;
 3.      In ``.bashrc`` or ``.cshrc``, make sure not messed up with your other `atomate` FW config;
-4.      Make sure the setup in the ``.bashrc`` file or (equivalently in the ``.cshrc`` file)
+4.      Make sure the setup in the ``.bashrc`` file 
 
 .. code-block:: bash
 
     export FW_CONFIG_FILE=~/dfttk/config/FW_config.yaml
+
+or equivalently in the ``.cshrc`` file
+
+.. code-block:: bash
+
+    setenv FW_CONFIG_FILE /storage/work/y/yuw3/dfttk/config/FW_config.yaml
 
 5.      git push issue for contributors, see https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account
 6.      for batch run of the postprocessing modules, make sure compatibilities of non-ascii character by:
