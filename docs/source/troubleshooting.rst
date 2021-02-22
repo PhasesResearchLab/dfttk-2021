@@ -54,6 +54,17 @@ Following are the steps of adding API key number on DFTTK.
       PMG_MAPI_KEY: ######(your API key number)
 
 
+pymatgen 2021 issue
+===================
+
+You mag meet numpy version issues using pymatgen, reporting::
+
+    pymatgen 2021.2.16 requires numpy>=1.20.1, but you'll have numpy 1.19.2 which is incompatible.
+
+
+In such case, please upgrade numpy by::
+
+    pip install numpy --upgrade
 
 conda issues
 ============
