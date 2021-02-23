@@ -118,7 +118,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     """
     ################ PARAMETERS FOR WF #############################
     #str, the absolute path of db.json file, e.g. /storage/home/mjl6505/atomate/config/db.json
-    #  If None, it will use the configuration in fireworks 
+    #  If None, it will use the configuration in fireworks
     db_file = settings.get('db_file', None)
     #list, the MAGMOM of the structure, e.g. [4.0, 4.0, -4.0, -4.0]
     magmom = settings.get('magmom', None)
@@ -146,7 +146,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     #float, the step of temperature in QHA process, e.g. 5
     t_step = settings.get('t_step', 5)
     #float, acceptable value for average RMS, recommend >= 0.005
-    eos_tolerance = settings.get('eos_tolerance', 0.01) 
+    eos_tolerance = settings.get('eos_tolerance', 0.01)
     #str, the vasp command, if None then find in the FWorker configuration
     vasp_cmd = settings.get('vasp_cmd', None)
     #dict, metadata to be included, this parameter is useful for filter the data, e.g. metadata={"phase": "BCC_A2", "tag": "AFM"}
@@ -165,7 +165,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     pass_isif4 = settings.get('pass_isif4', False)
     #Set the path already exists for new static calculations; if set as '', will try to get the path from db_file
     relax_path = settings.get('relax_path', '')
-    #The symmetry tolerance, including three keys, 
+    #The symmetry tolerance, including three keys,
     #e.g. override_symmetry_tolerances={'tol_strain': 0.05, 'tol_energy': 0.025, 'tol_bond': 0.10}
     override_symmetry_tolerances = settings.get('override_symmetry_tolerances', None)
     #Global settings for all vasp job, e.g.
@@ -176,7 +176,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     """
     modify_incar_params = { 'Full relax': {'incar_update': {"LAECHG":False,"LCHARG":False,"LWAVE":False}},
                             'PreStatic': {'incar_update': {"LAECHG":False,"LCHARG":False,"LWAVE":False}},
-                            'PS2': {'incar_update': {"LAECHG":False,"LCHARG":False,"LWAVE":False}}, 
+                            'PS2': {'incar_update': {"LAECHG":False,"LCHARG":False,"LWAVE":False}},
                             'static': {'incar_update': {"LAECHG":False,"LCHARG":False,"LWAVE":False}},
     """
     modify_incar_params = settings.get('modify_incar_params', {})
@@ -228,17 +228,17 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
         structure.add_site_property('magmom', magmom)
     if not db_file:
         from fireworks.fw_config import config_to_dict
-        db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]    
+        db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
 
     """
     if WORKFLOW == "get_wf_gibbs":
         #Currently, only this workflow is supported
-        wf = get_wf_gibbs(structure, num_deformations=num_deformations, deformation_fraction=deformation_fraction, 
-                    phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix,  t_min=t_min, t_max=t_max, 
-                    t_step=t_step, eos_tolerance=eos_tolerance, volume_spacing_min=volume_spacing_min,vasp_cmd=vasp_cmd, 
-                    db_file=db_file, metadata=metadata, name='EV_QHA', symmetry_tolerance=symmetry_tolerance, 
-                    run_isif2=run_isif2, pass_isif4=pass_isif4, passinitrun=passinitrun, relax_path=relax_path, 
-                    modify_incar_params=modify_incar_params, modify_kpoints_params=modify_kpoints_params, 
+        wf = get_wf_gibbs(structure, num_deformations=num_deformations, deformation_fraction=deformation_fraction,
+                    phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix,  t_min=t_min, t_max=t_max,
+                    t_step=t_step, eos_tolerance=eos_tolerance, volume_spacing_min=volume_spacing_min,vasp_cmd=vasp_cmd,
+                    db_file=db_file, metadata=metadata, name='EV_QHA', symmetry_tolerance=symmetry_tolerance,
+                    run_isif2=run_isif2, pass_isif4=pass_isif4, passinitrun=passinitrun, relax_path=relax_path,
+                    modify_incar_params=modify_incar_params, modify_kpoints_params=modify_kpoints_params,
                     verbose=verbose, store_volumetric_data=store_volumetric_data)
     elif WORKFLOW == "eos":
     """
@@ -247,16 +247,16 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
                   num_deformations=num_deformations, override_symmetry_tolerances=override_default_vasp_params, metadata=metadata)
     elif WORKFLOW == "robust" or WORKFLOW == "get_wf_gibbs":
         wf = get_wf_gibbs_robust(structure, num_deformations=num_deformations, deformation_fraction=deformation_fraction,
-                 phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, t_min=t_min, t_max=t_max, t_step=t_step, 
-                 eos_tolerance=eos_tolerance, volume_spacing_min=volume_spacing_min, vasp_cmd=vasp_cmd, db_file=db_file, 
+                 phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, t_min=t_min, t_max=t_max, t_step=t_step,
+                 eos_tolerance=eos_tolerance, volume_spacing_min=volume_spacing_min, vasp_cmd=vasp_cmd, db_file=db_file,
                  isif4=isif4, metadata=metadata, name='EV_QHA', override_symmetry_tolerances=override_symmetry_tolerances,
                  override_default_vasp_params=override_default_vasp_params, modify_incar_params=modify_incar_params,
                  modify_kpoints_params=modify_kpoints_params, verbose=verbose, phonon_supercell_matrix_min=phonon_supercell_matrix_min,
                  phonon_supercell_matrix_max=phonon_supercell_matrix_max, optimize_sc=optimize_sc, level=level,
                  force_phonon=force_phonon, stable_tor=stable_tor, store_volumetric_data=store_volumetric_data)
     elif WORKFLOW == "born":
-        wf = get_wf_borncharge(structure=structure, metadata=metadata, db_file=db_file, isif=2, name="born charge", 
-                      vasp_cmd=vasp_cmd, override_default_vasp_params=override_default_vasp_params, 
+        wf = get_wf_borncharge(structure=structure, metadata=metadata, db_file=db_file, isif=2, name="born charge",
+                      vasp_cmd=vasp_cmd, override_default_vasp_params=override_default_vasp_params,
                       modify_incar=modify_incar_params)
     elif WORKFLOW == 'elastic':
             wf = get_wf_elastic(structure=structure, metadata=metadata, vasp_cmd=vasp_cmd, db_file=db_file, name="elastic",
@@ -272,21 +272,21 @@ def run(args):
     Currently, only support get_wf_gibbs
 
     Parameters
-        STR_FOLDER = args.STRUCTURE_FOLDER  
+        STR_FOLDER = args.STRUCTURE_FOLDER
             folder/file containing structures
-        MATCH_PATTERN = args.MATCH_PATTERN  
+        MATCH_PATTERN = args.MATCH_PATTERN
             Match patterns for structure file, e.g. *POSCAR
-        RECURSIVE = args.RECURSIVE          
+        RECURSIVE = args.RECURSIVE
             recursive or not
-        WORKFLOW = args.WORKFLOW            
+        WORKFLOW = args.WORKFLOW
             workflow, current only get_wf_gibbs
-        LAUNCH = args.LAUNCH               
+        LAUNCH = args.LAUNCH
             Launch to lpad or not
-        MAX_JOB = args.MAX_JOB              
+        MAX_JOB = args.MAX_JOB
             Max job to submit
-        SETTINGS = args.SETTINGS            
-            Settings file    
-        WRITE_OUT_WF = args.WRITE_OUT_WF    
+        SETTINGS = args.SETTINGS
+            Settings file
+        WRITE_OUT_WF = args.WRITE_OUT_WF
             Write out wf file or not
     """
     STR_FOLDER = args.STRUCTURE_FOLDER  # folder/file containing structures
@@ -296,7 +296,7 @@ def run(args):
     PHONON = args.PHONON                # run phonon
     LAUNCH = args.LAUNCH               # Launch to lpad or not
     MAX_JOB = args.MAX_JOB              # Max job to submit
-    SETTINGS = args.SETTINGS            # Settings file    
+    SETTINGS = args.SETTINGS            # Settings file
     WRITE_OUT_WF = args.WRITE_OUT_WF    # Write out wf file or not
     TAG = args.TAG                      # Metadata from the command line
     APPEND = args.APPEND                # Append calculations, e.g. appending volumes or phonon or born
@@ -353,8 +353,8 @@ def run(args):
             (STR_PATH, STR_FILENAME_WITH_EXT) = os.path.split(STR_FILE)
             (STR_FILENAME, STR_EXT) = os.path.splitext(STR_FILENAME_WITH_EXT)
             str_filename = STR_FILENAME.lower()
-            if (str_filename.endswith("-" + SETTINGS.lower()) or 
-               str_filename.startswith( SETTINGS.lower() + "-") or 
+            if (str_filename.endswith("-" + SETTINGS.lower()) or
+               str_filename.startswith( SETTINGS.lower() + "-") or
                (str_filename == SETTINGS.lower())):
                 print(STR_FILE + " is a setting file, not structure file, and skipped when reading the structure.")
             elif STR_FILE == os.path.abspath(__file__):
@@ -389,7 +389,7 @@ def run(args):
                     if WRITE_OUT_WF:
                         dfttk_wf_filename = os.path.join(STR_PATH, "dfttk_wf-" + STR_FILENAME_WITH_EXT + ".yaml")
                         dumpfn(wf.to_dict(), dfttk_wf_filename)
-            
+
         #Write Out the metadata for POST and continue purpose
         dumpfn(metadatas, "METADATAS.yaml")
 
@@ -428,12 +428,12 @@ def config(args):
     MAPI_KEY = args.MAPI_KEY
     DEFAULT_FUNCTIONAL = args.DEFAULT_FUNCTIONAL
     ACI = args.ACI
-    
+
     if ALL:
         ATOMATE = True
         PYMATGEN = True
 
-    TEST_CONFIG_MAP = {"all": [True, True], "atomate": [True, False], 
+    TEST_CONFIG_MAP = {"all": [True, True], "atomate": [True, False],
                        "pymatgen": [False, True], "none": [False, False]}
     [test_atomate, test_pymagen] = TEST_CONFIG_MAP[TEST_CONFIG.lower()]
     if test_atomate or test_pymagen:
@@ -446,12 +446,12 @@ def config(args):
     PATH_TO_STORE_CONFIG = get_abspath(PATH_TO_STORE_CONFIG)
 
     if ATOMATE:
-        dfttkconfig.config_atomate(path_to_store_config=PATH_TO_STORE_CONFIG, config_folder=CONFIG_FOLDER, 
+        dfttkconfig.config_atomate(path_to_store_config=PATH_TO_STORE_CONFIG, config_folder=CONFIG_FOLDER,
             queue_script=QUEUE_SCRIPT, queue_type=QUEUE_TYPE, vasp_cmd_flag=VASP_CMD_FLAG)
 
     if PYMATGEN:
-        dfttkconfig.config_pymatgen(psp_dir=VASP_PSP_DIR, def_fun=DEFAULT_FUNCTIONAL, 
-            mapi=MAPI_KEY, path_to_store_psp=os.path.join(PATH_TO_STORE_CONFIG, "vasp_psp"), aci=ACI, 
+        dfttkconfig.config_pymatgen(psp_dir=VASP_PSP_DIR, def_fun=DEFAULT_FUNCTIONAL,
+            mapi=MAPI_KEY, path_to_store_psp=os.path.join(PATH_TO_STORE_CONFIG, "vasp_psp"), aci=ACI,
             vasp_cmd=VASP_CMD_FLAG, template=QUEUE_SCRIPT, queue_type=QUEUE_TYPE)
 
 def db_remove(args):
@@ -466,7 +466,7 @@ def run_dfttk():
     print("Copyright \u00a9 Phases Research Lab (https://www.phaseslab.com/)\n")
 
     parser = argparse.ArgumentParser(description='Run DFTTK jobs.')
-    
+
     subparsers = parser.add_subparsers()
 
     #SUB-PROCESS: run
@@ -484,7 +484,7 @@ def run_dfttk():
                            "\t SETTINGS (global settings in the folder)\n"
                            "\t Start with SETTINGS- (individual settings for struct)\n"
                            "\t End with -SETTINGS (individual settings)")
-    prun.add_argument("-r", "--recursive", dest="RECURSIVE", action="store_true", 
+    prun.add_argument("-r", "--recursive", dest="RECURSIVE", action="store_true",
                       help="Recursive the path.")
     prun.add_argument("-wf", "--workflow", dest="WORKFLOW", type=str, default="robust",
                       help="""Specify the workflow to run.\n
@@ -511,6 +511,14 @@ def run_dfttk():
     pconfig = subparsers.add_parser("config", help="Config dfttk.")
     pconfig.add_argument("-all", "--all", dest="ALL", action="store_true",
                          help="Configure atomate and pymatgen.")
+    pconfig.add_argument("-B", "--batch", dest="batch", default="pbs",
+                         help="Batch job management system.\n"
+                              "Default: pbs")
+    pconfig.add_argument("-m", "--machine", dest="machine", type=str,
+                         choices=['aci', 'bridge2', 'stampede2','cori', ''],
+                         default="aci",
+                         help="Computer.\n"
+                              "Default: aci")
     pconfig.add_argument("-p", "--prefix", dest="PATH_TO_STORE_CONFIG", default=".",
                          help="The folder to store the config files.\n"
                               "Default: . (current folder)")
@@ -530,7 +538,7 @@ def run_dfttk():
                          help="Configure pymatgen.")
     pconfig.add_argument("-aci", "--aci", dest="ACI", action="store_true",
                          help="Using the pesudopotential on the ACI cluster at PSU.")
-    pconfig.add_argument("-psp", "--vasp_psp_dir", dest="VASP_PSP_DIR", 
+    pconfig.add_argument("-psp", "--vasp_psp_dir", dest="VASP_PSP_DIR",
                          help="The path of pseudopotentials.")
     pconfig.add_argument("-mapi", "--mapi_key", dest="MAPI_KEY", type=str,
                          help="The API key of Materials Projects")
