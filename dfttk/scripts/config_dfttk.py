@@ -45,8 +45,8 @@ def default_path():
 def add_path_var(force_override=True, **kwarg):
     """
     Add path var to ~/.bashrc
-    
-    If the key of kwarg exists in ~/.bashrc, it will update it, 
+
+    If the key of kwarg exists in ~/.bashrc, it will update it,
     if not exists, it will add "export key=kwarg[key]"
     Note: it will backup the original ~/.bashrc to ~/.bashrc.dfttk.bak
     """
@@ -311,7 +311,7 @@ def find_psppath_in_cluster(vasp_cmd="vasp_std", psp_pathnames=None, template="v
         vasp_cmd: str
             The vasp command, default is 'vasp_std'
         psp_pathnames: str or list(str)
-            The possible folder name of the pseudopotential 
+            The possible folder name of the pseudopotential
         template: str (filename-like)
             The filename of the queue script. Default: vaspjob.pbs
         queue_type: str
@@ -325,12 +325,12 @@ def find_psppath_in_cluster(vasp_cmd="vasp_std", psp_pathnames=None, template="v
         psp_pathnames=["pp", "pps", "psp", "potential", "pseudopotential"]
     if isinstance(psp_pathnames, str):
         psp_pathnames = [psp_pathnames]
-    
+
     psp_path = []
 
     #Find vasp's location
     vasp_path = find_vasp_path(vasp_cmd=vasp_cmd, template=template, queue_type=queue_type)
-    
+
     #Search the vasp_path and its parent path(e.g. the exe file in bin/src folder)
     vasp_path = [vasp_path, os.path.dirname(vasp_path)]
     for vasp_pathi in vasp_path:
@@ -345,7 +345,7 @@ def find_psppath_in_cluster(vasp_cmd="vasp_std", psp_pathnames=None, template="v
     return psp_path
 
 
-def handle_potcar_gz(psp_dir=None, path_to_store_psp="psp_pymatgen", aci=True, 
+def handle_potcar_gz(psp_dir=None, path_to_store_psp="psp_pymatgen", aci=True,
     vasp_cmd="vasp_std", template="vaspjob.pbs", queue_type="pbs"):
     """
     Compress and move the pseudopotential to a specified path(path_to_store_psp)
@@ -451,7 +451,7 @@ def handle_potcar_gz(psp_dir=None, path_to_store_psp="psp_pymatgen", aci=True,
 def config_pymatgen(psp_dir=None, def_fun="PBE", mapi=None, path_to_store_psp="psp_pymatgen", aci=False,
     vasp_cmd="vasp_std", template="vaspjob.pbs", queue_type="pbs"):
     """
-    Config pymatgen. 
+    Config pymatgen.
     If the key is exists in ~/.pmgrc.yaml and not empty, skip
 
     Parameter
@@ -460,7 +460,7 @@ def config_pymatgen(psp_dir=None, def_fun="PBE", mapi=None, path_to_store_psp="p
         def_fun: str
             The default functional. Default: PBE
         mapi: str
-            The API of Materials Project. Default: None. Ref. https://materialsproject.org/open 
+            The API of Materials Project. Default: None. Ref. https://materialsproject.org/open
         path_to_store_psp: str (path-like)
             The destination to store the compressed psp. default: psp_pymatgen
     Return
@@ -497,19 +497,19 @@ def config_pymatgen(psp_dir=None, def_fun="PBE", mapi=None, path_to_store_psp="p
         params[key] = keys_dict[key]
     dumpfn(params, pmg_config_file, default_flow_style=False)
     if "PMG_MAPI_KEY" in keys_required and (not mapi):
-        warnings.warn("'PMG_MAPI_KEY' is empty, some function will not work. " + 
+        warnings.warn("'PMG_MAPI_KEY' is empty, some function will not work. " +
             "Please add your own Materials Project's API. " +
             "Ref. https://github.com/PhasesResearchLab/dfttk/tree/master/docs/Configuration.md")
     if "PMG_VASP_PSP_DIR" in keys_required:
         #No configuration for psp path
-        handle_potcar_gz(psp_dir=psp_dir, path_to_store_psp=path_to_store_psp, aci=aci, 
+        handle_potcar_gz(psp_dir=psp_dir, path_to_store_psp=path_to_store_psp, aci=aci,
             vasp_cmd=vasp_cmd, template=template, queue_type=queue_type)
 
 def update_configfile(filename, base_file):
     """
     Update the filename base on base_file.
     Update all except the path/file which exists in filename but not in base_file
-    
+
     Parameter
         filename: str (filename-like)
             The filename of config file
@@ -533,7 +533,7 @@ def update_configfile(filename, base_file):
     elif filename.endswith(".yaml"):
         dumpfn(ori_file, filename, default_flow_style=False, indent=4)
 
-def config_atomate(path_to_store_config=".", config_folder="config", queue_script="vaspjob.pbs", 
+def config_atomate(path_to_store_config=".", config_folder="config", queue_script="vaspjob.pbs",
     queue_type="pbs", vasp_cmd_flag="vasp_std"):
     """
     Configuration for atomate
@@ -553,13 +553,13 @@ def config_atomate(path_to_store_config=".", config_folder="config", queue_scrip
         None
     """
     config_file = get_config_file(config_folder=config_folder, queue_script=queue_script)
-        
+
     creat_folders(path_to_store_config + "/config")
     creat_folders(path_to_store_config + "/logs")
-   
+
     if config_file[queue_script]:
         #If the pbs file exists
-        param_dict = parse_queue_script(template=config_file[queue_script], 
+        param_dict = parse_queue_script(template=config_file[queue_script],
                                         queue_type=queue_type, vasp_cmd_flag=vasp_cmd_flag)
     else:
         param_dict = {}
@@ -592,6 +592,7 @@ class ConfigTemplate(object):
         self.VASP_CMD = kwargs.get("vasp_cmd", "mpirun vasp_std")
         self.NNODES = kwargs.get("nodes", 1)
         self.PPNODE = kwargs.get("ppn", 24)
+        self.C = kwargs.get("constraint", "knl,quad,cache")
         self.WALLTIME = kwargs.get("walltime", "48:00:00")
         self.QUEUE = kwargs.get("queue", "open")
         self.PMEM = kwargs.get("pmem", "8gb")
