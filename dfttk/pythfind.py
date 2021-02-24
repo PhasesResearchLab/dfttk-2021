@@ -20,7 +20,7 @@ import json
 import subprocess
 import shutil
 import numpy as np
-from fireworks.fw_config import config_to_dict
+#from fireworks.fw_config import config_to_dict
 from atomate.vasp.database import VaspCalcDb
 from dfttk.analysis.ywutils import formula2composition, reduced_formula
 
@@ -66,8 +66,12 @@ class thfindMDB ():
         else:
             self.qhamode = 'phonon'
         if args.qhamode == 'debye' : self.qhamode = 'qha'
-        from fireworks.fw_config import config_to_dict
+        #from dfttk.fw_config import config_to_dict
+        from fireworks.fw_config import override_user_settings, config_to_dict
+        override_user_settings()
         from monty.serialization import loadfn
+        #print (os.environ["FW_CONFIG_FILE"])
+        #print (config_to_dict()["FWORKER_LOC"])
         try:
             db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
         except:

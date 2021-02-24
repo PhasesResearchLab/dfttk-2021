@@ -116,7 +116,9 @@ def ext_thelec(args, plotfiles=None):
         #if True:
         try:
             from atomate.vasp.database import VaspCalcDb
-            from fireworks.fw_config import config_to_dict
+            #from fireworks.fw_config import config_to_dict
+            from fireworks.fw_config import override_user_settings, config_to_dict
+            override_user_settings()
             from monty.serialization import loadfn
             try:
                 db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]

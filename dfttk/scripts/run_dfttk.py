@@ -15,6 +15,28 @@ import os
 import sys
 import shutil
 
+
+def set_windows_env():
+    try:
+        os.environ["FW_CONFIG_FILE"]
+        return
+    except:
+        pass
+
+    from pathlib import Path
+    homepath = str(Path.home())
+    with open (os.path.join(homepath, ".bashrc"), "r") as fp:
+        lines = fp.readlines()
+    for line in lines:
+        if line.startswith("export FW_CONFIG_FILE="):
+            fw_config_file = line.replace("export FW_CONFIG_FILE=","")
+    os.environ["FW_CONFIG_FILE"] = fw_config_file.rstrip()
+    #print (os.environ["FW_CONFIG_FILE"])
+
+#Window compatible
+set_windows_env()
+
+
 def get_abspath(path):
     """
     Get the absolute path.
@@ -227,7 +249,9 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
             magmom = Incar.from_string('MAGMOM={}'.format(magmom)).as_dict()['MAGMOM']
         structure.add_site_property('magmom', magmom)
     if not db_file:
-        from fireworks.fw_config import config_to_dict
+        #from fireworks.fw_config import config_to_dict
+        from fireworks.fw_config import override_user_settings, config_to_dict
+        override_user_settings()
         db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
 
     """
@@ -396,7 +420,7 @@ def run(args):
     if LAUNCH:
         from fireworks import LaunchPad
         lpad = LaunchPad.auto_load()
-
+    
         for wflow in wfs:
             lpad.add_wf(wflow)
         if MAX_JOB:
