@@ -7,7 +7,9 @@ from pymatgen.io.vasp.inputs import Potcar
 from dfttk.wflows import get_wf_gibbs
 from dfttk.utils import recursive_glob
 from dfttk.structure_builders.parse_anrl_prototype import multi_replace
+from fireworks.fw_config import config_to_dict
 from monty.serialization import loadfn, dumpfn
+from atomate.vasp.database import VaspCalcDb
 import dfttk.pythelec as pythelec
 from dfttk.pythelec import thelecMDB
 from dfttk.pythfind import thfindMDB
@@ -115,15 +117,7 @@ def ext_thelec(args, plotfiles=None):
     elif not args.plotonly:
         #if True:
         try:
-            from atomate.vasp.database import VaspCalcDb
-            #from fireworks.fw_config import config_to_dict
-            from fireworks.fw_config import override_user_settings, config_to_dict
-            override_user_settings()
-            from monty.serialization import loadfn
-            try:
-                db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
-            except:
-                db_file="db.json"
+            db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
             vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
             static_calculations = vasp_db.collection.\
                 find({'$and':[ {'metadata.tag': metatag}, {'adopted': True} ]})
