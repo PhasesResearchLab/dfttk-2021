@@ -184,7 +184,6 @@ def ext_thelec(args, plotfiles=None):
         if expt!=None:
             _t1 = get_melting_temperature(expt, formula)
             if _t1!=None: t1 = _t1
-
         readme = {}
         record_cmd(readme)
         proc = thelecMDB(t0, t1, td, xdn, xup, dope, ndosmx, gaussian, natom, outf, vasp_db=vasp_db,

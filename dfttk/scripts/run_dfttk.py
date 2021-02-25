@@ -423,6 +423,7 @@ def config(args):
     VASP_CMD_FLAG = args.VASP_CMD_FLAG
     CONFIG_FOLDER = args.CONFIG_FOLDER
     QUEUE_SCRIPT = args.QUEUE_SCRIPT
+    MACHINE = args.MACHINE
     QUEUE_TYPE = args.QUEUE_TYPE
 
     PYMATGEN = args.PYMATGEN
@@ -430,6 +431,7 @@ def config(args):
     MAPI_KEY = args.MAPI_KEY
     DEFAULT_FUNCTIONAL = args.DEFAULT_FUNCTIONAL
     ACI = args.ACI
+    MACHINES = args.MACHINES
 
     if ALL:
         ATOMATE = True
@@ -448,7 +450,8 @@ def config(args):
     PATH_TO_STORE_CONFIG = get_abspath(PATH_TO_STORE_CONFIG)
 
     if ATOMATE:
-        dfttkconfig.config_atomate(path_to_store_config=PATH_TO_STORE_CONFIG, config_folder=CONFIG_FOLDER,
+        dfttkconfig.config_atomate(path_to_store_config=PATH_TO_STORE_CONFIG, 
+            config_folder=CONFIG_FOLDER, machine=MACHINE, machines=MACHINES,
             queue_script=QUEUE_SCRIPT, queue_type=QUEUE_TYPE, vasp_cmd_flag=VASP_CMD_FLAG)
 
     if PYMATGEN:
@@ -513,17 +516,21 @@ def run_dfttk():
     pconfig = subparsers.add_parser("config", help="Config dfttk.")
     pconfig.add_argument("-all", "--all", dest="ALL", action="store_true",
                          help="Configure atomate and pymatgen.")
-    pconfig.add_argument("-B", "--batch", dest="batch", default="pbs",
-                         help="Batch job management system.\n"
-                              "Default: pbs")
-    pconfig.add_argument("-m", "--machine", dest="machine", type=str,
-                         choices=['aci', 'bridge2', 'stampede2','cori', ''],
+    pconfig.add_argument("-M", "--machine", dest="MACHINE", type=str,
                          default="aci",
-                         help="Computer.\n"
+                         help="Computer name to be configured.\n"
                               "Default: aci")
+    pconfig.add_argument("-MS", "--machines", dest="MACHINES", type=str,
+                         default=None,
+                         help="User supplied yaml file containing a list of computers with configuration.\n"
+                              "Default: None")
     pconfig.add_argument("-p", "--prefix", dest="PATH_TO_STORE_CONFIG", default=".",
                          help="The folder to store the config files.\n"
                               "Default: . (current folder)")
+    pconfig.add_argument("-N", "--nodes", dest="NODES", default=1,
+                         help="Number of nodes. Default: 1")
+    pconfig.add_argument("-NP", "--ppn", dest="PPN", default=16,
+                         help="Number of cores per node. Default: 16")
     pconfig.add_argument("-a", "--atomate", dest="ATOMATE", action="store_true",
                          help="Configure atomate.")
     pconfig.add_argument("-c", "--config_folder", dest="CONFIG_FOLDER", default=".",
@@ -533,7 +540,7 @@ def run_dfttk():
                          help="The filename of the script for sumitting vasp job. "
                               "It will search in current folder and sub-folders. Default: vaspjob.pbs")
     pconfig.add_argument("-qt", "--queue_type", dest="QUEUE_TYPE", type=str, default="pbs",
-                         help="The type of queue system. Note, only pbs is supported now. Default: pbs")
+                         help="The type of queue system. Default: pbs")
     pconfig.add_argument("-v", "--vasp_cmd_flag", dest="VASP_CMD_FLAG", type=str, default="vasp_std",
                          help="The flag to distinguish vasp_cmd to othe commands in queue_script. Default: vasp_std")
     pconfig.add_argument("-mp", "--pymatgen", dest="PYMATGEN", action="store_true",

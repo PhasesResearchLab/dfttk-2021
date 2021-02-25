@@ -622,7 +622,9 @@ class thermoplot:
         if self.plottitle!=None: plt.title(self.plottitle)
         plt.xlabel(self._xlabel)
         plt.ylabel(self._ylabel)
-        #self.ax.legend(loc=0, prop={'size': 24})
+        self.ax.legend(loc=0, prop={'size': 24})
+        #plt.legend(loc=0, prop={'size': 24})
+     
         self.fig.savefig(self.fname,bbox_inches='tight')
         plt.close(self.fig)
 
