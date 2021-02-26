@@ -781,6 +781,7 @@ class ConfigFworker(ConfigTemplate):
 
         machines = get_machines(nodes=self.NNODES, ppn=self.PPNODE, user_machines=user_machines)
 
+        self.DATA["name"] = machine
         if machine in machines.keys():
             self.DATA['env']["vasp_cmd"] = machines[machine]["vasp_cmd"]
         else:

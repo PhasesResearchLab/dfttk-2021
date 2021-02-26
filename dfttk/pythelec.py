@@ -1316,7 +1316,8 @@ class thelecMDB():
         print ("extract the superfij.out used by Yphon ...")
         for i, vol in enumerate(self.volumes):
             if self.local!="":
-                dir = self.local+'/Yphon/'+'V{:010.6f}'.format(vol)
+                #dir = self.local+'/Yphon/'+'V{:010.6f}'.format(vol)
+                dir = self.dirs[i]
             else:
                 dir = self.phasename+'/Yphon/'+'V{:010.6f}'.format(vol)
             cwd = os.getcwd()
@@ -1493,9 +1494,12 @@ class thelecMDB():
     def find_static_calculations_local(self):
         from os import walk
         yphondir = self.local+"/Yphon"
+        if not os.path.exists(yphondir): yphondir = self.local
+
         _, static_calculations, _ = next(walk(yphondir))
 
         energies = []
+        dirs = []
         volumes = []
         lattices = []
         _matrixs = []
@@ -1520,6 +1524,7 @@ class thelecMDB():
                 print ("WARNING: skipped volume =", vol)
                 continue
             volumes.append(vol)
+            dirs.append(os.path.join(yphondir,calc))
             with open(oszicar,"r") as fp:
                 lines = fp.readlines()
                 for line in lines:
@@ -1564,6 +1569,7 @@ class thelecMDB():
         from dfttk.utils import sort_x_by_y
         self.energies = sort_x_by_y(energies, volumes)
         self.dos_objs = sort_x_by_y(dos_objs, volumes)
+        self.dirs = sort_x_by_y(dirs,volumes)
         self.volumes = sort_x_by_y(volumes,volumes)
         self.key_comments['E-V'] = {'lattices':sort_x_by_y(lattices, volumes),
             'volumes':self.volumes, 'energies':self.energies,
@@ -1575,6 +1581,7 @@ class thelecMDB():
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
         if not os.path.exists(self.phasename):
             os.mkdir(self.phasename)
+
 
 
     # get the energies, volumes and DOS objects by searching for the tag
@@ -2317,7 +2324,10 @@ class thelecMDB():
         if not self.pyphon: self.get_qha()
         self.hasSCF = True
         self.check_vol()
-        self.has_Cij = self.get_Cij(self.phasename+'/Yphon', pinv=False)
+        if self.local!="":
+            self.has_Cij = self.get_Cij(self.phasename, pinv=False)
+        else:
+            self.has_Cij = self.get_Cij(os.path.join(self.phasename,'Yphon'), pinv=False)
         self.energies_orig = copy.deepcopy(self.energies)
 
         if self.noel : self.theall = np.zeros([14, len(self.T), len(self.volumes)])
