@@ -67,6 +67,7 @@ class thfindMDB ():
         else:
             self.qhamode = 'phonon'
         if args.qhamode == 'debye' : self.qhamode = 'qha'
+
         db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
  
         if not self.plotonly:

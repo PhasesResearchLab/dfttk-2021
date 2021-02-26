@@ -773,6 +773,7 @@ class ConfigFworker(ConfigTemplate):
             "query": '{}',
             "env":
                 {"db_file": os.path.join(self.PATH_TO_STORE_CONFIG, "config/db.json"),
+                #{"db_file": ">>db_file<<",
                  "vasp_cmd": self.VASP_CMD,
                  "scratch_dir": "null",
                  "incar_update": {}}

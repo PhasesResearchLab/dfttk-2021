@@ -365,7 +365,7 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
     deformations = _get_deformations(deformation_fraction, num_deformations)
     vol_spacing = max((deformations[-1] - deformations[0]) / (num_deformations - 1), volume_spacing_min)
 
-    common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': db_file, "metadata": metadata, "tag": tag,
+    common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': ">>db_file<<", "metadata": metadata, "tag": tag,
                      'override_default_vasp_params': override_default_vasp_params}
     robust_opt_kwargs = {'isif': 7, 'isif4': isif4, 'level': level, 'override_symmetry_tolerances': override_symmetry_tolerances}
     vasp_kwargs = {'modify_incar_params': modify_incar_params, 'modify_kpoints_params': modify_kpoints_params}
@@ -394,7 +394,7 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
         fws.append(phonon_wf)
         check_qha_parent.append(phonon_wf)
 
-    check_relax_fw = Firework(CheckRelaxScheme(db_file=db_file, tag=tag), parents=robust_opt_fw,
+    check_relax_fw = Firework(CheckRelaxScheme(db_file=">>db_file<<", tag=tag), parents=robust_opt_fw,
                               name="{}-CheckRelaxScheme".format(structure.composition.reduced_formula))
     fws.append(check_relax_fw)
     check_qha_parent.append(check_relax_fw)
