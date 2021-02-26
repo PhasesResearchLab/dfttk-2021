@@ -230,8 +230,8 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
         structure.add_site_property('magmom', magmom)
     if not db_file:
         #from fireworks.fw_config import config_to_dict
-        #db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
-        db_file = ">>db_file<<"
+        db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+        #db_file = ">>db_file<<"
 
     """
     if WORKFLOW == "get_wf_gibbs":
