@@ -567,9 +567,10 @@ def update_configfile(filename, base_file):
     Return
         None
     """
+
     ori_file = loadfn(filename)
     base_file = loadfn(base_file)
-
+    """
     for item in base_file:
         flag_update = True
         if item in ori_file:
@@ -578,6 +579,7 @@ def update_configfile(filename, base_file):
                     flag_update = False
         if flag_update:
             ori_file[item] = base_file[item]
+    """
     if filename.endswith(".json"):
         dumpfn(ori_file, filename, indent=4)
     elif filename.endswith(".yaml"):
