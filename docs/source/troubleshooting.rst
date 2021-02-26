@@ -149,14 +149,3 @@ If VASP did not run, find out why and fix that issue.
 If VASP did run successfully, it was probably an issue parsing the ``vasprun.xml`` file.
 Try parsing the ``vasprun.xml`` file using the ``pymatgen.io.vasp.outputs.Vasprun`` class.
 If it throws an error when you try to parse, that's what made Custodian fail and you should fix that.
-
-=========================
-Useful help from FireWork
-=========================
-
-`Controlling the Worker that executes a Firework <https://materialsproject.github.io/fireworks/controlworker.html#controlling-the-worker-that-executes-a-firework>`_
-
-`Querying FireWorks and Workflows / Generating Reports <https://materialsproject.github.io/fireworks/query_tutorial.html>`_
-
-`Dealing with Failures and Crashes <https://materialsproject.github.io/fireworks/failures_tutorial.html>`_
-
