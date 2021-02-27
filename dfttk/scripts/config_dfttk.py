@@ -34,9 +34,13 @@ def get_machines(nodes=1, ppn=16, user_machines=None):
                 "account": "TG-DMR140063",
                 "pre_rocket": "module load vasp/5.4.4", 
                 "vasp_cmd": "ibrun -np "+str(nodes*ppn)+" vasp_std"}
-          ,"aci":{"queue": "open", 
+          ,"aci-b":{"queue": "open", 
                 "account": "open",
                 "pre_rocket": "module load intel impi vasp", 
+                "vasp_cmd": "mpirun vasp_std"}
+          ,"aci-roar":{"queue": "open", 
+                "account": "open",
+                "_fw_template_file": os.path.join(".", "config", "PBS_template_custom.txt"),
                 "vasp_cmd": "mpirun vasp_std"}
             }
         dumpfn(machines, "machines.yaml", default_flow_style=False, indent=4)
@@ -749,11 +753,14 @@ class ConfigQadapter(ConfigTemplate):
         }
 
         machines = get_machines(nodes=self.NNODES, ppn=self.PPNODE, user_machines=user_machines)
-
         if queue_type=="slurm": self.DATA = slurm
         else: self.DATA = pbs
         if machine in machines.keys():
-            self.DATA.update(machines[machine])
+            m = machines[machine]
+            if "_fw_template_file" in m.keys():
+                head, tail = os.path.split(m["_fw_template_file"])
+                m["_fw_template_file"] = os.path.join(self.PATH_TO_STORE_CONFIG,"config",tail)
+            self.DATA.update(m)
         else:
             self.DATA = pbs
             self.DATA.update(machines["aci"])

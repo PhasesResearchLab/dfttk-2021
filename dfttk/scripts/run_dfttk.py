@@ -230,8 +230,8 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
         structure.add_site_property('magmom', magmom)
     if not db_file:
         #from fireworks.fw_config import config_to_dict
-        db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
-        #db_file = ">>db_file<<"
+        #db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+        db_file = ">>db_file<<"
 
     """
     if WORKFLOW == "get_wf_gibbs":
@@ -251,18 +251,18 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     elif WORKFLOW == "robust" or WORKFLOW == "get_wf_gibbs":
         wf = get_wf_gibbs_robust(structure, num_deformations=num_deformations, deformation_fraction=deformation_fraction,
                  phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, t_min=t_min, t_max=t_max, t_step=t_step,
-                 eos_tolerance=eos_tolerance, volume_spacing_min=volume_spacing_min, vasp_cmd=vasp_cmd, db_file=db_file,
+                 eos_tolerance=eos_tolerance, volume_spacing_min=volume_spacing_min, vasp_cmd=">>vasp_cmd<<", db_file=">>db_file<<",
                  isif4=isif4, metadata=metadata, name='EV_QHA', override_symmetry_tolerances=override_symmetry_tolerances,
                  override_default_vasp_params=override_default_vasp_params, modify_incar_params=modify_incar_params,
                  modify_kpoints_params=modify_kpoints_params, verbose=verbose, phonon_supercell_matrix_min=phonon_supercell_matrix_min,
                  phonon_supercell_matrix_max=phonon_supercell_matrix_max, optimize_sc=optimize_sc, level=level,
                  force_phonon=force_phonon, stable_tor=stable_tor, store_volumetric_data=store_volumetric_data)
     elif WORKFLOW == "born":
-        wf = get_wf_borncharge(structure=structure, metadata=metadata, db_file=db_file, isif=2, name="born charge",
-                      vasp_cmd=vasp_cmd, override_default_vasp_params=override_default_vasp_params,
+        wf = get_wf_borncharge(structure=structure, metadata=metadata, db_file=">>db_file<<", isif=2, name="born charge",
+                      vasp_cmd=">>vasp_cmd<<", override_default_vasp_params=override_default_vasp_params,
                       modify_incar=modify_incar_params)
     elif WORKFLOW == 'elastic':
-            wf = get_wf_elastic(structure=structure, metadata=metadata, vasp_cmd=vasp_cmd, db_file=db_file, name="elastic",
+            wf = get_wf_elastic(structure=structure, metadata=metadata, vasp_cmd=">>vasp_cmd<<", db_file=">>db_file<<", name="elastic",
                        override_default_vasp_params=override_default_vasp_params, strain_states=strain_states,
                        stencils=stencils, analysis=analysis, sym_reduce=sym_reduce, order=order, conventional=conventional)
     else:
@@ -518,9 +518,9 @@ def run_dfttk():
     pconfig.add_argument("-all", "--all", dest="ALL", action="store_true",
                          help="Configure atomate and pymatgen.")
     pconfig.add_argument("-M", "--machine", dest="MACHINE", type=str,
-                         default="aci",
+                         default="aci-roar",
                          help="Computer name to be configured.\n"
-                              "Default: aci")
+                              "Default: aci-roar")
     pconfig.add_argument("-MS", "--machines", dest="MACHINES", type=str,
                          default=None,
                          help="User supplied yaml file containing a list of computers with configuration.\n"
