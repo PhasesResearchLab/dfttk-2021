@@ -511,7 +511,7 @@ def get_mat_info(struct):
 
 def mark_adopted_TF(tag, db_file, adpoted, phonon=False):
     from atomate.vasp.database import VaspCalcDb
-    if db_file==">>db_file<<":
+    if db_file!=">>db_file<<":
         vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)       
     else:
         t_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
@@ -525,7 +525,7 @@ def mark_adopted_TF(tag, db_file, adpoted, phonon=False):
 def mark_adopted(tag, db_file, volumes, phonon=False):
     mark_adopted_TF(tag, db_file, False, phonon=phonon)             # Mark all as adpoted
     from atomate.vasp.database import VaspCalcDb
-    if db_file==">>db_file<<":
+    if db_file!=">>db_file<<":
         vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)       
     else:
         t_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
@@ -545,7 +545,7 @@ def consistent_check_db(db_file, tag):
     "task" and "phonon" collections.
     '''
     from atomate.vasp.database import VaspCalcDb
-    if db_file==">>db_file<<":
+    if db_file!=">>db_file<<":
         vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)       
     else:
         t_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
@@ -562,7 +562,7 @@ def consistent_check_db(db_file, tag):
 
 def check_relax_path(relax_path, db_file, tag, run_isif2, pass_isif4):
     from atomate.vasp.database import VaspCalcDb
-    if db_file==">>db_file<<":
+    if db_file!=">>db_file<<":
         vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)       
     else:
         t_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
