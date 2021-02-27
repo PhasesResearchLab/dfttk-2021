@@ -11,6 +11,8 @@ from itertools import combinations
 from pymatgen.analysis.eos import EOS
 from fireworks import FiretaskBase, LaunchPad, Workflow, Firework
 from fireworks.utilities.fw_utilities import explicit_serialize
+from fireworks.fw_config import config_to_dict
+from monty.serialization import loadfn, dumpfn
 from dfttk.input_sets import PreStaticSet, RelaxSet, StaticSet, ForceConstantsSet
 from dfttk.fworks import OptimizeFW, StaticFW, PhononFW
 from dfttk.ftasks import QHAAnalysis
@@ -392,7 +394,12 @@ class EVcheck_QHA(FiretaskBase):
             json.dump(EVcheck_result, fp, indent=4)  
     
     def get_orig_EV(self, db_file, tag):
-        vasp_db = VaspCalcDb.from_db_file(db_file, admin = True)
+        if db_file!=">>db_file<<":
+            vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)       
+        else:
+            t_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+            vasp_db = VaspCalcDb.from_db_file(t_file, admin=True)
+        #vasp_db = VaspCalcDb.from_db_file(db_file, admin = True)
         energies = []
         volumes = []
         dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
