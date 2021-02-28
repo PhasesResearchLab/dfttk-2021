@@ -51,4 +51,6 @@ Useful help from FireWork
 
 `Dealing with Failures and Crashes <https://materialsproject.github.io/fireworks/failures_tutorial.html>`_
 
+`Writing Queue Adapters <https://materialsproject.github.io/fireworks/qadapter_programming.html>`_
+
 

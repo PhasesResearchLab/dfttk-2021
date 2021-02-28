@@ -40,6 +40,7 @@ def get_machines(nodes=1, ppn=16, user_machines=None):
                 "vasp_cmd": "mpirun vasp_std"}
           ,"aci-roar":{"queue": "open", 
                 "account": "open",
+                "pre_rocket": "#", 
                 "_fw_template_file": os.path.join(".", "config", "PBS_template_custom.txt"),
                 "vasp_cmd": "mpirun vasp_std"}
             }

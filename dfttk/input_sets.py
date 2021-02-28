@@ -390,16 +390,16 @@ class BornChargeSet(DictSet):
     def __init__(self, structure, isif=2, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
         self.isif = isif
-        uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
-        uis['ISIF'] = isif
-        old_uis = ['NPAR', 'NCORE', 'LEPSILON', 'LCALCEPS']
-        for k in old_uis:
-            try:
-                uis.pop(k)
-            except KeyError:
-                pass
+        uis_pot = copy.deepcopy(kwargs.get('user_potcar_functional', {}))
+        if uis_pot:
+            BornChargeSet.CONFIG.update({'POTCAR_FUNCTIONAL':uis_pot})
 
-        old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', 'lrpa']
+        uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
+        """
+        old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', \
+            'user_potcar_functional', 'user_incar_settings']
+        """
+        old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol']
         for k in old_kwargs:
             try:
                 kwargs.pop(k)
@@ -412,8 +412,34 @@ class BornChargeSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
+        else:
+            if uis['ISPIN']==1:
+                if 'MAGMON' in uis.keys():
+                    uis.pop['MAGMOM']
 
-        BornChargeSet.CONFIG['INCAR'].update(uis)
+        for key in uis.keys():
+            if key not in BornChargeSet.CONFIG['INCAR']:
+                if key in {'NELM', 'EDIFF', 'NEDOS', 'KPOINT_BSE'} : continue
+                BornChargeSet.CONFIG['INCAR'][key] = uis[key]
+            elif key == 'ISPIN':
+                BornChargeSet.CONFIG['INCAR'][key] = uis[key]
+            elif key == 'ISMEAR':
+                BornChargeSet.CONFIG['INCAR'][key] = uis[key]
+            elif key == 'SIGMA':
+                BornChargeSet.CONFIG['INCAR'][key] = uis[key]
+               
+        if 'ISPIN' in BornChargeSet.CONFIG['INCAR']:
+            if BornChargeSet.CONFIG['INCAR']['ISPIN'] == 1:
+                if 'MAGMOM' in BornChargeSet.CONFIG['INCAR']:
+                    BornChargeSet.CONFIG['INCAR'].pop('MAGMOM')
+
+        if 'SIGMA' in BornChargeSet.CONFIG['INCAR'] and 'ISMEAR' in BornChargeSet.CONFIG['INCAR'] :
+            if BornChargeSet.CONFIG['INCAR']['ISMEAR'] == -5:
+                BornChargeSet.CONFIG['INCAR'].pop('SIGMA')
+
+        kwargs.update({'user_potcar_functional':BornChargeSet.CONFIG['POTCAR_FUNCTIONAL']})
+        kwargs.update({'user_incar_settings':BornChargeSet.CONFIG['INCAR']})
+
 
         super(BornChargeSet, self).__init__(structure, BornChargeSet.CONFIG, sort_structure=False, **kwargs)
         """
