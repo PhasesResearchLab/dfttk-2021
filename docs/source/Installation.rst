@@ -1,17 +1,21 @@
 Installation
 ============
 
-It is recommended to install DFTTK under the `anaconda <https://docs.anaconda.com/anaconda/install/>`_ environment. Under the anaconda prompt, one can create a preferred directory and then run
+It is recommended to install DFTTK under the `anaconda <https://docs.anaconda.com/anaconda/install/>`_ environment. Under the linux command prompt (or anaconda powershell prompt for Windows), one can create a preferred directory and then run
 
 - Release version
 
 .. code-block:: bash
 
     pip install dfttk
-    cd dfttk
-    dfttk config -mp -aci 
-
-A folder named "config" will be created where running environmental info saved
+    #mkdir a folder named 'config' whatwhere you want to
+    mkdir config
+    # copy the files of db.json, my_launchpad.yaml from your MongoDB manager into config/
+    # for ACI/roat from Penn State, copy the file PBS_template_custom.txt into config/
+    dfttk config -all --nodes 1 --ppn 32 -psp vasp_psp/ -M yourcomputer -qt yourbatch -mapi PMG_MAPI_KEY
+    #yourcomputer is your computer name, such as aci-rour, cori-knl, cori-ksw, bridges2, stampede2
+    #yourbactch can be pbs, slurm
+    #PMG_MAPI_KEY can be obtained by: Go to the materials project website, https://materialsproject.org/, under the API section, you will easily find you API Keys number.
 
 - Development version
 
@@ -20,7 +24,14 @@ A folder named "config" will be created where running environmental info saved
     git clone https://github.com/PhasesResearchLab/dfttk.git
     cd dfttk
     pip install -e .
-    dfttk config -mp -aci #a folder named "config" will be created where running environmental info saved
+    #mkdir a folder named 'config' whatwhere you want to
+    mkdir config
+    # copy the files of db.json, my_launchpad.yaml from your MongoDB manager into config/
+    # for ACI/roat from Penn State, copy the file PBS_template_custom.txt into config/
+    dfttk config -all --nodes 1 --ppn 32 -psp vasp_psp/ -M yourcomputer -qt yourbatch -mapi PMG_MAPI_KEY
+    #yourcomputer is your computer name, such as aci-rour, cori-knl, cori-ksw, bridges2, stampede2
+    #yourbactch can be pbs, slurm
+    #PMG_MAPI_KEY can be obtained by: Go to the materials project website, https://materialsproject.org/, under the API section, you will easily find you API Keys number.
 
 Config MongoDB
 --------------
