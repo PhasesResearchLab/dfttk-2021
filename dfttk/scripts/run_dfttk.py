@@ -498,7 +498,7 @@ def run_dfttk():
                            (NOTE: currently, only robust and born are supported.)""")
     prun.add_argument("-ph", "--phonon", dest="PHONON", action="store_true",
                       help="Run phonon. This is equivalent with set phonon=True in SETTINGS file")
-    prun.add_argument("-tag", "--tag", dest="TAG", type=str,
+    prun.add_argument("-tag", "--metatag", dest="TAG", type=str,
                       help="Specify the tag for continue mode")
     prun.add_argument("-a", "--append", dest="APPEND", action="store_true",
                       help="Append calculation according to metadata, e.g. appending volumes or phonon")

@@ -325,7 +325,7 @@ def shared_aguments(pthelec):
     pthelec.add_argument("-noel", "-noel", dest="noel", action='store_true', default=False,
                       help="do not consider the thermal electron contribution. \n"
                            "Default: False")
-    pthelec.add_argument("-metatag", "-metatag", dest="metatag", nargs="?", type=str, default=None,
+    pthelec.add_argument("-tag", "--metatag", dest="metatag", nargs="?", type=str, default=None,
                       help="metatag: MongoDB metadata tag field. \n"
                            "Default: None")
     pthelec.add_argument("-qhamode", "-qhamode", dest="qhamode", nargs="?", type=str, default=None,
