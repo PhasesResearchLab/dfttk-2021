@@ -21,9 +21,11 @@ def get_machines(nodes=1, ppn=16, user_machines=None):
         machines = loadfn(user_machines)
     else:
         machines = {"cori-hsw":{"constraint": "haswell", "queue": "regular", 
+                "account": "m891",
                 "pre_rocket": "module load vasp/5.4.4-hsw", 
                 "vasp_cmd": "srun -n "+str(nodes*ppn)+" --cpu_bind=cores vasp_std"}
           ,"cori-knl":{"constraint": "knl,quad,cache", "queue": "regular", 
+                "account": "m891",
                 "pre_rocket": "module load vasp/5.4.4-knl", 
                 "vasp_cmd": "srun -n "+str(nodes*ppn)+" --cpu_bind=cores vasp_std"}
           ,"bridges2":{"queue": "RM", 

@@ -426,6 +426,8 @@ def config(args):
     QUEUE_SCRIPT = args.QUEUE_SCRIPT
     MACHINE = args.MACHINE
     QUEUE_TYPE = args.QUEUE_TYPE
+    NODES= args.NODES
+    PPN= args.PPN
 
     PYMATGEN = args.PYMATGEN
     VASP_PSP_DIR = args.VASP_PSP_DIR
@@ -453,6 +455,7 @@ def config(args):
     if ATOMATE:
         dfttkconfig.config_atomate(path_to_store_config=PATH_TO_STORE_CONFIG, 
             config_folder=CONFIG_FOLDER, machine=MACHINE, machines=MACHINES,
+            nodes=NODES, ppn=PPN,
             queue_script=QUEUE_SCRIPT, queue_type=QUEUE_TYPE, vasp_cmd_flag=VASP_CMD_FLAG)
 
     if PYMATGEN:

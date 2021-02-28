@@ -16,6 +16,7 @@ It is recommended to install DFTTK under the `anaconda <https://docs.anaconda.co
     #yourcomputer is your computer name, such as aci-rour, cori-knl, cori-ksw, bridges2, stampede2
     #yourbactch can be pbs, slurm
     #PMG_MAPI_KEY can be obtained by: Go to the materials project website, https://materialsproject.org/, under the API section, you will easily find you API Keys number.
+    #finally, you need to change the account number and queue/partition number in the config/my_qadapter.yaml file
 
 - Development version
 
@@ -32,6 +33,7 @@ It is recommended to install DFTTK under the `anaconda <https://docs.anaconda.co
     #yourcomputer is your computer name, such as aci-rour, cori-knl, cori-ksw, bridges2, stampede2
     #yourbactch can be pbs, slurm
     #PMG_MAPI_KEY can be obtained by: Go to the materials project website, https://materialsproject.org/, under the API section, you will easily find you API Keys number.
+    #finally, you need to change the account number and queue/partition number in the config/my_qadapter.yaml file
 
 Config MongoDB
 --------------
