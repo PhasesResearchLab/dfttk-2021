@@ -50,12 +50,11 @@ It is recommended to install DFTTK under the `anaconda <https://docs.anaconda.co
 Config MongoDB
 --------------
 
-DFTTK needs MongoDB to manage DFT inputs/outputs settings including structure, force constants etc. The users of DFTTK can either buy the commercial MongoDB database management or set up their own MongoDB server. 
+DFTTK needs MongoDB to manage DFT calculations and outputs. The users of DFTTK can either buy the commercial MongoDB database service or set up their own MongoDB server. 
 
-  Ask the MongoDB system manager for a json file named ``db.json`` to get your DFTTK results
-  saved in MongoDB database.  The ``db.json`` file contains something similiar to the 
-  following lines which should saved under the "dfttk/config" folder 
-  that was created by "dfttk config -mp -aci" command mentioned above. 
+Ask the MongoDB system manager for two json files: one named ``db.json`` and another named ``my_launchpad.yaml`` and save them in a ``config`` folder wherever you choose.
+
+``db.json`` provides MongoDB the information to access the DFTTK output results, templated as follows. 
 
 .. _JSONLint: https://jsonlint.com
 
@@ -65,13 +64,27 @@ DFTTK needs MongoDB to manage DFT inputs/outputs settings including structure, f
         "database": "userid-results",
         "collection": "tasks",
         "admin_user": "userid",
-        "admin_password": "BeFihJ2mrKGm",
+        "admin_password": "pass1",
         "readonly_user": "userid-ro",
-        "readonly_password": "QIvaUT9ca6H8",
+        "readonly_password": "pass2",
         "host": "146.186.149.69",
         "port": 27018,
         "aliases": {}
     }
+
+``my_launchpad.yaml`` provides ``FireWorks`` the information for DFT job managements, templated as follows. 
+
+.. code-block:: YAML
+
+    host: 146.186.149.69
+    name: userid-fws
+    password: pass3
+    port: 27018
+    ssl_ca_file: null
+    strm_lvl: INFO
+    user_indices: []
+    username: userid
+    wf_user_indices: []
 
 Access MongoDB database from desktop
 ------------------------------------
