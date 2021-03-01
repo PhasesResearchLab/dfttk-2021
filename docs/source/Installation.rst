@@ -11,7 +11,11 @@ It is recommended to install DFTTK under the `anaconda <https://docs.anaconda.co
     #mkdir a folder named 'config' whatwhere you want to
     mkdir config
     # copy the files of db.json, my_launchpad.yaml from your MongoDB manager into config/
-    # for ACI/roat from Penn State, copy the file PBS_template_custom.txt into config/
+
+For ACI/roar from Penn State, download the file `PBS_template_custom.txt <https://github.com/yiwang62/dfttk/tree/20210211/dfttk/scripts>`_ into config/. Then
+
+.. code-block:: bash
+
     dfttk config -all --nodes 1 --ppn 16 -psp vasp_psp/ -M yourcomputer -qt yourbatch -mapi PMG_MAPI_KEY
     #dfttk config -all --nodes 1 --ppn 16 -psp vasp_psp/ -M aci-roar -qt pbs -mapi PMG_MAPI_KEY
     #dfttk config -all --nodes 1 --ppn 16 -psp vasp_psp/ -M cori-knl -qt slurm -mapi PMG_MAPI_KEY
