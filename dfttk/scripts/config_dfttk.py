@@ -21,28 +21,42 @@ def get_machines(nodes=1, ppn=16, user_machines=None):
         machines = loadfn(user_machines)
     else:
         machines = {"cori-hsw":{"constraint": "haswell", "queue": "regular", 
+                "_fw_q_type": "SLURM",
                 "account": "m891",
                 "pre_rocket": "module load vasp/5.4.4-hsw", 
-                "vasp_cmd": "srun -n "+str(nodes*ppn)+" --cpu_bind=cores vasp_std"}
+                "post_rocket": "",
+                "mem": "64gb",
+                "vasp_cmd": "srun -n "+str(int(nodes)*int(ppn))+" --cpu_bind=cores vasp_std"}
           ,"cori-knl":{"constraint": "knl,quad,cache", "queue": "regular", 
+                "_fw_q_type": "SLURM",
                 "account": "m891",
                 "pre_rocket": "module load vasp/5.4.4-knl", 
-                "vasp_cmd": "srun -n "+str(nodes*ppn)+" --cpu_bind=cores vasp_std"}
+                "mem": "64gb",
+                "post_rocket": "",
+                "vasp_cmd": "srun -n "+str(int(nodes)*int(ppn))+" --cpu_bind=cores vasp_std"}
           ,"bridges2":{"queue": "RM", 
+                "_fw_q_type": "SLURM",
                 "account": "dmr170016p",
                 "pre_rocket": "module load intel cuda", 
+                "post_rocket": "",
                 "vasp_cmd": "mpirun -np "+str(nodes*ppn)+" /opt/packages/VASP/VASP5/INTEL/vasp_std"}
           ,"stampede2":{"queue": "normal", 
+                "_fw_q_type": "SLURM",
                 "account": "TG-DMR140063",
                 "pre_rocket": "module load vasp/5.4.4", 
+                "post_rocket": "",
                 "vasp_cmd": "ibrun -np "+str(nodes*ppn)+" vasp_std"}
           ,"aci-b":{"queue": "open", 
+                "_fw_q_type": "PBS",
                 "account": "open",
                 "pre_rocket": "module load intel impi vasp", 
+                "post_rocket": "",
                 "vasp_cmd": "mpirun vasp_std"}
           ,"aci-roar":{"queue": "open", 
+                "_fw_q_type": "PBS",
                 "account": "open",
                 "pre_rocket": "#", 
+                "post_rocket": "",
                 "_fw_template_file": os.path.join(".", "config", "PBS_template_custom.txt"),
                 "vasp_cmd": "mpirun vasp_std"}
             }
@@ -664,7 +678,7 @@ class ConfigTemplate(object):
         self.C = kwargs.get("constraint", "knl,quad,cache")
         self.WALLTIME = kwargs.get("walltime", "48:00:00")
         self.QUEUE = kwargs.get("queue", "open")
-        self.PMEM = kwargs.get("pmem", "8gb")
+        self.PMEM = kwargs.get("pmem", "32gb")
         self.PRE_ROCKET = kwargs.get("pre_rocket", "module load intel impi vasp")
         self.POST_ROCKET = kwargs.get("post_rocket", '')
 
@@ -746,6 +760,7 @@ class ConfigQadapter(ConfigTemplate):
             "rocket_launch": "rlaunch -c " + os.path.join(self.PATH_TO_STORE_CONFIG, "config") + " rapidfire",
             "nodes": self.NNODES,
             "ntasks": self.PPNODE,
+            "mem": self.PMEM,
             "walltime": self.WALLTIME,
             "queue": self.QUEUE,
             "account": "open",
@@ -756,18 +771,19 @@ class ConfigQadapter(ConfigTemplate):
         }
 
         machines = get_machines(nodes=self.NNODES, ppn=self.PPNODE, user_machines=user_machines)
-        if queue_type=="slurm": self.DATA = slurm
-        else: self.DATA = pbs
         if machine in machines.keys():
             m = machines[machine]
             if "_fw_template_file" in m.keys():
                 head, tail = os.path.split(m["_fw_template_file"])
                 m["_fw_template_file"] = os.path.join(self.PATH_TO_STORE_CONFIG,"config",tail)
+            queue_type = m['_fw_q_type'].lower()
+            if queue_type=="slurm": self.DATA = slurm
+            else: self.DATA = pbs
             self.DATA.update(m)
         else:
             self.DATA = pbs
-            self.DATA.update(machines["aci"])
-            print ("machine", machine, "is not in the list",  machines.keys(), "Default to ACI")
+            self.DATA.update(machines["aci-roar"])
+            print ("machine", machine, "is not in the list",  machines.keys(), "Default to aci-roar")
         #print(self.DATA)
 
 
@@ -797,7 +813,7 @@ class ConfigFworker(ConfigTemplate):
         if machine in machines.keys():
             self.DATA['env']["vasp_cmd"] = machines[machine]["vasp_cmd"]
         else:
-            self.DATA['env']["vasp_cmd"] = machines['aci']["vasp_cmd"]
+            self.DATA['env']["vasp_cmd"] = machines['aci-roar']["vasp_cmd"]
             print ("machine", machine, "is not in the list",  machines.keys(), "Default to ACI")
  
 

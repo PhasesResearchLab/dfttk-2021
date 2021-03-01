@@ -531,9 +531,9 @@ def run_dfttk():
     pconfig.add_argument("-p", "--prefix", dest="PATH_TO_STORE_CONFIG", default=".",
                          help="The folder to store the config files.\n"
                               "Default: . (current folder)")
-    pconfig.add_argument("-N", "--nodes", dest="NODES", default=1,
+    pconfig.add_argument("-N", "--nodes", dest="NODES", type=int, default=1,
                          help="Number of nodes. Default: 1")
-    pconfig.add_argument("-NP", "--ppn", dest="PPN", default=16,
+    pconfig.add_argument("-NP", "--ppn", dest="PPN", type=int, default=16,
                          help="Number of cores per node. Default: 16")
     pconfig.add_argument("-a", "--atomate", dest="ATOMATE", action="store_true",
                          help="Configure atomate.")
