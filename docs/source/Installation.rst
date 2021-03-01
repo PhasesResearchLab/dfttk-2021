@@ -54,7 +54,7 @@ DFTTK needs MongoDB to manage DFT calculations and outputs. The users of DFTTK c
 
 Ask the MongoDB system manager for two json files: one named ``db.json`` and another named ``my_launchpad.yaml`` and save them in a ``config`` folder wherever you choose.
 
-``db.json`` provides MongoDB the information to access the DFTTK output results, templated as follows. 
+``db.json`` used by `FireWorks <https://materialsproject.github.io/fireworks/introduction.html>`_ through MongoDB to access the DFTTK output results, templated as follows. 
 
 .. _JSONLint: https://jsonlint.com
 
@@ -72,7 +72,7 @@ Ask the MongoDB system manager for two json files: one named ``db.json`` and ano
         "aliases": {}
     }
 
-``my_launchpad.yaml`` provides ``FireWorks`` the information for DFT job managements, templated as follows. 
+``my_launchpad.yaml`` used by `FireWorks <https://materialsproject.github.io/fireworks/introduction.html>`_ through MongoDB for DFT job managements, templated as follows. 
 
 .. code-block:: YAML
 
