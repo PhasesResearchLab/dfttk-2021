@@ -1,5 +1,4 @@
-#!/bin/bash
-
+#PBS -S /bin/bash
 #PBS -l nodes=$${nnodes}:ppn=$${ppnode}
 #PBS -l walltime=$${walltime}
 #PBS -l pmem=$${pmem}
