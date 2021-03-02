@@ -13,7 +13,7 @@ It is recommended to install DFTTK under the `anaconda <https://docs.anaconda.co
 
 .. code-block:: bash
 
-    git clone https://github.com/PhasesResearchLab/dfttk.git
+    git clone https://github.com/yiwang62/dfttk.git
     cd dfttk
     pip install -e .
 
