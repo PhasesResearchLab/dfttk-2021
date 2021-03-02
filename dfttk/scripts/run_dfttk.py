@@ -435,6 +435,7 @@ def config(args):
     DEFAULT_FUNCTIONAL = args.DEFAULT_FUNCTIONAL
     ACI = args.ACI
     MACHINES = args.MACHINES
+    PMEM = args.PMEM
 
     if ALL:
         ATOMATE = True
@@ -455,7 +456,7 @@ def config(args):
     if ATOMATE:
         dfttkconfig.config_atomate(path_to_store_config=PATH_TO_STORE_CONFIG, 
             config_folder=CONFIG_FOLDER, machine=MACHINE, machines=MACHINES,
-            nodes=NODES, ppn=PPN,
+            nodes=NODES, ppn=PPN,pmem=PMEM,
             queue_script=QUEUE_SCRIPT, queue_type=QUEUE_TYPE, vasp_cmd_flag=VASP_CMD_FLAG)
 
     if PYMATGEN:
@@ -535,6 +536,8 @@ def run_dfttk():
                          help="Number of nodes. Default: 1")
     pconfig.add_argument("-NP", "--ppn", dest="PPN", type=int, default=16,
                          help="Number of cores per node. Default: 16")
+    pconfig.add_argument("-PM", "--pmem", dest="PMEM", type=str, default="8gb",
+                         help="RAM required per node. Default: 8gb")
     pconfig.add_argument("-a", "--atomate", dest="ATOMATE", action="store_true",
                          help="Configure atomate.")
     pconfig.add_argument("-c", "--config_folder", dest="CONFIG_FOLDER", default=".",
