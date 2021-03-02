@@ -23,7 +23,7 @@ Note for ACI/roar in Penn State, download the file `PBS_template_custom.txt <htt
 
 .. code-block:: bash
 
-    dfttk config -all --nodes 1 --ppn 16 -psp vasp_psp/ -M yourcomputer -qt yourbatch -mapi PMG_MAPI_KEY
+    dfttk config -all --nodes 1 --ppn 16 --pmem 32gb -psp vasp_psp/ -M yourcomputer -qt yourbatch -mapi PMG_MAPI_KEY
 
 where
 
