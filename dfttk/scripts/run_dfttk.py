@@ -182,6 +182,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
                             'static': {'incar_update': {"LAECHG":False,"LCHARG":False,"LWAVE":False}},
     """
     modify_incar_params = settings.get('modify_incar_params', {})
+ 
     #dict, dict of class ModifyKpoints with keywords in Workflow name, similar with modify_incar_params
     modify_kpoints_params = settings.get('modify_kpoints_params', {})
     #bool, print(True) or not(False) some informations, used for debug
@@ -206,7 +207,6 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     """
 
     uis = override_default_vasp_params.get('user_incar_settings', {})
-
     #Set the default value for phonon_supercell_matrix_min/max
     if isinstance(phonon_supercell_matrix, str) and (phonon_supercell_matrix_min is None):
         if phonon_supercell_matrix.lower().startswith('a'):

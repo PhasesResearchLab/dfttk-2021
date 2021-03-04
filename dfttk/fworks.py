@@ -448,6 +448,7 @@ class BornChargeFW(Firework):
             metadata['tag'] = tag
 
         override_default_vasp_params = override_default_vasp_params or {}
+
         vasp_input_set = vasp_input_set or BornChargeSet(structure, isif=isif, **override_default_vasp_params)
         site_properties = deepcopy(structure).site_properties
 
