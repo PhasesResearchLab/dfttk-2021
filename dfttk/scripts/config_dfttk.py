@@ -20,48 +20,48 @@ def get_machines(nodes=1, ppn=16, user_machines=None):
     if user_machines is not None:
         machines = loadfn(user_machines)
     else:
-        machines = {"cori-hsw":{"constraint": "haswell", "queue": "regular", 
+        machines = {"cori-hsw":{"constraint": "haswell", "queue": "regular",
                 "_fw_q_type": "SLURM",
                 "account": "m891",
-                "pre_rocket": "module load vasp/5.4.4-hsw", 
+                "pre_rocket": "module load vasp/5.4.4-hsw",
                 "post_rocket": "",
                 "mem": "64gb",
                 "vasp_cmd": "srun -n "+str(int(nodes)*int(ppn))+" --cpu_bind=cores vasp_std"}
-          ,"cori-knl":{"constraint": "knl,quad,cache", "queue": "regular", 
+          ,"cori-knl":{"constraint": "knl,quad,cache", "queue": "regular",
                 "_fw_q_type": "SLURM",
                 "account": "m891",
-                "pre_rocket": "module load vasp/5.4.4-knl", 
+                "pre_rocket": "module load vasp/5.4.4-knl",
                 "mem": "64gb",
                 "post_rocket": "",
                 "vasp_cmd": "srun -n "+str(int(nodes)*int(ppn))+" --cpu_bind=cores vasp_std"}
-          ,"bridges2":{"queue": "RM", 
+          ,"bridges2":{"queue": "RM",
                 "_fw_q_type": "SLURM",
                 "account": "dmr170016p",
-                "pre_rocket": "module load intel cuda", 
+                "pre_rocket": "module load intel cuda intelmpi/20.4-intel20.4",
                 "post_rocket": "",
                 "vasp_cmd": "mpirun -np "+str(nodes*ppn)+" /opt/packages/VASP/VASP5/INTEL/vasp_std"}
-          ,"stampede2":{"queue": "normal", 
+          ,"stampede2":{"queue": "normal",
                 "_fw_q_type": "SLURM",
                 "account": "TG-DMR140063",
-                "pre_rocket": "module load vasp/5.4.4", 
+                "pre_rocket": "module load vasp/5.4.4",
                 "post_rocket": "",
                 "vasp_cmd": "ibrun -np "+str(nodes*ppn)+" vasp_std"}
-          ,"aci-b":{"queue": "open", 
+          ,"aci-b":{"queue": "open",
                 "_fw_q_type": "PBS",
                 "account": "open",
-                "pre_rocket": "module load intel impi vasp", 
+                "pre_rocket": "module load intel impi vasp",
                 "post_rocket": "",
                 "vasp_cmd": "mpirun vasp_std"}
-          ,"aci-roar":{"queue": "open", 
+          ,"aci-roar":{"queue": "open",
                 "_fw_q_type": "PBS",
                 "account": "open",
-                "pre_rocket": "#", 
+                "pre_rocket": "#",
                 "post_rocket": "",
                 "_fw_template_file": os.path.join(".", "config", "PBS_template_custom.txt"),
                 "vasp_cmd": "mpirun vasp_std"}
             }
         dumpfn(machines, "machines.yaml", default_flow_style=False, indent=4)
-    return machines    
+    return machines
 
 def replace_file(filename, old_str, new_str):
     """
@@ -542,10 +542,10 @@ def config_pymatgen(psp_dir=None, def_fun="PBE", mapi=None, path_to_store_psp="p
     """
     keys_required = ["PMG_DEFAULT_FUNCTIONAL", "PMG_MAPI_KEY", "PMG_VASP_PSP_DIR"]
     keys_dict = {"PMG_DEFAULT_FUNCTIONAL": def_fun, "PMG_VASP_PSP_DIR": path_to_store_psp, "PMG_MAPI_KEY": mapi}
-    
+
     from pathlib import Path
     homepath = str(Path.home())
-    
+
     pmg_config_file = os.path.join(homepath, ".pmgrc.yaml")
     keys_exist = []
     params = {}
@@ -616,7 +616,7 @@ def update_configfile(filename, base_file):
         dumpfn(ori_file, filename, default_flow_style=False, indent=4)
 
 def config_atomate(path_to_store_config=".", config_folder="config", queue_script="vaspjob.pbs",
-    queue_type="pbs", vasp_cmd_flag="vasp_std", machine="aci", machines=None, 
+    queue_type="pbs", vasp_cmd_flag="vasp_std", machine="aci", machines=None,
     nodes=1, ppn=16, pmem="8gb"):
     """
     Configuration for atomate
@@ -654,7 +654,7 @@ def config_atomate(path_to_store_config=".", config_folder="config", queue_scrip
         param_dict["ppn"] = ppn
         param_dict["machines"] = machines
         param_dict["pmem"] = pmem
- 
+
     param_dict["path_to_store_config"] = path_to_store_config
 
     required_file = ["db.json", "my_launchpad.yaml"]
@@ -804,7 +804,7 @@ class ConfigFworker(ConfigTemplate):
         queue_type = kwargs.get("queue_type", "pbs")
         machine = kwargs.get("machine","aci")
         user_machines = kwargs.get("machines",None)
- 
+
         self.FILENAME = "my_fworker.yaml"
         self.DATA = {"name": "ACI",
             "category": '',
@@ -825,7 +825,7 @@ class ConfigFworker(ConfigTemplate):
         else:
             self.DATA['env']["vasp_cmd"] = machines['aci-roar']["vasp_cmd"]
             print ("machine", machine, "is not in the list",  machines.keys(), "Default to ACI")
- 
+
 
 
 def test_config(test_pymagen=True, test_atomate=True):
