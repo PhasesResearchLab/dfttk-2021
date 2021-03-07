@@ -182,7 +182,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
                             'static': {'incar_update': {"LAECHG":False,"LCHARG":False,"LWAVE":False}},
     """
     modify_incar_params = settings.get('modify_incar_params', {})
- 
+
     #dict, dict of class ModifyKpoints with keywords in Workflow name, similar with modify_incar_params
     modify_kpoints_params = settings.get('modify_kpoints_params', {})
     #bool, print(True) or not(False) some informations, used for debug
@@ -399,7 +399,7 @@ def run(args):
     if LAUNCH:
         from fireworks import LaunchPad
         lpad = LaunchPad.auto_load()
-    
+
         for wflow in wfs:
             lpad.add_wf(wflow)
         if MAX_JOB:
@@ -454,7 +454,7 @@ def config(args):
     PATH_TO_STORE_CONFIG = get_abspath(PATH_TO_STORE_CONFIG)
 
     if ATOMATE:
-        dfttkconfig.config_atomate(path_to_store_config=PATH_TO_STORE_CONFIG, 
+        dfttkconfig.config_atomate(path_to_store_config=PATH_TO_STORE_CONFIG,
             config_folder=CONFIG_FOLDER, machine=MACHINE, machines=MACHINES,
             nodes=NODES, ppn=PPN,pmem=PMEM,
             queue_script=QUEUE_SCRIPT, queue_type=QUEUE_TYPE, vasp_cmd_flag=VASP_CMD_FLAG)
@@ -561,7 +561,7 @@ def run_dfttk():
     pconfig.add_argument("-df", "--default_functional", dest="DEFAULT_FUNCTIONAL", type=str, default="PBE",
                          choices=sorted(Potcar.FUNCTIONAL_CHOICES),
                          help="The default functional. Default: PBE")
-    pconfig.add_argument("-t", "--test_config", dest="TEST_CONFIG", nargs="?", const="all", default="none",
+    pconfig.add_argument("-t", "--test_config", dest="TEST_CONFIG", nargs="?", const="all", default="all",
                          choices=["all", "pymatgen", "atomate"],
                          help="Test for configurations. Note: currently only support for pymatgen.")
     pconfig.set_defaults(func=config)

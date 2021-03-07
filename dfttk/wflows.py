@@ -103,11 +103,11 @@ def get_wf_elastic(structure=None, metadata=None, tag=None, vasp_cmd=None, db_fi
         conventional (bool): flag to convert input structure to conventional structure,
             defaults to False.
         order (int): order of the tensor expansion to be determined.  Defaults to 2 and
-            currently supports up to 3.        
+            currently supports up to 3.
         analysis (bool): flag to indicate whether analysis task should be added
             and stresses and strains passed to that task
         sym_reduce (bool): Whether or not to apply symmetry reductions
-        
+
     '''
     vasp_cmd = vasp_cmd or VASP_CMD
     db_file = db_file or DB_FILE
@@ -122,7 +122,7 @@ def get_wf_elastic(structure=None, metadata=None, tag=None, vasp_cmd=None, db_fi
     if struct_energy_elasticity:
         bandgap = struct_energy_elasticity[2]
         static_setting = struct_energy_elasticity[3]
-    
+
         volumes_existed_calc = is_property_exist_in_db(metadata=metadata, db_file=db_file, collection='elasticity')
         if not volumes_existed_calc:
             structures = struct_energy_elasticity[0]
@@ -174,7 +174,7 @@ def get_wf_elastic(structure=None, metadata=None, tag=None, vasp_cmd=None, db_fi
             print(vasp_input_set.CONFIG['INCAR'])
             """
             vasp_input_set = vasp_input_set or ElasticSet(structure=_struct, **override_default_vasp_params)
-    
+
             wf_elastic = get_wf_elastic_constant(struct, metadata, strain_states=strain_states, stencils=stencils,
                                 db_file=db_file, conventional=conventional, order=order, vasp_input_set=vasp_input_set,
                                 analysis=analysis, sym_reduce=sym_reduce, tag='{}-{}'.format(name, tag),
@@ -194,8 +194,8 @@ def get_wf_elastic(structure=None, metadata=None, tag=None, vasp_cmd=None, db_fi
 
 
 
-def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name="born charge", 
-                      vasp_input_set=None,vasp_cmd=None, override_default_vasp_params=None, 
+def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name="born charge",
+                      vasp_input_set=None,vasp_cmd=None, override_default_vasp_params=None,
                       tag=None, modify_incar=None, **kwargs):
     '''
     The born charge work flow
@@ -229,7 +229,7 @@ def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name=
         if all(np.array(bandgap) == 0):
             print("\nWARNING! No bandgap found for ", \
             struct_energy_bandgap[0][0].composition.reduced_formula, " with tag:", tag, "\n")
-    
+
         volumes_existed_calc = is_property_exist_in_db(metadata=metadata, db_file=db_file, collection='borncharge')
         if not volumes_existed_calc:
             structures = struct_energy_bandgap[0]
@@ -258,14 +258,15 @@ def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name=
             struct_energy_bandgap[0][0].composition.reduced_formula, " with tag:", tag, "\n")
     else: bandgap=False
 
-    
+
     fws = []
     if bandgap:
         if override_default_vasp_params is None: override_default_vasp_params = {}
+        using_incar_new_settings = None
         if 'user_incar_settings' in override_default_vasp_params.keys():
             using_incar_new_settings = override_default_vasp_params['user_incar_settings']
         override_default_vasp_params.update(static_setting)
-        if 'user_incar_settings' in override_default_vasp_params.keys():
+        if using_incar_new_settings is not None:
             override_default_vasp_params['user_incar_settings'].update(using_incar_new_settings)
 
         #any bandgap > 0
@@ -273,7 +274,7 @@ def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name=
         if True:
             for i in range(0,len(bandgap)):
                 structure = structures[i]
-                fw = BornChargeFW(structure, isif=isif, name="{}-{:.3f}".format(name, structure.volume), 
+                fw = BornChargeFW(structure, isif=isif, name="{}-{:.3f}".format(name, structure.volume),
                                   vasp_cmd=vasp_cmd, metadata=metadata, modify_incar=modify_incar,
                                   override_default_vasp_params=override_default_vasp_params, tag=tag,
                                   prev_calc_loc=False, db_file=db_file, **kwargs)
@@ -282,7 +283,7 @@ def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name=
         if structure is None:
             raise ValueError('You must provide metadata existed in mongodb or structure')
         else:
-            fw = BornChargeFW(structure, isif=isif, name="{}-{:.3f}".format(name, structure.volume), 
+            fw = BornChargeFW(structure, isif=isif, name="{}-{:.3f}".format(name, structure.volume),
                               vasp_cmd=vasp_cmd, metadata=metadata, modify_incar=modify_incar,
                               override_default_vasp_params=override_default_vasp_params, tag=tag,
                               prev_calc_loc=False, db_file=db_file, **kwargs)
@@ -296,10 +297,10 @@ def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name=
 
 
 def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.1, 0.1), phonon=False, isif4=False,
-                        phonon_supercell_matrix=None, override_symmetry_tolerances=None, t_min=5, t_max=2000, 
-                        t_step=5, eos_tolerance=0.01, volume_spacing_min=0.03, vasp_cmd=None, db_file=None, 
+                        phonon_supercell_matrix=None, override_symmetry_tolerances=None, t_min=5, t_max=2000,
+                        t_step=5, eos_tolerance=0.01, volume_spacing_min=0.03, vasp_cmd=None, db_file=None,
                         metadata=None, name='EV_QHA', override_default_vasp_params=None, modify_incar_params={},
-                        modify_kpoints_params={}, verbose=False, level=1, phonon_supercell_matrix_min=60, 
+                        modify_kpoints_params={}, verbose=False, level=1, phonon_supercell_matrix_min=60,
                         phonon_supercell_matrix_max=120, optimize_sc=False, force_phonon=False, stable_tor=0.01,
                         store_volumetric_data=False):
     """
@@ -320,7 +321,7 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
         Whether to do a phonon calculation. Defaults to False, meaning the Debye model.
     phonon_supercell_matrix : list/str
         3x3 array of the supercell matrix, e.g. [[2,0,0],[0,2,0],[0,0,2]]. Must be specified if phonon is specified.
-         if string, choose from 'atoms', 'lattice' or 'volume' (only the first letter works, case insensitive), 
+         if string, choose from 'atoms', 'lattice' or 'volume' (only the first letter works, case insensitive),
             which determine who to determin the matrix
     override_symmetry_tolerances : dict
         The symmetry tolerance. It contains three keys, default: {'tol_energy':0.025, 'tol_strain':0.05, 'tol_bond':0.1}
@@ -396,7 +397,7 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
         ph_scm_size = np.array(phonon_supercell_matrix).shape
         if not (ph_scm_size[0] == 3 and ph_scm_size[1] == 3):
             raise ValueError('Current phonon_supercell_matrix({}) is not correct.'.format(phonon_supercell_matrix))
-        phonon_wf = PhononFW(structure, phonon_supercell_matrix, parents=robust_opt_fw, prev_calc_loc='static', 
+        phonon_wf = PhononFW(structure, phonon_supercell_matrix, parents=robust_opt_fw, prev_calc_loc='static',
                              name='structure_{:.3f}-phonon'.format(structure.volume), stable_tor=stable_tor,
                              **t_kwargs, **common_kwargs)
         fws.append(phonon_wf)
@@ -527,7 +528,7 @@ def get_wf_gibbs(structure, num_deformations=7, deformation_fraction=(-0.1, 0.1)
         full_relax_fw = None
 
     check_result = Firework(EVcheck_QHA(db_file = db_file, tag = tag, relax_path = relax_path, deformations = deformations, site_properties=site_properties,
-                                        tolerance = tolerance, threshold = 14, vol_spacing = vol_spacing, vasp_cmd = vasp_cmd, 
+                                        tolerance = tolerance, threshold = 14, vol_spacing = vol_spacing, vasp_cmd = vasp_cmd,
                                         metadata = metadata, t_min=t_min, t_max=t_max, t_step=t_step, phonon = phonon, symmetry_tolerance = symmetry_tolerance,
                                         phonon_supercell_matrix = phonon_supercell_matrix, verbose = verbose, run_isif2=run_isif2, pass_isif4=pass_isif4,
                                         modify_incar_params=modify_incar_params, modify_kpoints_params = modify_kpoints_params, store_volumetric_data=store_volumetric_data),
