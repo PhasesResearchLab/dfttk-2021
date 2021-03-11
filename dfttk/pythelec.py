@@ -1510,7 +1510,7 @@ class thelecMDB():
             if not os.path.exists(poscar) : continue
             oszicar = yphondir + '/' + calc + '/OSZICAR'
             if not os.path.exists(oszicar) : continue
-            print ("Handling data in ", yphondir + '/' + calc)
+            print ("Handling data in ", os.path.join(yphondir,calc))
             structure = Structure.from_file(poscar)
             vol = structure.volume
             sss = (structure.lattice.matrix).tolist()

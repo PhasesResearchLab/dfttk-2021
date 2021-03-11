@@ -78,7 +78,7 @@ class EVfindMDB ():
                 if e in els: return False
             return True
         return False
-    
+
     def run_console(self):
         self.EV_find()
 
@@ -147,7 +147,7 @@ class EVfindMDB ():
             if self.skipby(phases[i]): continue
             sys.stdout.write('{}, static: {:>2}, {}\n'.format(m, count[i], phases[i]))
             EV, POSCAR, INCAR = get_rec_from_metatag(self.vasp_db, m)
- 
+
             evdir = './E-V/'
             if not os.path.exists(evdir): os.mkdir(evdir)
             folder = evdir+phases[i]
@@ -162,5 +162,3 @@ class EVfindMDB ():
                 myjsonout(readme, fp, indent="", comma="")
 
             thermoplot(folder,"0 K total energies (eV/atom)",EV['volumes'], EV['energies'])
-
-

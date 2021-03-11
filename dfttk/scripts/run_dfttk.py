@@ -315,7 +315,7 @@ def run(args):
 
     if APPEND:
         if TAG:
-            metadatas = {os.path.join(os.path.abspath('./'), 'POSCAR'): TAG}
+            metadatas = {os.path.join(os.path.abspath('./'), 'POSCAR'): {'tag':TAG}}
         elif os.path.exists('METADATAS.yaml'):
             metadatas = loadfn('METADATAS.yaml')
         else:
@@ -325,7 +325,7 @@ def run(args):
             (STR_FILENAME, STR_EXT) = os.path.splitext(STR_FILENAME_WITH_EXT)
             user_settings = get_user_settings(STR_FILENAME_WITH_EXT, STR_PATH=STR_PATH, NEW_SETTING=SETTINGS)
             metadata = user_settings.get('metadata', {})
-            metadata.update({'tag': metadatas[keyi]})
+            metadata.update(metadatas[keyi])
             user_settings.update({'metadata': metadata})
             structure = get_eq_structure_by_metadata(metadata=metadata, db_file=db_file)
             if structure is None:

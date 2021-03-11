@@ -53,7 +53,7 @@ def getdos(f): # Line 186
     -------
     freq : phonon frequency (array)
     pdos : phonon dos (array)
-    quality : weigh of positive frequency 
+    quality : weigh of positive frequency
     """
     # read the file
     lines = f.readlines() # read in all lines then determine is it is WIEN2k DOS (in the unit eV) file or VASP DOS file
@@ -65,7 +65,7 @@ def getdos(f): # Line 186
         data = [k for k in line.split(' ') if k != '']
         freq.append(float(data[0]))
         pdos.append(float(data[1]))
-        
+
     freq = np.array(list(map(float,freq)))
     pdos = np.array(list(map(float,pdos)))
     quality = trapz(pdos,freq)
@@ -115,9 +115,9 @@ def caclf(_freq, _pdos, T, dmu=0.0, energyunit='J'):
     f : vibrational free energy
     u : internal energy
     s : vibrational entropy
-    cv : regular vibrational cv 
+    cv : regular vibrational cv
     n : density of active phonons
-    cv_n : vibrational cv of constant niumber of phonons 
+    cv_n : vibrational cv of constant niumber of phonons
     sound_ph : phonon seebeck corfficient (freq/k)
     """
 
@@ -132,6 +132,7 @@ def caclf(_freq, _pdos, T, dmu=0.0, energyunit='J'):
     if T > 0: Beta = 1/(kB*T)
     else:
         if energyunit=='eV':
+            #print ("pppppppppp", u0/eV)
             return u0/eV,u0/eV,0,0,0,0,0,0,0,0
         else:
             return u0,u0,0,0,0,0,0,0,0,0
@@ -172,13 +173,13 @@ def caclf(_freq, _pdos, T, dmu=0.0, energyunit='J'):
     #fn = pdos*((1+tf)*np.log(1+tf)-tf1*np.log(tf1))
     fn = pdos*((1+tf)*np.log(1+tf)-tf*np.log(tf))
     s = trapz(fn, freq)*kB
-    
+
     tf = tf*(1.0+tf)
     fn = pdos*tf
     n = trapz(fn, freq)
     if lowT:
         n = cfreq*(kB/h*T)**3*pi**2/3
-    
+
 
     fn = pdos*tf*(hmu-dmu)
     tmp = trapz(fn, freq)
@@ -290,10 +291,9 @@ if __name__ == '__main__':
         if N_ph[i]!=0.:
             tmp0 = C_ph_mu[i]/N_ph[i]
             tmp1 = C_ph_n[i]/N_ph[i]
-        
+
         sys.stdout.write('{:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} \
         {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g}\n'.format(\
         T[i], F_ph[i]*unit, U_ph[i]*unit, S_ph[i]*unit, C_ph_mu[i]*unit, C_ph_n[i], \
         tmp0, tmp1, Sound_ph[i], Sound_nn[i], \
         N_ph[i], NN_ph[i], debyeT[i]))
-

@@ -100,7 +100,7 @@ def ext_thelec(args, plotfiles=None):
             #print("xxxxxxx",proc.get_formula())
             if plotAPI(readme, thermofile, volumes, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp,
                 formula = proc.get_formula(), debug=args.debug,
-                plotlabel=args.plot):
+                plotlabel=args.plot, local=args.local):
                 #print ("xxxxxxx",proc.get_formula())
                 vtof = proc.get_free_energy_for_plot(readme)
                 if vtof is not None:

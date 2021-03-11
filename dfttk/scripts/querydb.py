@@ -1,6 +1,6 @@
 #!python
 # This script is used to query the mongodb
-# 
+#
 from pymatgen import Structure
 from atomate.vasp.database import VaspCalcDb
 from monty.serialization import loadfn
@@ -27,7 +27,7 @@ def get_eq_structure_by_metadata(metadata, db_file=None):
     if (db_file is None) or (db_file == '>>db_file<<'):
         db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
     vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)
-    static_items = list(vasp_db.db['tasks'].find({'metadata': metadata}).sort('_id', 1))
+    static_items = list(vasp_db.db['tasks'].find({'metadata.tag': metadata['tag']}).sort('_id', 1))
     structure_list = [itemi['output']['structure'] for itemi in static_items]
     if structure_list:
         #not empty
@@ -85,7 +85,7 @@ def get_static_structure_by_metadata(metadata, db_file=None):
 def is_property_exist_in_db(metadata, db_file=None, collection='tasks'):
     '''
     Search the MongoDB collection by metadata
-    '''    
+    '''
     if (db_file is None) or (db_file == '>>db_file<<'):
         db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
     if collection == 'tasks':
@@ -120,7 +120,7 @@ def remove_data_by_metadata(tag, db_file=None, rem_mode='vol', forcedelete=False
         aeccar: remove all aeccar related
         chgcar: remove chgcar
         locpot: remove locpot
-        
+
     '''
     if (db_file is None) or (db_file == '>>db_file<<'):
         db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
