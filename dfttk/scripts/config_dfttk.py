@@ -657,6 +657,7 @@ def config_atomate(path_to_store_config=".", config_folder="config", queue_scrip
 
     param_dict["path_to_store_config"] = path_to_store_config
 
+    #print("ppppp")
     required_file = ["db.json", "my_launchpad.yaml"]
     option_file = ["FW_config.yaml", "my_fworker.yaml", "my_qadapter.yaml"]
     FileModule = {"FW_config.yaml": "ConfigFW", "my_fworker.yaml": "ConfigFworker", "my_qadapter.yaml": "ConfigQadapter",
@@ -835,7 +836,9 @@ def test_config(test_pymagen=True, test_atomate=True):
         test_config_atomate()
 
 def test_config_pymatgen():
-    path_mp_config = os.path.join(os.environ["HOME"], ".pmgrc.yaml")
+    from pathlib import Path
+    homepath = str(Path.home())
+    path_mp_config = os.path.join(homepath, ".pmgrc.yaml")
     if os.path.exists(path_mp_config):
         mp_config = loadfn(path_mp_config)
 

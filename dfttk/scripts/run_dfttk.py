@@ -519,8 +519,8 @@ def run_dfttk():
 
     #SUB-PROCESS: config
     pconfig = subparsers.add_parser("config", help="Config dfttk.")
-    pconfig.add_argument("-all", "--all", dest="ALL", action="store_true",
-                         help="Configure atomate and pymatgen.")
+    pconfig.add_argument("-all", "--all", dest="ALL", action="store_true",default=True,
+                         help="Configure atomate and pymatgen. Default: True")
     pconfig.add_argument("-M", "--machine", dest="MACHINE", type=str,
                          default="aci-roar",
                          help="Computer name to be configured.\n"
@@ -561,7 +561,7 @@ def run_dfttk():
     pconfig.add_argument("-df", "--default_functional", dest="DEFAULT_FUNCTIONAL", type=str, default="PBE",
                          choices=sorted(Potcar.FUNCTIONAL_CHOICES),
                          help="The default functional. Default: PBE")
-    pconfig.add_argument("-t", "--test_config", dest="TEST_CONFIG", nargs="?", const="all", default="all",
+    pconfig.add_argument("-t", "--test_config", dest="TEST_CONFIG", nargs="?", const="all", default="None",
                          choices=["all", "pymatgen", "atomate"],
                          help="Test for configurations. Note: currently only support for pymatgen.")
     pconfig.set_defaults(func=config)
