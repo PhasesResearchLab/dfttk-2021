@@ -18,7 +18,7 @@ setup(
     package_data = {'dfttk.structure_builders' : ["prototype_anrl.all", "aflow_prototype_db.json"]},
     description='Density functional theory workflows for finite temperature thermodynamics based on atomate workflows. Created by the Phases Research Lab',
     long_description=readme(),
-    install_requires=['atomate>=0.9.4', 'tinydb', 'phonopy', 'ase', 'pymatgen', 'numpy'],
+    install_requires=['atomate>=0.9.4', 'tinydb', 'phonopy', 'ase', 'pymatgen', 'numpy>=1.20.1'],
     extras_require={
         'dev': [
             'sphinx',
