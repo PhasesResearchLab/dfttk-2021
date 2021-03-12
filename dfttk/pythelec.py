@@ -17,7 +17,7 @@ from scipy.interpolate import interp1d, splev, splrep, BSpline
 from scipy.integrate import quadrature
 from scipy.interpolate import UnivariateSpline
 from atomate.vasp.database import VaspCalcDb
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import dfttk.pyphon as ywpyphon
 from dfttk.utils import sort_x_by_y
@@ -913,7 +913,7 @@ class thelecMDB():
                 noel=False, everyT=1, metatag=None, qhamode=None, eqmode=0, elmode=1, smooth=False,
                 phasename=None, pyphon=False, debug=False, renew=False, fitF=False, args=None):
         from atomate.vasp.database import VaspCalcDb
-        from pymatgen import Structure
+        from pymatgen.core import Structure
         self.vasp_db = vasp_db
         self.t0 = t0
         self.t1 = t1

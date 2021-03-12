@@ -61,7 +61,7 @@ if __name__ == '__main__':
     verbose=False
 
     ###################### DO NOT CHANGE THE FOLLOWING LINES ##############################
-    from pymatgen import MPRester, Structure
+    from pymatgen.ext.matproj import MPRester, Structure
     from dfttk.wflows import get_wf_gibbs
 
     structure = Structure.from_file(TEMPLATE_STRUCTURE_FILENAME)

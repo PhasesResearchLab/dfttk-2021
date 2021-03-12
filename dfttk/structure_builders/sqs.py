@@ -11,7 +11,7 @@ import copy
 import itertools
 
 import pymatgen as pmg
-from pymatgen import Structure
+from pymatgen.core import Structure
 
 from .prl_structure import PRLStructure
 

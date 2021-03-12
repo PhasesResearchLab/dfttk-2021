@@ -8,7 +8,7 @@ import pytest
 #sys.path.append(dfttkhome)
 import dfttk.structure_builders.substitutions as substitutions
 import dfttk.utils
-from pymatgen import Structure
+from pymatgen.core import Structure
 
 
 POSCAR_STR = """FeNi3

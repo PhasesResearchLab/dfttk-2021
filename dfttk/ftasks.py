@@ -11,7 +11,7 @@ import copy
 import six
 import shlex
 from phonopy.interface.vasp import Vasprun as PhonopyVasprun
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.io.vasp.inputs import Incar
 from pymatgen.io.vasp.outputs import Vasprun, Outcar
 from custodian.custodian import Custodian
@@ -31,7 +31,7 @@ from dfttk.utils import sort_x_by_y, update_pos_by_symbols, update_pot_by_symbol
 from dfttk.custodian_jobs import ATATWalltimeHandler, ATATInfDetJob
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
-from pymatgen import __version__ as pymatgen_ver
+from pymatgen.core import __version__ as pymatgen_ver
 
 
 def extend_calc_locs(name, fw_spec):

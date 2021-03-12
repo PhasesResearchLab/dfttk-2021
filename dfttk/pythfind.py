@@ -2,7 +2,7 @@
 # The template for batch run of DFTTK
 import argparse
 import datetime
-from pymatgen import MPRester, Structure
+from pymatgen.ext.matproj import MPRester, Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.inputs import Potcar
 #from dfttk.wflows import get_wf_gibbs, get_wf_EV_bjb, get_wf_gibbs_robust

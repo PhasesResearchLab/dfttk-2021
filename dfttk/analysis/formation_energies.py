@@ -1,5 +1,5 @@
 import numpy as np
-from pymatgen import Structure
+from pymatgen.core import Structure
 from dfttk.utils import eV_per_atom_to_J_per_mol, mget
 
 def get_thermal_props(qha_result, phonon=True):

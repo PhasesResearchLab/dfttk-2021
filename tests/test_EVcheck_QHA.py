@@ -3,7 +3,7 @@
 import pytest
 
 from dfttk.EVcheck_QHA import *
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.analysis.eos import EOS
 from fireworks import Firework
 from atomate.vasp.config import VASP_CMD, DB_FILE

@@ -6,7 +6,7 @@ import warnings
 import subprocess
 from dfttk.scripts.run_dfttk import get_abspath, creat_folders
 from pymatgen.io.vasp.inputs import PotcarSingle, Potcar
-from pymatgen import MPRester
+from pymatgen.ext.matproj import MPRester
 from dfttk.utils import recursive_glob
 from monty.serialization import loadfn, dumpfn
 from monty.os.path import which

@@ -3,7 +3,7 @@ import pytest
 
 import dfttk.utils as dfttkutils
 from dfttk.input_sets import RelaxSet
-from pymatgen import Structure, SETTINGS
+from pymatgen.core import Structure, SETTINGS
 
 POSCAR_STR_check_symbol = """FCC_Fe_WithDiffMagMom
 1.0

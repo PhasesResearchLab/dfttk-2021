@@ -26,7 +26,7 @@ import json
 import os
 import re
 
-from pymatgen import Lattice
+from pymatgen.core import Lattice
 from pyparsing import Regex, Word, alphas, alphanums, OneOrMore, LineEnd, Suppress, Group
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage

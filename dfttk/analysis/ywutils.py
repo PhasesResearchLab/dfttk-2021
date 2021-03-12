@@ -6,7 +6,7 @@ from fractions import Fraction
 from dfttk.utils import sort_x_by_y
 import os
 import json
-from pymatgen import MPRester, Structure
+from pymatgen.ext.matproj import MPRester, Structure
 from atomate.vasp.database import VaspCalcDb
 
 MM_of_Elements = {'H': 1.00794, 'He': 4.002602, 'Li': 6.941, 'Be': 9.012182, 'B': 10.811, 'C': 12.0107, 'N': 14.0067,

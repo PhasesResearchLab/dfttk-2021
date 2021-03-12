@@ -6,7 +6,7 @@
 import os
 import sys
 import pytest
-from pymatgen import Structure
+from pymatgen.core import Structure
 from monty.serialization import loadfn
 try:
     import dfttk.structure_builders.parse_anrl_prototype as parse_proto

@@ -1,7 +1,7 @@
 #!python
 # This script is used to query the mongodb
 #
-from pymatgen import Structure
+from pymatgen.core import Structure
 from atomate.vasp.database import VaspCalcDb
 from monty.serialization import loadfn
 from fireworks.fw_config import config_to_dict

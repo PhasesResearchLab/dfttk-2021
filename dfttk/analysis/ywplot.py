@@ -26,7 +26,7 @@ from scipy.optimize import curve_fit
 from scipy.constants import physical_constants
 from scipy.optimize import brentq
 from scipy.integrate import cumtrapz, trapz, simps
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from dfttk.analysis.ywutils import get_expt, formula2composition, get_melting_temperature
 
