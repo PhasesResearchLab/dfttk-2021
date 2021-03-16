@@ -43,6 +43,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+import platform
 
 def pngplot(cmd):
     item = [s for s in cmd.split() if s!=""]
@@ -68,13 +69,19 @@ def pngplot(cmd):
         else:
             f.write('{}'.format(line))
     #return "gnuplot "+cmdfile+"; gnuplot "+pngfile
-    return "wgnuplot "+cmdfile, "wgnuplot "+pngfile
-
-
-import platform
-def plot(cmd):
     if platform.system()=="Windows":
+        return "wgnuplot "+cmdfile, "wgnuplot "+pngfile
+    elif platform.system()=="Darwin":
+        return "gnuplot "+cmdfile, "gnuplot "+pngfile
+    else:
+        return "gnuplot "+cmdfile, "gnuplot "+pngfile
+
+
+
+def plot(cmd):
+    if platform.system()=="Windows" or platform.system()=="Darwin":
         cmd0, cmd1 = pngplot(cmd)
+        #print("ssssssss",cmd0,cmd1)
         output0 = subprocess.run(cmd0, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             universal_newlines=True)
         print(output0)
@@ -1738,8 +1745,10 @@ def Phonon298(dir0, pvdos=False):
     copyfile(dfile,phdir298+'/'+dfile0)
     cwd = os.getcwd()
     os.chdir( phdir298 )
-    cmd = 'timeout 6 pos2s Symmetry.pos -THR 3.e-4 >&symmetry.out'
-    output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    import platform
+    if platform.system()=="Linux":
+      cmd = 'timeout 6 pos2s Symmetry.pos -THR 3.e-4 >&symmetry.out'
+      output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
 
     Gph = os.path.exists("symmetry.mode")
@@ -1958,8 +1967,9 @@ def plotAPI(readme, thermofile, volumes=None, energies=None,
       g = sum(g)/len(g)
       readme['Gruneisen parameter']= round(g,3)
       Gmax = 1.2*max(G)
-      g = 3*A[T>0]*B[T>0]*physical_constants['Avogadro constant'][0]*1e-21*V[T>0]/C[T>0]
-      t = T[T>0]
+      gl = [i for i,v in enumerate(C) if v > 0]
+      g = 3*A[gl]*B[gl]*physical_constants['Avogadro constant'][0]*1e-21*V[gl]/C[gl]
+      t = T[gl]
       Gmin = min(g)
       if Gmax>0: Gmin = max(Gmin,-Gmax)
       if Gmin>0: Gmin = 0
@@ -2420,6 +2430,8 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None, local=None):
       move("vdos.png", os.path.join(cwd,folder,'vdos298.15.png'))
 
   if not os.path.exists('symmetry.mode'):
+    import platform
+    if platform.system()=="Linux":
       cmd = "pos2s Symmetry.pos -THR 0.001"
       print(cmd)
       output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -2519,6 +2531,8 @@ def PlotVol(folder, vdosdir):
   move("vdos.png", os.path.join(cwd,folder,'vdos.png'))
 
   if not os.path.exists('symmetry.mode'):
+    import platform
+    if platform.system()=="Linux":
       cmd = "pos2s Symmetry.pos -THR 0.001"
       print(cmd)
       output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
