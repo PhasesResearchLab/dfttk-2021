@@ -1,6 +1,9 @@
 """
 Custom DFTTK Workflows
 """
+from pathlib import Path
+import os
+os.environ["HOME"] = str(Path.home())
 
 import numpy as np
 from uuid import uuid4
