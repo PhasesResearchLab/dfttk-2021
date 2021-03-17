@@ -68,29 +68,17 @@ def pngplot(cmd):
                 f.write('{}\n'.format('set ylabel "Phonon frequncy (THz)"'))
         else:
             f.write('{}'.format(line))
-    #return "gnuplot "+cmdfile+"; gnuplot "+pngfile
-    if platform.system()=="Windows":
-        return "wgnuplot "+cmdfile, "wgnuplot "+pngfile
-    elif platform.system()=="Darwin":
-        return "gnuplot "+cmdfile, "gnuplot "+pngfile
-    else:
-        return "gnuplot "+cmdfile, "gnuplot "+pngfile
-
-
+    return "gnuplot "+cmdfile, "gnuplot "+pngfile
 
 def plot(cmd):
-    if platform.system()=="Windows" or platform.system()=="Darwin":
-        cmd0, cmd1 = pngplot(cmd)
-        #print("ssssssss",cmd0,cmd1)
-        output0 = subprocess.run(cmd0, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            universal_newlines=True)
-        print(output0)
-        output1 = subprocess.run(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            universal_newlines=True)
-        print(output1)
-    else:
-        output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            universal_newlines=True)
+    cmd0, cmd1 = pngplot(cmd)
+    #print("ssssssss",cmd0,cmd1)
+    output0 = subprocess.run(cmd0, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        universal_newlines=True)
+    print(output0)
+    output1 = subprocess.run(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        universal_newlines=True)
+    print(output1)
 
 
 #from elements import elements
@@ -636,7 +624,8 @@ class thermoplot:
         plt.close(self.fig)
 
         os.chdir( self.cwd )
-        figures.update({self.thermodynamicproperty:folder.split('/')[-1]+'/'+self.fname})
+        head,tail = os.path.split(folder)
+        figures.update({self.thermodynamicproperty:os.path.join(tail,self.fname)})
 
 
     def plot_EV(self):
@@ -1225,6 +1214,7 @@ def Genergy(thermofile,dir0):
   cmd = "YWfit "+ffun+" <"+dir0+'/E-V.dat | grep "f_expr(x) = "'
   output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
+  print(output)
   cwd = os.getcwd()
   os.chdir( os.path.join(dir0, "figures"))
   fitF = output.stdout
@@ -1439,7 +1429,7 @@ def mkDict(line):
   idx = 1
   while True:
     if not os.path.exists(dir0): break
-    recordfile = dir0+"/record.json"
+    recordfile = dir0,"record.json"
     newdir = False
     try:
       if os.path.exists(recordfile):
@@ -1488,113 +1478,114 @@ def mkDict(line):
 
 
 def VASPResults(dir0,vdos_e,Vfiles, Pfiles, phdft="phonon"):
-  hdir = vdos_e.replace('thermo/vdos_e','')
-
+  head, tail = os.path.split(vdos_e)
+  hdir, tail = os.path.split(head)
   natom = structure.get("number of atoms in POSCAR")
-  pdir = vdos_e.replace('thermo/vdos_e',phdft)+'/'
-  phdir = dir0+'/phonon'
+  pdir = os.path.join(hdir,phdft)
+  phdir = os.path.join(dir0,'phonon')
   if not os.path.exists(phdir):
     os.mkdir(phdir)
   for ff in Vfiles:
-    vdir = dir0+"/"+ff
+    vdir = os.path.join(dir0,ff)
     if not os.path.exists(vdir):
       os.mkdir(vdir)
-    pvdir = phdir+"/"+ff
+    pvdir = os.path.join(phdir,ff)
     if not os.path.exists(pvdir):
       os.mkdir(pvdir)
 
-    vdos = hdir+"/"+ff+"/vdos.out"
-    copyfile(vdos,vdir+'/vdos.out')
+    vdos = os.path.join(hdir,ff,"vdos.out")
+    copyfile(vdos,os.path.join(vdir,'vdos.out'))
     print(vdos)
 
-    poscar = hdir+"/"+ff+"/CONTCAR"
+    poscar = os.path.join(hdir,ff,"CONTCAR")
     if not os.path.exists(poscar):
-      poscar = hdir+"/"+ff+"/Static.CON"
+      poscar = os.path.join(hdir,ff,"Static.CON")
       if not os.path.exists(poscar):
-        poscar = hdir+"/"+ff+"/POSCAR"
-    copyfile(poscar,vdir+'/POSCAR')
+        poscar = os.path.join(hdir,ff,"POSCAR")
+    copyfile(poscar,os.path.join(vdir,'POSCAR'))
 
-    outcar = hdir+ff+"/OUTCAR"
+    outcar = os.path.join(hdir+ff,"OUTCAR")
     if os.path.exists(outcar):
       output = subprocess.run("grep POTCAR "+outcar+" | sort -u", shell=True, stdout=subprocess.PIPE,
                         universal_newlines=True)
       POTCAR = str(output.stdout)
     else:
-      outcar = pdir+"/"+ff+"/OUTCAR.gz"
+      outcar = os.path.join(pdir,ff,"OUTCAR.gz")
       if not os.path.exists(outcar):
-        outcar = pdir+"/"+ff+"/Static.OUT.gz"
+        outcar = os.path.join(pdir,ff,"Static.OUT.gz")
       output = subprocess.run("zgrep POTCAR "+outcar+" | sort -u", shell=True, stdout=subprocess.PIPE,
                         universal_newlines=True)
       POTCAR = str(output.stdout)
 
     #print (outcar)
-    with open(vdir+'/POTCAR', "w") as text_file:
+    with open(os.path.join(vdir,'POTCAR'), "w") as text_file:
       text_file.write(POTCAR)
 
-    doscar = hdir+"/"+ff+"/DOSCAR"
+    doscar = os.path.join(hdir,ff,"DOSCAR")
     if not os.path.exists(doscar):
-      doscar = hdir+"/"+ff+"/Static.DOS.gz"
-    ddoscar = doscar.split('/')[-1].replace("Static.DOS", "DOSCAR")
-    copyfile(doscar, vdir+'/'+ddoscar)
+      doscar = os.path.join(hdir,ff,"Static.DOS.gz")
+    head,tail = os.path.split(doscar)
+    ddoscar = os.path.join(head, tail.replace("Static.DOS", "DOSCAR"))
+    copyfile(doscar, os.path.join(vdir,ddoscar))
 
-    oszicar = hdir+"/"+ff+"/OSZICAR"
+    oszicar = os.path.join(hdir,ff,"OSZICAR")
     if not os.path.exists(doscar):
-      oszicar = hdir+"/"+ff+"/Static.OSZ"
+      oszicar = os.path.join(hdir,ff,"Static.OSZ")
     output = subprocess.run("grep E0= "+oszicar+" | tail -1 | awk '{print $5}'", shell=True, stdout=subprocess.PIPE,
                         universal_newlines=True)
     E0 = float(output.stdout)
     E0 /= natom
-    with open(vdir+'/energy', "w") as text_file:
+    with open(os.path.join(vdir,'energy'), "w") as text_file:
       text_file.write(str(E0))
 
-    incars = fnmatch.filter(os.listdir(hdir+"/"+ff), 'INCAR_*')
+    incars = fnmatch.filter(os.listdir(hdir,ff), 'INCAR_*')
     if len(incars)==0:
-      INCAR = hdir+"/tplate/INCAR.Static"
+      INCAR = os.path.join(hdir,"tplate","INCAR.Static")
     else:
-      INCAR = hdir+"/"+ff+'/'+incars[0]
+      INCAR = os.path.join(hdir,ff,incars[0])
       d0 = os.path.getmtime(INCAR)
       for ii in range(1,len(incars)):
-        d1 = os.path.getmtime(hdir+"/"+ff+'/'+incars[ii])
+        d1 = os.path.getmtime(os.path.join(hdir,ff,incars[ii]))
         if d1 > d0:
-          INCAR = hdir+"/"+ff+'/'+incars[ii]
+          INCAR = os.path.join(hdir,ff,incars[ii])
           d1 = d0
-    copyfile(INCAR, vdir+'/INCAR')
-    copyfile(hdir+"/tplate/KPOINTS", vdir+'/KPOINTS')
+    copyfile(INCAR, os.path.join(vdir,'INCAR'))
+    copyfile(os.path.join(hdir,"tplate","KPOINTS"), os.path.join(vdir,'KPOINTS'))
 
-    sposcar = pdir+ff+"/POSCAR"
-    copyfile(sposcar, pvdir+'/POSCAR')
-    soutcar = pdir+ff+"/OUTCAR"
+    sposcar = os.path.join(pdir,ff,"POSCAR")
+    copyfile(sposcar, os.path.join(pvdir,'POSCAR'))
+    soutcar = os.path.join(pdir,ff,"OUTCAR")
     if os.path.exists(soutcar):
       output = subprocess.run("grep POTCAR "+soutcar+" | sort -u", shell=True, stdout=subprocess.PIPE,
                         universal_newlines=True)
       POTCAR = str(output.stdout)
     else:
-      soutcar = pdir+"/"+ff+"/OUTCAR.gz"
+      soutcar = os.path.join(pdir,ff,"OUTCAR.gz")
       output = subprocess.run("zgrep POTCAR "+soutcar+" | sort -u", shell=True, stdout=subprocess.PIPE,
                         universal_newlines=True)
       POTCAR = str(output.stdout)
 
-    with open(pvdir+'/POTCAR', "w") as text_file:
+    with open(os.path.join(pvdir,'POTCAR'), "w") as text_file:
       text_file.write(POTCAR)
 
-    incars = fnmatch.filter(os.listdir(pdir+"/"+ff), 'INCAR_*')
+    incars = fnmatch.filter(os.listdir(pdir,ff), 'INCAR_*')
     if len(incars)==0:
-      INCAR = pdir+"/tplate/INCAR"
+      INCAR = os.path.join(pdir,"tplate","INCAR")
     else:
-      INCAR = pdir+"/"+ff+'/'+incars[0]
+      INCAR = pdir,ff,incars[0]
       d0 = os.path.getmtime(INCAR)
       for ii in range(1,len(incars)):
-        d1 = os.path.getmtime(pdir+"/"+ff+'/'+incars[ii])
+        d1 = os.path.getmtime(os.path.join(pdir,ff,incars[ii]))
         if d1 > d0:
-          INCAR = pdir+"/"+ff+'/'+incars[ii]
+          INCAR = os.path.join(pdir,ff,incars[ii])
           d1 = d0
-    copyfile(INCAR, pvdir+'/INCAR')
-    copyfile(pdir+"/tplate/KPOINTS", pvdir+'/KPOINTS')
+    copyfile(INCAR, os.path.join(pvdir,'INCAR'))
+    copyfile(os.path.join(pdir,"tplate","KPOINTS"), os.path.join(pvdir,'KPOINTS'))
 
-    sposcar = pdir+ff+"/POSCAR"
-    sxml = pdir+ff+"/vasprun.xml"
+    sposcar = os.path.join(pdir,ff,"POSCAR")
+    sxml = os.path.join(pdir,ff,"vasprun.xml")
     if not os.path.exists(sxml):
-      sxml = pdir+ff+"/vasprun.xml.gz"
+      sxml = os.path.join(pdir,ff,"vasprun.xml.gz")
 
     cwd = os.getcwd()
     os.chdir( pvdir )
@@ -1627,13 +1618,13 @@ def extractGph():
 
 class BornMix:
     def __init__(self, dir0, V0, V1, ff1, phdir298):
-        F0 = dir0+'/'+V0+'/dielecfij.out'
+        F0 = os.path.join(dir0,V0,'dielecfij.out')
         if not os.path.exists(F0): return
-        F1 = dir0+'/'+V1+'/dielecfij.out'
+        F1 = os.path.join(dir0,V1,'dielecfij.out')
         if not os.path.exists(F1): return
         with open (F0, 'r') as fp: data0 = fp.readlines()
         with open (F1, 'r') as fp: data1 = fp.readlines()
-        out = phdir298+'/dielecfij.out'
+        out = os.path.join(phdir298,'dielecfij.out')
         with open (out, 'w') as fp:
             for i, line in enumerate(data0):
                 self.mix(line, data1[i], ff1, fp)
@@ -1666,7 +1657,7 @@ class BornMix:
 
 def Phonon298(dir0, pvdos=False):
   V298 = threcord.get("Atomic volume at 298.15 K ($\AA^3$)")
-  phdir298 = dir0 + '/phonon298.15K'
+  phdir298 = os.path.join(dir0, 'phonon298.15K')
   if not os.path.exists(phdir298):
     os.mkdir(phdir298)
   volumes = threcord.get("volumes")
@@ -1679,9 +1670,10 @@ def Phonon298(dir0, pvdos=False):
   i1 = min(i1, len(volumes)-2)
   dV = float(volumes[i1+1]) - float(volumes[i1])
   ff1 = (float(volumes[i1+1]) - V298)/dV
-  cmd = "Ymix -mlat -f "+str(ff1)+ " " + dir0+'/'+Pfiles[i1]+"/superfij.out " + " " + dir0+'/'+Pfiles[i1+1]+"/superfij.out >"+phdir298+"/superfij.out"
+  cmd = "Ymix -mlat -f "+str(ff1)+ " " + dir0,Pfiles[i1],"superfij.out " + " " + dir0,Pfiles[i1+1],"superfij.out >"+phdir298,"superfij.out"
   output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
+  print(output)
   mix = BornMix(dir0, Pfiles[i1], Pfiles[i1+1], ff1, phdir298)
 
   cwd = os.getcwd()
@@ -1689,20 +1681,19 @@ def Phonon298(dir0, pvdos=False):
 
   cmd = "Yphon -tranI 2 -eps -nqwave "+ str(nqwave)+ " <superfij.out"
   if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
-  print(cmd)
   output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
+  print(output)
   cmd = "gnuplot vdos.plt; convert background white -alpha remove -rotate 90 -density 120x120 vdos.eps vdos.png"
-  plot(cmd)
   figures = threcord.get("figures")
-  figures.update({"phonon DOS at 298.15 K": "phonon298.15K/vdos.png"})
+  figures.update({"phonon DOS at 298.15 K": os.path.join("phonon298.15K","vdos.png")})
 
   if pvdos:
     cmd = "Yphon -tranI 2 -eps -pvdos -nqwave "+ str(nqwave/4)+ " <superfij.out"
     if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
-    print(cmd)
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
+    print(output)
     cmd = "gnuplot pvdos.plt; convert background white -alpha remove -rotate 90 -density 120x120 pvdos.eps pvdos.png"
     plot(cmd)
     figures = threcord.get("figures")
@@ -1713,36 +1704,37 @@ def Phonon298(dir0, pvdos=False):
   ngroup = structure.get("space group")
   dfile = ""
   if ngroup>=1 and ngroup<=2:
-    dfile = home+"/bin/hbin/pycode/data/dfile.tri"
+    dfile = "dfile.tri"
     structure.update({"crystal system": "Triclinic"})
   elif ngroup>=3 and ngroup<=15:
-    dfile = home+"/bin/hbin/pycode/data/dfile.mon"
+    dfile = "dfile.mon"
     structure.update({"crystal system": "Monoclinic"})
   elif ngroup>=16 and ngroup<=74:
-    dfile = home+"/bin/hbin/pycode/data/dfile.oth"
+    dfile = "dfile.oth"
     structure.update({"crystal system": "Orthorhombic"})
   elif ngroup>=75 and ngroup<=142:
-    dfile = home+"/bin/hbin/pycode/data/dfile.tet"
+    dfile = "dfile.tet"
     structure.update({"crystal system": "Tetragonal"})
   elif ngroup>=143 and ngroup<=167:
-    dfile = home+"/bin/hbin/pycode/data/dfile.rho"
+    dfile = "dfile.rho"
     structure.update({"crystal system": "Trigonal"})
   elif ngroup>=168 and ngroup<=194:
-    dfile = home+"/bin/hbin/pycode/data/dfile.hcp"
+    dfile = "dfile.hcp"
     structure.update({"crystal system": "Hexagonal"})
   elif ngroup>=195 and ngroup<=220:
-    dfile = home+"/bin/hbin/pycode/data/dfile.scc"
+    dfile = "dfile.scc"
     structure.update({"crystal system": "Cubic"})
   elif ngroup>=221 and ngroup<=224:
-    dfile = home+"/bin/hbin/pycode/data/dfile.bcc"
+    dfile = "dfile.bcc"
     structure.update({"crystal system": "Cubic({bcc})"})
   elif ngroup>=225 and ngroup<=230:
-    dfile = home+"/bin/hbin/pycode/data/dfile.fcc"
+    dfile = "dfile.fcc"
     structure.update({"crystal system": "Cubic({fcc})"})
 
   if dfile != "":
-    dfile0 = dfile.split('/')[-1]
-    copyfile(dfile,phdir298+'/'+dfile0)
+    PATH_TO_STORE_CONFIG = dfttkconfig.default_path()
+    plotdatabase = os.path.join(dfttkconfig.get_abspath(PATH_TO_STORE_CONFIG),'analysis','database')
+    copyfile(os.path.join(plotdatabase,dfile),os.path.join(phdir298,dfile))
     cwd = os.getcwd()
     os.chdir( phdir298 )
     import platform
@@ -1750,6 +1742,7 @@ def Phonon298(dir0, pvdos=False):
       cmd = 'timeout 6 pos2s Symmetry.pos -THR 3.e-4 >&symmetry.out'
       output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
+      print(output)
 
     Gph = os.path.exists("symmetry.mode")
     if Gph:
@@ -1760,6 +1753,7 @@ def Phonon298(dir0, pvdos=False):
 
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
+    print(output)
     if Gph:
       extractGph()
 
@@ -1819,7 +1813,6 @@ def addpapers(g,formula,pname):
 
 markers=['o', 'v', 'd', '^', '<', '>', 's', '*', 'x', '+', '1', '2']
 
-home = "/global/u2/y/yiwang62/"
 k_B = 8.6173303e-5
 R = 8.3144598
 
@@ -2007,7 +2000,7 @@ def plotAPI(readme, thermofile, volumes=None, energies=None,
       proStoichiometricCp()
     else:
       proStoichiometricG()
-    with open(folder + '/../record.json', 'w') as fp:
+    with open(os.path.join(folder,'..','record.json'), 'w') as fp:
       myjsonout(SGTErec, fp, indent="", comma="")
     myjsonout(SGTErec, sys.stdout, indent="", comma="")
 
@@ -2091,8 +2084,7 @@ def plotCMD(thermofile, volumes=None, energies=None, expt=None, xlim=None, _fitC
   global fitCp
   fitCp = _fitCp
   #print(expt)
-  phasedir = [substr for substr in thermofile.split('/') if substr!=""]
-  phasedir = ('/').join(phasedir[0:-1])
+  phasedir,tail = os.path.split(thermofile)
   if phasedir=="": phasedir="."
   folder = os.path.join(phasedir,"figures")
   print("All figures have been outputed into: ", folder, "  with T uplimt:", xlim, "\n\nEnjoy!\n")
@@ -2404,10 +2396,9 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None, local=None):
   if not os.path.exists(phdir298):
       os.mkdir(phdir298)
   cmd = "Ymix -mlat -f "+str(ff1)+ " "+file1+ " "+file2 +" >"+os.path.join(phdir298,"superfij.out")
-  print(cmd)
   output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
-
+  print(output)
   mix = BornMix(ydir, dir1, dir2, ff1, phdir298)
 
   cwd = os.getcwd()
@@ -2418,9 +2409,9 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None, local=None):
   if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
   #cmd = "Yphon -tranI 2 -eps " + " <superfij.out"
   if not (debug and os.path.exists('vdos.out')):
-      print(cmd)
       output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
+      print(output)
       cmd = "gnuplot vdos.plt; convert -flatten -rotate 90 -density 120x120 vdos.eps vdos.png"
       #cmd = " vdos.plt"
       plot(cmd)
@@ -2433,20 +2424,21 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None, local=None):
     import platform
     if platform.system()=="Linux":
       cmd = "pos2s Symmetry.pos -THR 0.001"
-      print(cmd)
       output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
+      print(output)
   """
   #temp for debug
   """
   #temp for debug
 
-  if os.path.exists("vdos.out") :
+  if os.path.exists("vdos.out") and platform.system()=="Linux":
     cmd = "Yphon -tranI 2 -eps -nqwave 100 -Gfile symmetry.mode <superfij.out >Raman.mode"
     if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
     move("vdos.out", 'vdos.sav')
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
+    print(output)
     move("vdos.sav", 'vdos.out')
     vdos = np.loadtxt("vdos.out", comments="#", dtype=np.float)
     if os.path.exists("Raman.mode") :
@@ -2478,14 +2470,14 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None, local=None):
     copyfile(dfile,dfile0)
     cmd = "Yphon -tranI 2 -eps -pdis "+dfile0+ " <superfij.out"
     if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out -bvec'
-    print(cmd)
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
+    print(output)
     cmd = "gnuplot vdis.plt; convert -flatten -rotate 90 -density 120x120 vdis.eps vdis.png"
     #cmd = gnuplot_cmd+" vdis.plt"
     plot(cmd)
-    move("vdis.eps", cwd+'/'+folder+'/vdis298.15.eps')
-    move("vdis.png", cwd+'/'+folder+'/vdis298.15.png')
+    move("vdis.eps", os.path.join(cwd,folder,'vdis298.15.eps'))
+    move("vdis.png", os.path.join(cwd,folder,'vdis298.15.png'))
   os.chdir( cwd )
 
 
@@ -2493,13 +2485,6 @@ def PlotVol(folder, vdosdir):
   import dfttk.scripts.config_dfttk as dfttkconfig
   PATH_TO_STORE_CONFIG = dfttkconfig.default_path()
   plotdatabase = os.path.join(dfttkconfig.get_abspath(PATH_TO_STORE_CONFIG),'analysis','database')
-  """
-  vdosdir = [substr for substr in vdos.split('/') if substr!=""]
-  if vdos.startswith('/'):
-    vdosdir = '/'+('/').join(vdosdir[0:-1])
-  else:
-    vdosdir = ('/').join(vdosdir[0:-1])
-  """
   if not os.path.exists(os.path.join(vdosdir,'superfij.out')) : return
 
   for ff in ['POSCAR', 'CONTCAR', 'Symmetry.pos']:
@@ -2521,9 +2506,9 @@ def PlotVol(folder, vdosdir):
   os.chdir( vdosdir )
   cmd = "Yphon -tranI 2 -eps -nqwave "+ str(nqwave)+ " <superfij.out"
   if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
-  print(cmd)
   output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
+  print(output)
   cmd = "gnuplot vdos.plt; convert -flatten -rotate 90 -density 120x120 vdos.eps vdos.png"
   #print(cmd)
   plot(cmd)
@@ -2531,28 +2516,28 @@ def PlotVol(folder, vdosdir):
   move("vdos.png", os.path.join(cwd,folder,'vdos.png'))
 
   if not os.path.exists('symmetry.mode'):
-    import platform
     if platform.system()=="Linux":
       cmd = "pos2s Symmetry.pos -THR 0.001"
-      print(cmd)
       output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
+      print(output)
   """
   #temp for debug
   """
   #temp for debug
 
-  if os.path.exists("vdos.out") :
+  if os.path.exists("vdos.out") and platform.system()=="Linux":
     move("vdos.out", 'vdos.sav')
     cmd = "Yphon -tranI 2 -eps -nqwave 100 -Gfile symmetry.mode <superfij.out >Raman.mode"
     if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
+    print(output)
     move("vdos.sav", 'vdos.out')
     vdos = np.loadtxt("vdos.out", comments="#", dtype=np.float)
     if os.path.exists("Raman.mode") :
       with open ("Raman.mode", "r") as fp:
-        plotRaman(cwd+'/'+folder, fp, vdos)
+        plotRaman(cwd,folder, fp, vdos)
 
   dfile = ""
   if ngroup>=1 and ngroup<=2:
@@ -2581,10 +2566,11 @@ def PlotVol(folder, vdosdir):
     if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
+    print(output)
     cmd = "gnuplot vdis.plt; convert -flatten -rotate 90 -density 120x120 vdis.eps vdis.png"
     plot(cmd)
-    move("vdis.eps", cwd+'/'+folder+'/vdis.eps')
-    move("vdis.png", cwd+'/'+folder+'/vdis.png')
+    move("vdis.eps", os.path.join(cwd,folder,'vdis.eps'))
+    move("vdis.png", os.path.join(cwd,folder,'vdis.png'))
   os.chdir( cwd )
 
 
