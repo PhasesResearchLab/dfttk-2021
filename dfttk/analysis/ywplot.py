@@ -1670,7 +1670,10 @@ def Phonon298(dir0, pvdos=False):
   i1 = min(i1, len(volumes)-2)
   dV = float(volumes[i1+1]) - float(volumes[i1])
   ff1 = (float(volumes[i1+1]) - V298)/dV
-  cmd = "Ymix -mlat -f "+str(ff1)+ " " + dir0,Pfiles[i1],"superfij.out " + " " + dir0,Pfiles[i1+1],"superfij.out >"+phdir298,"superfij.out"
+  cmd = "Ymix -mlat -f "+str(ff1)+ " " \
+      + os.path.join(dir0,Pfiles[i1],"superfij.out") + " " \
+      + os.path.join(dir0,Pfiles[i1+1],"superfij.out") + " >" \
+      + phdir298,"superfij.out"
   output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
   #print(output)
