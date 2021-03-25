@@ -473,11 +473,11 @@ def ext_thfind(args, vasp_db=None):
                 print("\nDownloading data by metadata tag:", t['tag'], "\n")
                 args.metatag = t['tag']
                 args.phasename = t['phasename']
-                ext_thelec(args)
+                ext_thelec(args, vasp_db=vasp_db)
                 #args.metatag = None
                 #args.phasename = None
             else:
-                ext_thelec(args,plotfiles=t)
+                ext_thelec(args,plotfiles=t, vasp_db=vasp_db)
 
 
 def run_ext_EVfind(subparsers):
