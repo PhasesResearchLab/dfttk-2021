@@ -1673,7 +1673,7 @@ def Phonon298(dir0, pvdos=False):
   cmd = "Ymix -mlat -f "+str(ff1)+ " " + dir0,Pfiles[i1],"superfij.out " + " " + dir0,Pfiles[i1+1],"superfij.out >"+phdir298,"superfij.out"
   output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
-  print(output)
+  #print(output)
   mix = BornMix(dir0, Pfiles[i1], Pfiles[i1+1], ff1, phdir298)
 
   cwd = os.getcwd()
@@ -1683,7 +1683,7 @@ def Phonon298(dir0, pvdos=False):
   if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
   output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
-  print(output)
+  #print(output)
   cmd = "gnuplot vdos.plt; convert background white -alpha remove -rotate 90 -density 120x120 vdos.eps vdos.png"
   figures = threcord.get("figures")
   figures.update({"phonon DOS at 298.15 K": os.path.join("phonon298.15K","vdos.png")})
@@ -1693,7 +1693,7 @@ def Phonon298(dir0, pvdos=False):
     if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
-    print(output)
+    #print(output)
     cmd = "gnuplot pvdos.plt; convert background white -alpha remove -rotate 90 -density 120x120 pvdos.eps pvdos.png"
     plot(cmd)
     figures = threcord.get("figures")
@@ -1753,7 +1753,7 @@ def Phonon298(dir0, pvdos=False):
 
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
-    print(output)
+    #print(output)
     if Gph:
       extractGph()
 
@@ -1895,7 +1895,7 @@ def plotAPI(readme, thermofile, volumes=None, energies=None,
     os.mkdir(folder)
   if volumes is not None: thermoplot(folder,"0 K total energies (eV/atom)",volumes, energies, plottitle=plottitle)
 
-  thermo = np.loadtxt(thermofile, comments="#", dtype=np.float)
+  thermo = np.loadtxt(thermofile, comments="#", dtype=float)
   thermo[np.isnan(thermo)] = 0.0
   _single = len(set(thermo[:,1])) == 1
   if len (thermo) < 1:
@@ -2398,20 +2398,22 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None, local=None):
   cmd = "Ymix -mlat -f "+str(ff1)+ " "+file1+ " "+file2 +" >"+os.path.join(phdir298,"superfij.out")
   output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
-  print(output)
+  #print(output)
   mix = BornMix(ydir, dir1, dir2, ff1, phdir298)
 
   cwd = os.getcwd()
   os.chdir( phdir298 )
 
-  if debug: cmd = "Yphon -tranI 2 -eps <superfij.out"
-  else: cmd = "Yphon -tranI 2 -eps -nqwave "+ str(nqwave)+ " <superfij.out"
+  _nqwave = ""
+  if debug:
+      _nqwave = "-nqwave "+ str(1.e4)
+  cmd = "Yphon -tranI 2 -eps "+ _nqwave+ " <superfij.out"
   if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
   #cmd = "Yphon -tranI 2 -eps " + " <superfij.out"
   if not (debug and os.path.exists('vdos.out')):
       output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
-      print(output)
+      #print(output)
       cmd = "gnuplot vdos.plt; convert -flatten -rotate 90 -density 120x120 vdos.eps vdos.png"
       #cmd = " vdos.plt"
       plot(cmd)
@@ -2438,7 +2440,7 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None, local=None):
     move("vdos.out", 'vdos.sav')
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
-    print(output)
+    #print(output)
     move("vdos.sav", 'vdos.out')
     vdos = np.loadtxt("vdos.out", comments="#", dtype=np.float)
     if os.path.exists("Raman.mode") :
@@ -2472,7 +2474,7 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None, local=None):
     if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out -bvec'
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
-    print(output)
+    #print(output)
     cmd = "gnuplot vdis.plt; convert -flatten -rotate 90 -density 120x120 vdis.eps vdis.png"
     #cmd = gnuplot_cmd+" vdis.plt"
     plot(cmd)
@@ -2508,7 +2510,7 @@ def PlotVol(folder, vdosdir):
   if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
   output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
-  print(output)
+  #print(output)
   cmd = "gnuplot vdos.plt; convert -flatten -rotate 90 -density 120x120 vdos.eps vdos.png"
   #print(cmd)
   plot(cmd)
@@ -2532,7 +2534,7 @@ def PlotVol(folder, vdosdir):
     if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
-    print(output)
+    #print(output)
     move("vdos.sav", 'vdos.out')
     vdos = np.loadtxt("vdos.out", comments="#", dtype=np.float)
     if os.path.exists("Raman.mode") :
@@ -2566,7 +2568,7 @@ def PlotVol(folder, vdosdir):
     if os.path.exists('dielecfij.out') : cmd = cmd + ' -Born dielecfij.out'
     output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                       universal_newlines=True)
-    print(output)
+    #print(output)
     cmd = "gnuplot vdis.plt; convert -flatten -rotate 90 -density 120x120 vdis.eps vdis.png"
     plot(cmd)
     move("vdis.eps", os.path.join(cwd,folder,'vdis.eps'))

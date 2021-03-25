@@ -82,7 +82,7 @@ def formula2composition(formula, normalize=True):
       com.append(1.0)
   com = np.array(list(map(float,com)))
   #print("eeeeee", formula, ele, com)
-  if normalize: 
+  if normalize:
       if sum(com)==0.0: raise ValueError("divided by zero")
       com = com/sum(com)
 
@@ -172,7 +172,7 @@ formula - chemical formula
 expt - a dict containing heat capacity data
 return:
 if found, the highest temperature from the heat capacity data
-otherwise, the up temperature limit defined in the argparse args 
+otherwise, the up temperature limit defined in the argparse args
 """
 def get_melting_temperature_from_JANAF(expt=None, formula=None):
 

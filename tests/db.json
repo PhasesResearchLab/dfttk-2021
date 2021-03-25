@@ -1,7 +1,9 @@
 {
-    "aliases": {},
+    "database": "test-results",
     "collection": "tasks",
-    "database": "dfttk_tests",
-    "host": "localhost",
-    "port": 27017
+    "readonly_user": "test-ro",
+    "readonly_password": "NUzoOAZjYfop",
+    "host": "146.186.149.69",
+    "port": 27018,
+    "aliases": {}
 }

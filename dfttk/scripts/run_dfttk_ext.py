@@ -25,7 +25,7 @@ from dfttk.analysis.ywutils import get_melting_temperature, reduced_formula, get
 
 no_MongoDB = False
 
-def ext_thelec(args, plotfiles=None):
+def ext_thelec(args, plotfiles=None, vasp_db=None):
     global no_MongoDB
     print ("Postprocess for thermodynamic properties, Seebeck, Lorenz number etc. Yi Wang\n")
     """
@@ -74,7 +74,6 @@ def ext_thelec(args, plotfiles=None):
         gaussian = max(10000., float(gaussian))
 
     formula = None
-    vasp_db = None
     if args.local != "":
         print("\nRun using local data\n")
 
@@ -117,8 +116,9 @@ def ext_thelec(args, plotfiles=None):
     elif not args.plotonly:
         #if True:
         try:
-            db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
-            vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
+            if vasp_db is None:
+                db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+                vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
             static_calculations = vasp_db.collection.\
                 find({'$and':[ {'metadata.tag': metatag}, {'adopted': True} ]})
             structure = Structure.from_dict(static_calculations[0]['output']['structure'])
@@ -446,7 +446,7 @@ def run_ext_thfind(subparsers):
     pthfind.set_defaults(func=ext_thfind)
 
 
-def ext_thfind(args):
+def ext_thfind(args, vasp_db=None):
     """
     find the metadata tag that has finished.
 
@@ -460,7 +460,10 @@ def ext_thfind(args):
         WORKFLOW = args.WORKFLOW
             workflow, current only get_wf_gibbs
     """
-    proc=thfindMDB(args)
+    if vasp_db is None:
+        db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+        vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
+    proc=thfindMDB(args,vasp_db)
     tags = proc.run_console()
     if args.get:
         with open("runs.log", "a") as fp:
@@ -471,6 +474,8 @@ def ext_thfind(args):
                 args.metatag = t['tag']
                 args.phasename = t['phasename']
                 ext_thelec(args)
+                #args.metatag = None
+                #args.phasename = None
             else:
                 ext_thelec(args,plotfiles=t)
 
@@ -508,7 +513,7 @@ def run_ext_EVfind(subparsers):
     pEVfind.set_defaults(func=ext_EVfind)
 
 
-def ext_EVfind(args):
+def ext_EVfind(args, vasp_db=None):
     """
     find the metadata tag that has finished.
 
@@ -522,5 +527,8 @@ def ext_EVfind(args):
         WORKFLOW = args.WORKFLOW
             workflow, current only get_wf_gibbs
     """
-    proc=EVfindMDB(args)
+    if vasp_db is None:
+        db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+        vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
+    proc=EVfindMDB(args, vasp_db=vasp_db)
     tags = proc.run_console()

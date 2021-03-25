@@ -1035,8 +1035,8 @@ class thelecMDB():
             volumes_b = (self.vasp_db).db['borncharge'].find({'metadata.tag': self.tag}, {'_id':0, 'volume':1})
             volumes_b = [i['volume'] for i in volumes_b]
             has_Born =  all(elem in volumes_b for elem in volumes_p)
-            #print("eeeeeeeeee", sorted(volumes_p))
-            #print("eeeeeeeeee", sorted(volumes_b))
+            #print("db_file", sorted(volumes_p))
+            #print("db_file", sorted(volumes_b))
         except:
             has_Born = False
         if has_Born:
@@ -1221,6 +1221,50 @@ class thelecMDB():
         return has_Cij
 
 
+    def get_btp2(self, btp2_dir):
+        volumes_uniform_tau = []
+        volumes_uniform_lambda = []
+        uniform_tau = []
+        uniform_lambda = []
+        from os import walk
+        yphondir = os.path.join(btp2_dir,"Yphon")
+        if not os.path.exists(yphondir): yphondir = btp2_dir
+        _, static_calculations, _ = next(walk(yphondir))
+        for calc in static_calculations:
+            poscar = os.path.join(yphondir, calc, 'POSCAR')
+            if not os.path.exists(poscar) : continue
+            tmp = os.path.join(yphondir, calc, 'interpolation.dope.trace.uniform_tau')
+            if os.path.exists(tmp) :
+                print ("Handling data in ", tmp)
+                structure = Structure.from_file(poscar)
+                vol = structure.volume
+                if vol not in volumes_uniform_tau:
+                    volumes_uniform_tau.append(vol)
+                    uniform_tau.append(np.genfromtxt(tmp))
+            tmp = os.path.join(yphondir, calc, 'interpolation.dope.trace.uniform_lambda')
+            if os.path.exists(tmp) :
+                print ("Handling data in ", tmp)
+                structure = Structure.from_file(poscar)
+                vol = structure.volume
+                if vol not in volumes_uniform_lambda:
+                    volumes_uniform_lambda.append(vol)
+                    uniform_lambda.append(np.genfromtxt(tmp))
+
+        has_btp2 = False
+        from dfttk.utils import sort_x_by_y
+        if len(volumes_uniform_tau)>0:
+            has_btp2 = True
+            self.uniform_tau = sort_x_by_y(uniform_tau, volumes_uniform_tau)
+            self.volumes_uniform_tau = sort_x_by_y(volumes_uniform_tau,volumes_uniform_tau)
+            print ("found volumes_uniform_tau volumes from static calculations:", self.volumes_uniform_tau)
+        if len(volumes_uniform_lambda)>0:
+            has_btp2 = True
+            self.uniform_lambda = sort_x_by_y(uniform_lambda, volumes_uniform_lambda)
+            self.volumes_uniform_lambda = sort_x_by_y(volumes_uniform_lambda,volumes_uniform_lambda)
+            print ("found volumes_uniform_lambda volumes from static calculations:", self.volumes_uniform_lambda)
+        return has_btp2
+
+
     def toYphon(self, _T=None, for_plot=False):
         if self.vasp_db==None or self.local!="":
             self.toYphon_without_DB(_T=_T, for_plot=for_plot)
@@ -1267,7 +1311,10 @@ class thelecMDB():
 
             #if not os.path.exists('vdos.out') or self.refresh:
             if updatevdos:
-                cmd = "Yphon -tranI 2 -DebCut 0.5 " + " <superfij.out"
+                _nqwave = ""
+                if self.debug:
+                    _nqwave = "-nqwave "+ str(1.e4)
+                cmd = "Yphon -tranI 2 -DebCut 0.5 " +_nqwave+ " <superfij.out"
                 if has_Born: cmd += " -Born dielecfij.out"
                 print(cmd, " at ", voldir)
                 output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -1326,7 +1373,10 @@ class thelecMDB():
 
             os.chdir( dir)
             if not os.path.exists('vdos.out'):
-                cmd = "Yphon -tranI 2 -DebCut 0.5 " + " <superfij.out"
+                _nqwave = ""
+                if self.debug:
+                    _nqwave = "-nqwave "+ str(1.e4)
+                cmd = "Yphon -tranI 2 -DebCut 0.5 " +_nqwave+ " <superfij.out"
                 print(cmd, " at ", dir)
                 output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
@@ -2056,6 +2106,48 @@ class thelecMDB():
         return Ev, Gv, Bv
 
 
+    def calc_uniform(self, volumes, uniform, outf):
+        if len(volumes) == 0: return
+        T = uniform[0][:,1]
+        nV = len(uniform)
+        nT, nF = uniform[0].shape
+        #print("eeeeeeeee", self.VCij)
+        with open (outf, 'w') as fp:
+          headerfmt = "#{:>11s} {:>9s}" + " ".join(18 * ["{:>25s}"])
+                #added by Yi Wang 09/24/2020
+          header = [
+                    "mu-Ef[eV]", "T[K]", "N[e/uc]", "DOS(ef)[1/(Ha*uc)]", "S[V/K]",
+                    "sigma/tau0[1/(ohm*m*s)]", "RH[m**3/C]", "kappae/tau0[W/(m*K*s)]",
+                    "cv[J/(mole-atom*K)]", "chi[m**3/mol]",
+                    "cv_x[J/(mole-atom*K)]", "S_x(V/K)", "N_x(e/cm^3)", "L(W*ohm/K**2)",
+                    "L0_h", "L0_e", "M_h", "M_e", "N_h", "N_e"
+                ]
+          if outf.endswith("uniform_lambda"):
+              header[5] = "sigma/lambda0[1/(ohm*m**2)]"
+              header[7] = "kappae/lambda0[W/(m**2*K)]"
+          elif outf.endswith("custom_tau"):
+              header[5] = "sigma[1/(ohm*m)]"
+              header[7] = "kappae[W/(m*K)]"
+          print(headerfmt.format(*header).strip(), file=fp)
+          rowfmt = "{:>14.8g} {:>9g}" + " ".join(18 * ["{:>25g}"])
+          for i in range(nT):
+            if T[i] <min(self.T): continue
+            if T[i] >max(self.T): continue
+            f2 = splrep(self.T, self.volT)
+            vol = splev(T[i], f2)
+            uniform_V = []
+            for ii,u in enumerate(volumes):
+                uniform_V.append(uniform[ii][i,:])
+            uniform_V = np.array(uniform_V, dtype=float)
+            values = []
+            for j in range(nF):
+              f2 = splrep(volumes, uniform_V[:,j])
+              val = splev(vol, f2)
+              values.append(val)
+            print(rowfmt.format(*values), file=fp)
+            #fp.write ("\n")
+
+
     def calc_Cij(self):
         if len(self.VCij) == 0: return
         T = self.T[self.T <=self.TupLimit]
@@ -2078,7 +2170,7 @@ class thelecMDB():
                 self.Cij_T[:,i,j] = splev(self.volT[0:nT], f2)
         """
         if True:
-                    print ("eeeeeeeeee",self.VCij)
+                    print ("db_file",self.VCij)
                     print (self.volT[0])
                     print (self.Cij_T[0,:,:])
                     sys.exit()
@@ -2326,8 +2418,10 @@ class thelecMDB():
         self.check_vol()
         if self.local!="":
             self.has_Cij = self.get_Cij(self.phasename, pinv=False)
+            self.has_btp2 = self.get_btp2(self.local)
         else:
             self.has_Cij = self.get_Cij(os.path.join(self.phasename,'Yphon'), pinv=False)
+            self.has_btp2 = self.get_btp2(self.phasename)
         self.energies_orig = copy.deepcopy(self.energies)
 
         if self.noel : self.theall = np.zeros([14, len(self.T), len(self.volumes)])
@@ -2338,6 +2432,11 @@ class thelecMDB():
             if self.has_Cij:
                 self.calc_Cij()
                 self.calc_Cij_S()
+            if self.has_btp2:
+                self.calc_uniform(self.volumes_uniform_tau, self.uniform_tau,
+                    os.path.join(self.local,'interpolation.dope.trace.uniform_tau'))
+                self.calc_uniform(self.volumes_uniform_lambda, self.uniform_lambda,
+                    os.path.join(self.local,'interpolation.dope.trace.uniform_lambda'))
             return a,b,c,self.key_comments
         else: return a,b,c,self.key_comments
 

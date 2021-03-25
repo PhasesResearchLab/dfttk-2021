@@ -60,7 +60,7 @@ class thfindMDB ():
         WORKFLOW = args.WORKFLOW
             workflow, current only get_wf_gibbs
     """
-    def __init__(self, args):
+    def __init__(self, args, vasp_db):
         self.plotonly = args.plotonly
         if args.qhamode is not None:
             self.qhamode = args.qhamode
@@ -68,11 +68,12 @@ class thfindMDB ():
             self.qhamode = 'phonon'
         if args.qhamode == 'debye' : self.qhamode = 'qha'
 
-        db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
- 
+        #db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+
         if not self.plotonly:
             try:
-                self.vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
+                #self.vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
+                self.vasp_db = vasp_db
                 self.items = (self.vasp_db).db[self.qhamode].find({})
                 if self.qhamode=='phonon':
                     self.items = list((self.vasp_db).db['phonon'].find({"S_vib": { "$exists": True } },\
@@ -401,7 +402,7 @@ class thfindMDB ():
             {'metadata':1, 'unitcell':1, 'supercell_matrix':1}))
 
         for i,mm in enumerate(hit):
-            #print ('eeeeeeeeee', mm)
+            #print ('db_file', mm)
             #phonon_calc = (self.vasp_db).db['phonon'].\
             #    find({'$and':[ {'metadata.tag': mm} ]})
             for calc in phonon_calc:

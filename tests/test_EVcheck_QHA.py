@@ -7,14 +7,10 @@ from pymatgen.core import Structure
 from pymatgen.analysis.eos import EOS
 from fireworks import Firework
 from atomate.vasp.config import VASP_CMD, DB_FILE
+import os
 
-db_file = "db.json"
-
-if db_file == ">>db_file<<":
-    #In PengGao's version, some function used the absolute db_file
-    from fireworks.fw_config import config_to_dict
-    from monty.serialization import loadfn
-    db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+head,tail = os.path.split(__file__)
+db_file = os.path.join(head,"db.json")
 
 POSCAR_STR = """Si2
 1.0
@@ -58,12 +54,12 @@ def test_check_deformations_in_volumes():
 
 def test_cal_stderr():
     value = [-34.69020102,
-        -34.88230787, 
-        -34.98749533, 
-        -35.02251529, 
-        -35.00101837, 
-        -34.93416781, 
-        -34.83111696, 
+        -34.88230787,
+        -34.98749533,
+        -35.02251529,
+        -35.00101837,
+        -34.93416781,
+        -34.83111696,
         -34.69802042]
     ref = [-34.69037673,
         -34.88126365,
@@ -96,10 +92,16 @@ def test_eosfit_stderr():
     eos = EOS('vinet')
     eos_fit = eos.fit(volume, energy)
     fit_value = eos_fit.func(volume)
-    print(fit_value)
+    print("EOS fitting test for values:",fit_value)
     stderr = eosfit_stderr(eos_fit, volume, energy)
     assert(stderr == pytest.approx(1.18844e-5, abs=1e-7))
 
 def test_EVcheck_QHA():
     wf = Firework(EVcheck_QHA(db_file=db_file,vasp_cmd=VASP_CMD,tag="test",metadata={}))
     #print(wf.as_dict())
+    """
+    from dfttk.analysis.ywplot import myjsonout
+    with open('test_EVcheck_QHA.json', 'w') as fp:
+        #json.dump(wf, fp, indent=4)
+        myjsonout(wf, fp, indent="", comma="")
+    """
