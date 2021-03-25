@@ -101,8 +101,8 @@ def run_thelec(capsys,tmp_path,compound, phasename, nfiles=5):
     _, _, filenames = next(walk(os.path.join(phasename,"figures")))
     os.chdir(cwd)
     assert len(filenames) >= 25
-    if not failure_tracking_fixture(request):
-        shutil.rmtree(test_dir)
+    #if not failure_tracking_fixture(request):
+    shutil.rmtree(test_dir)
 
 
 @pytest.mark.EVfind
