@@ -14,6 +14,7 @@ db_file = os.path.join(head,"db.json")
 expt = os.path.join(head,"ExptData.json")
 vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
 
+
 class _thargs:
     def __init__(self):
         self.local = ""
@@ -63,6 +64,13 @@ class _thargs:
         self.vdos = None
 
 
+@pytest.fixture(scope="module", autouse=True)
+def failure_tracking_fixture(request):
+    tests_failed_before_module = request.session.testsfailed
+    yield
+    tests_failed_during_module = request.session.testsfailed - tests_failed_before_module
+
+
 def run_thelec(capsys,tmp_path,compound, phasename, nfiles=5):
     """Test that the postprocess module thfind."""
     thargs = _thargs()
@@ -78,38 +86,44 @@ def run_thelec(capsys,tmp_path,compound, phasename, nfiles=5):
     os.chdir(test_dir)
     #yield test_dir
     #assert cwd == test_dir
-    print("\n\n# Testing compound=",compound, "using database", db_file)
-    print("phasename=",phasename)
-    print("test_dir=",test_dir)
+    print("\n\n# Testing compound=",compound, "using database", db_file, \
+        "if failed, see additional info at",test_dir)
 
-    vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
+    #vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
     ext_thfind(thargs, vasp_db=vasp_db)
     lines, _ = capsys.readouterr()
     line = "Full thermodynamic properties have outputed into: "
     kRec = [rec for rec in lines.split('\n') if rec.startswith(line)]
-    print("test_output=",lines)
-    print("kRec=",kRec)
 
     assert len(kRec) >= 1
     _, _, filenames = next(walk(phasename))
     assert len(filenames) == nfiles
     _, _, filenames = next(walk(os.path.join(phasename,"figures")))
     os.chdir(cwd)
-    shutil.rmtree(test_dir)
     assert len(filenames) >= 25
+    if not failure_tracking_fixture(request):
+        shutil.rmtree(test_dir)
 
 
 @pytest.mark.EVfind
-def test_EVfind(capsys):
+def test_EVfind(capsys, tmp_path):
     """Test that the postprocess module thfind."""
     thargs = _thargs()
     thargs.print = False
     thargs.nV = 0
+    cwd = os.getcwd()
+    test_dir = os.path.join(tmp_path,"dfttk-test-" + str(time.time()).split('.')[0])
+    os.mkdir(test_dir)
+    os.chdir(test_dir)
+    print("\n\n# Testing EVfind, if failed, see additional info at",test_dir)
+
     ext_EVfind(thargs, vasp_db)
     n_thfind, _ = capsys.readouterr()
     kRec = [rec for rec in n_thfind.split('\n') if rec.startswith("{'tag': '")]
-    print ("testing thfind using the test database", db_file)
     assert len(kRec) == 3
+    os.chdir(cwd)
+    if len(kRec) == 3:
+        shutil.rmtree(test_dir)
 
 
 @pytest.mark.thfind
