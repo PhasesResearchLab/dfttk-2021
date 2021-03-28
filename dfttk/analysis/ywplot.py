@@ -1977,13 +1977,19 @@ def plotAPI(readme, thermofile, volumes=None, energies=None,
       g = g[ix:]
       t = t[ix:]
       thermoplot(folder,"Gruneisen coefficient",list(t),list(g), yzero=Gmin, expt=expt, xlim=xlim, label=plotlabel, single=vdos!=None,plottitle=plottitle)
-      Plot298(folder, V298, volumes, debug=debug, plottitle=plottitle, local=local)
+      try:
+        Plot298(folder, V298, volumes, debug=debug, plottitle=plottitle, local=local)
+      except:
+        pass
     else:
       print ("\nWarning! T0=", T0, "is higher than the T up limit:", thermo[-1,0], \
       " phonon perperties will be reported at 0 K\n")
       f2=interp1d(thermo[:,0], thermo[:,1])
       V0 = f2(0)
-      Plot298(folder, V0, volumes, debug=debug)
+      try:
+        Plot298(folder, V0, volumes, debug=debug)
+      except:
+        pass
   elif vdos!=None:
       #check if superfij.out file exist there. if yes, do phonon properties
       PlotVol(folder, vdos)

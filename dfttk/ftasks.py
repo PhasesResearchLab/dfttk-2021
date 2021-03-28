@@ -281,7 +281,7 @@ class QHAAnalysis(FiretaskBase):
 
     required_params = ["phonon", "db_file", "t_min", "t_max", "t_step", "tag"]
 
-    optional_params = ["poisson", "bp2gru", "metadata"]
+    optional_params = ["poisson", "bp2gru", "metadata", "test_failure"]
 
     def run_task(self, fw_spec):
         # handle arguments and database setup
@@ -317,13 +317,18 @@ class QHAAnalysis(FiretaskBase):
         qha_result['formula_pretty'] = structure.composition.reduced_formula
         qha_result['elements'] = sorted([el.name for el in structure.composition.elements])
         qha_result['metadata'] = self.get('metadata', {})
-        qha_result['has_phonon'] = self['phonon']
+        #qha_result['has_phonon'] = self['phonon']
 
         poisson = self.get('poisson', 0.363615)
         bp2gru = self.get('bp2gru', 1)
 
         # phonon properties
-        if self['phonon']:
+        # check if phonon calculations existed
+        #always perform phonon calculations when when enough phonon calculations found
+        num_phonons = len(list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})))       
+        qha_result['has_phonon'] = num_phonons >= 5
+        #if self['phonon']:
+        if qha_result['has_phonon']:
             # get the vibrational properties from the FW spec
             phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
             vol_vol = [calc['volume'] for calc in phonon_calculations]  # these are just used for sorting and will be thrown away
@@ -378,13 +383,16 @@ class QHAAnalysis(FiretaskBase):
         qha_result['Energies_fitting_false'] = energies_false
         print('Volumes_fitting_false : %s' %volumes_false)
         print('Energies_fitting_false: %s' %energies_false)
+        print('number of phonon calculations found : %s' %num_phonons)
 
         # write to JSON for debugging purposes
         import json
         with open('qha_summary.json', 'w') as fp:
             json.dump(qha_result, fp, indent=4)
 
-        if self['phonon']:
+        if self.get("test_failure", False) : return
+        #if self['phonon']:
+        if qha_result['has_phonon']:
             vasp_db.db['qha_phonon'].insert_one(qha_result)
         else:
             vasp_db.db['qha'].insert_one(qha_result)

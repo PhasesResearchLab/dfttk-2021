@@ -1727,17 +1727,39 @@ class thelecMDB():
                 self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata.tag': self.tag})
                 self.T_vib = self.qha_items[0][self.qhamode]['temperatures'][::self.everyT]
             except:
-                print ("\nWARNING! I cannot find required data from qha_phonon, am asking help from Yphon!\n")
-                self.pyphon = True
-                self.toYphon()
+                try:
+                    self.qhamode = 'phonon'
+                    self.qha_items = self.vasp_db.db[self.qhamode].find({'metadata.tag': self.tag})
+                    self.T_vib = self.qha_items[0]['temperatures'][::self.everyT]
+                except:
+                    print ("\nWARNING! I cannot find required data from qha_phonon, am asking help from Yphon!\n")
+                    self.pyphon = True
+                    self.toYphon()            
 
 
     def get_qha(self):
-        _Vlat = self.qha_items[0][self.qhamode]['volumes']
-        _Slat = self.qha_items[0][self.qhamode]['entropies']
-        _Clat = self.qha_items[0][self.qhamode]['heat_capacities']
-        _Flat = self.qha_items[0][self.qhamode]['helmholtz_energies']
-        _Dlat = self.qha_items[0]['debye']['debye_temperatures']
+        if self.qhamode=='phonon':
+            _Vlat = []
+            _Slat = []
+            _Clat = []
+            _Flat = []
+
+            for i in self.qha_items:
+                _Vlat.append(i['volume'])
+                _Slat.append(i['S_vib'][::self.everyT])
+                _Clat.append(i['CV_vib'][::self.everyT])
+                _Flat.append(i['F_vib'][::self.everyT])
+            self.volT = np.zeros(len(self.T_vib))
+            self.GibT = np.zeros(len(self.T_vib))
+            _Dlat = np.full((len(_Vlat)), 400.)
+        else:
+            _Vlat = self.qha_items[0][self.qhamode]['volumes']
+            _Slat = self.qha_items[0][self.qhamode]['entropies']
+            _Clat = self.qha_items[0][self.qhamode]['heat_capacities']
+            _Flat = self.qha_items[0][self.qhamode]['helmholtz_energies']
+            self.volT = self.qha_items[0][self.qhamode]['optimum_volumes'][::self.everyT]
+            self.GibT = self.qha_items[0][self.qhamode]['gibbs_free_energy'][::self.everyT]
+            _Dlat = self.qha_items[0]['debye']['debye_temperatures']
         Vlat = []
         Slat = []
         Clat = []
@@ -1761,8 +1783,6 @@ class thelecMDB():
         self.Flat = np.array(Flat)[:,::self.everyT]
         self.Dlat = np.array(Dlat)
         self.Vlat = np.array(Vlat)
-        self.volT = self.qha_items[0][self.qhamode]['optimum_volumes'][::self.everyT]
-        self.GibT = self.qha_items[0][self.qhamode]['gibbs_free_energy'][::self.everyT]
         if self.td < 0:
             s = []
             f = []
