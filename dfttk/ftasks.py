@@ -330,6 +330,8 @@ class QHAAnalysis(FiretaskBase):
         print ("xxxxxxxxxxxxxxxxxxxxxxxx 2")
         num_phonons = len(list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})))       
         print ("xxxxxxxxxxxxxxxxxxxxxxxx", num_phonons)
+        xxxxxxxxxxx = num_phonons >= 5
+        print ("xxxxxxxxxxxxxxxxxxxxxxxx", xxxxxxxxxxx)
         qha_result['has_phonon'] = num_phonons >= 5
         print ("xxxxxxxxxxxxxxxxxxxxxxxx", qha_result['has_phonon'])
         #if self['phonon']:
