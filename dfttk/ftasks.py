@@ -331,6 +331,7 @@ class QHAAnalysis(FiretaskBase):
         num_phonons = len(list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})))       
         print ("xxxxxxxxxxxxxxxxxxxxxxxx", num_phonons)
         qha_result['has_phonon'] = num_phonons >= 5
+        print ("xxxxxxxxxxxxxxxxxxxxxxxx", qha_result['has_phonon'])
         #if self['phonon']:
         if qha_result['has_phonon']:
             # get the vibrational properties from the FW spec
@@ -345,6 +346,7 @@ class QHAAnalysis(FiretaskBase):
                                 poisson=poisson, bp2gru=bp2gru)
             qha_result['phonon'] = qha.get_summary_dict()
             qha_result['phonon']['temperatures'] = qha_result['phonon']['temperatures'].tolist()
+        print ("xxxxxxxxxxxxxxxxxxxxxxxx", qha_result)
 
         # calculate the Debye model results no matter what
         qha_debye = Quasiharmonic(energies, volumes, structure, dos_objects=dos_objs, F_vib=None,
@@ -369,6 +371,7 @@ class QHAAnalysis(FiretaskBase):
         eos_res['error']['difference'] = errors.tolist()  # volume by volume differences
         eos_res['error']['sum_square_error'] = sum_square_error
         qha_result['eos'] = eos_res
+        print ("xxxxxxxxxxxxxxxxxxxxxxxx eos", qha_result['eos'])
 
         qha_result['debye'] = qha_debye.get_summary_dict()
         qha_result['debye']['poisson'] = poisson
@@ -380,6 +383,8 @@ class QHAAnalysis(FiretaskBase):
         volumes_false = []
         energies_false = []
         static_falses = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': False} ]})
+        print ("xxxxxxxxxxxxxxxxxxxxxxxx final", qha_result)
+
         for static_false in static_falses:
             volumes_false.append(static_false['output']['structure']['lattice']['volume'])
             energies_false.append(static_false['output']['energy'])
