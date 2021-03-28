@@ -198,6 +198,6 @@ class QHAAnalysis_failure(FiretaskBase):
 def test_EVcheck_QHA():
     proc = QHAAnalysis_failure(phonon=True, t_min=5, t_max=1000,
         t_step=5, db_file=db_file, test_failure=True,
-        tag='5cb6392e-df1c-47da-ae29-ed3929f2a1e9')
+        tag='df06adfc-cd9e-4eaa-abc9-441d9156dd31')
     proc.run_task()
 
