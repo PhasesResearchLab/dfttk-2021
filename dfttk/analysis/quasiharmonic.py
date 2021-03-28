@@ -109,6 +109,14 @@ class Quasiharmonic(object):
 
         # Set up the array of Gibbs energies
         # G = E_0(V) + F_vib(V,T) + F_el(V,T) + PV
+        print("xxxxxxxxxxxxxx 90", np.newaxis)
+        print("xxxxxxxxxxxxxx 91", self.energies[:, np.newaxis])
+        print("xxxxxxxxxxxxxx 92", self.pressure)
+        print("xxxxxxxxxxxxxx 93", self.volumes[:, np.newaxis])
+        print("xxxxxxxxxxxxxx 94", self.volumes[:, np.newaxis] * self.gpa_to_ev_ang)
+
+        print("xxxxxxxxxxxxxx 96", self.energies[:, np.newaxis])
+    
         self.G = self.energies[:, np.newaxis] + self.F_vib + self.F_el + self.pressure * self.volumes[:, np.newaxis] * self.gpa_to_ev_ang
 
         # set up the final variables of the optimized Gibbs energies
