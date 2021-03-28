@@ -79,6 +79,7 @@ class Quasiharmonic(object):
         self.eos = EOS(eos)
 
         # get the vibrational properties as a function of V and T
+        print("xxxxxxxxxxxxxx", F_vib)
         if F_vib is None:  # use the Debye model
             vib_kwargs = vib_kwargs or {}
             debye_model = DebyeModel(energies, volumes, structure, t_min=t_min, t_step=t_step,
@@ -87,10 +88,12 @@ class Quasiharmonic(object):
             self.S_vib = debye_model.S_vib  # vibrational entropy as a function of volume and temperature
             self.C_vib = debye_model.C_vib  # vibrational heat capacity as a function of volume and temperature
             self.D_vib = debye_model.D_vib  # Debye temperature
+            print("xxxxxxxxxxxxxx 5")
         else:
             self.F_vib = F_vib
             self.S_vib = S_vib
             self.C_vib = C_vib
+        print("xxxxxxxxxxxxxx 6")
 
 
         # get the electronic properties as a function of V and T
@@ -98,8 +101,11 @@ class Quasiharmonic(object):
             # we set natom to 1 always because we want the property per formula unit here.
             thermal_electronic_props = [calculate_thermal_electronic_contribution(dos, t0=t_min, t1=t_max, td=t_step, natom=1) for dos in dos_objects]
             self.F_el = [p['free_energy'] for p in thermal_electronic_props]
+           print("xxxxxxxxxxxxxx 7")
         else:
-            self.F_el = np.zeros((self.volumes.size, self.temperatures.size))
+           print("xxxxxxxxxxxxxx 8")
+           self.F_el = np.zeros((self.volumes.size, self.temperatures.size))
+        print("xxxxxxxxxxxxxx 9")
 
         # Set up the array of Gibbs energies
         # G = E_0(V) + F_vib(V,T) + F_el(V,T) + PV
@@ -107,8 +113,11 @@ class Quasiharmonic(object):
 
         # set up the final variables of the optimized Gibbs energies
         self.gibbs_free_energy = []  # optimized values, eV
+        print("xxxxxxxxxxxxxx 10")
         self.optimum_volumes = []  # in Ang^3
+        print("xxxxxxxxxxxxxx 11")
         self.optimize_gibbs_free_energy()
+        print("xxxxxxxxxxxxxx 15")
 
     def optimize_gibbs_free_energy(self):
         """

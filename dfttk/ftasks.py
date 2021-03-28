@@ -285,7 +285,6 @@ class QHAAnalysis(FiretaskBase):
 
     def run_task(self, fw_spec):
         # handle arguments and database setup
-        print ("xxxxxxxxxxxxxxxxxxxxxxxx")
         db_file = env_chk(self.get("db_file"), fw_spec)
         tag = self["tag"]
 
@@ -305,7 +304,6 @@ class QHAAnalysis(FiretaskBase):
             # get a Structure. We only need one for the masses and number of atoms in the unit cell.
             if structure is None:
                 structure = Structure.from_dict(calc['output']['structure'])
-        print ("xxxxxxxxxxxxxxxxxxxxxxxx 1")
 
         # sort everything in volume order
         # note that we are doing volume last because it is the thing we are sorting by!
@@ -327,35 +325,22 @@ class QHAAnalysis(FiretaskBase):
         # phonon properties
         # check if phonon calculations existed
         #always perform phonon calculations when when enough phonon calculations found
-        print ("xxxxxxxxxxxxxxxxxxxxxxxx 2")
         num_phonons = len(list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})))       
-        print ("xxxxxxxxxxxxxxxxxxxxxxxx", num_phonons)
-        xxxxxxxxxxx = num_phonons >= 5
-        print ("xxxxxxxxxxxxxxxxxxxxxxxx", xxxxxxxxxxx)
         qha_result['has_phonon'] = num_phonons >= 5
-        print ("xxxxxxxxxxxxxxxxxxxxxxxx", qha_result['has_phonon'])
         #if self['phonon']:
         if qha_result['has_phonon']:
             # get the vibrational properties from the FW spec
             phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
-            print ("xxxxxxxxxxxxxxxxxxxxxxxx 10")
             vol_vol = [calc['volume'] for calc in phonon_calculations]  # these are just used for sorting and will be thrown away
-            print ("xxxxxxxxxxxxxxxxxxxxxxxx 10 vol", vol_vol)
             vol_f_vib = [calc['F_vib'] for calc in phonon_calculations]
-            print ("xxxxxxxxxxxxxxxxxxxxxxxx 11")
             # sort them order of the unit cell volumes
             vol_f_vib = sort_x_by_y(vol_f_vib, vol_vol)
-            print ("xxxxxxxxxxxxxxxxxxxxxxxx 12")
             f_vib = np.vstack(vol_f_vib)
-            print ("xxxxxxxxxxxxxxxxxxxxxxxx 13")
             qha = Quasiharmonic(energies, volumes, structure, dos_objects=dos_objs, F_vib=f_vib,
                                 t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'],
                                 poisson=poisson, bp2gru=bp2gru)
-            print ("xxxxxxxxxxxxxxxxxxxxxxxx 14")
             qha_result['phonon'] = qha.get_summary_dict()
-            print ("xxxxxxxxxxxxxxxxxxxxxxxx 15")
             qha_result['phonon']['temperatures'] = qha_result['phonon']['temperatures'].tolist()
-        print ("xxxxxxxxxxxxxxxxxxxxxxxx", qha_result)
 
         # calculate the Debye model results no matter what
         qha_debye = Quasiharmonic(energies, volumes, structure, dos_objects=dos_objs, F_vib=None,
@@ -380,7 +365,6 @@ class QHAAnalysis(FiretaskBase):
         eos_res['error']['difference'] = errors.tolist()  # volume by volume differences
         eos_res['error']['sum_square_error'] = sum_square_error
         qha_result['eos'] = eos_res
-        print ("xxxxxxxxxxxxxxxxxxxxxxxx eos", qha_result['eos'])
 
         qha_result['debye'] = qha_debye.get_summary_dict()
         qha_result['debye']['poisson'] = poisson
@@ -392,8 +376,6 @@ class QHAAnalysis(FiretaskBase):
         volumes_false = []
         energies_false = []
         static_falses = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': False} ]})
-        print ("xxxxxxxxxxxxxxxxxxxxxxxx final", qha_result)
-
         for static_false in static_falses:
             volumes_false.append(static_false['output']['structure']['lattice']['volume'])
             energies_false.append(static_false['output']['energy'])
