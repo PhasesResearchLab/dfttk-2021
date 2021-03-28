@@ -185,6 +185,6 @@ def remove_data_by_metadata(tag, db_file=None, rem_mode='vol', forcedelete=False
                 if tag:
                     vasp_db.db[collectioni].remove({'metadata.tag': tag})
                     print('The data with metadata.tag={} in {} collection is removed'.format(tag, collectioni))
-                else:
-                    vasp_db.db[collectioni].remove()
-                    print('The data in {} collection is removed'.format(collectioni))
+                #else:
+                #    vasp_db.db[collectioni].remove()
+                #    print('The data in {} collection is removed'.format(collectioni))

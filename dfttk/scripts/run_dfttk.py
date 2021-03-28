@@ -7,7 +7,7 @@ from dfttk.wflows import get_wf_gibbs, get_wf_EV_bjb, get_wf_gibbs_robust, get_w
 from dfttk.utils import recursive_glob
 from dfttk.structure_builders.parse_anrl_prototype import multi_replace
 from dfttk.scripts.querydb import get_eq_structure_by_metadata
-import dfttk.scripts.querydb as dfttkdb
+import dfttk.scripts.querydb as querydb
 from fireworks.fw_config import config_to_dict
 from monty.serialization import loadfn, dumpfn
 import warnings
@@ -465,7 +465,7 @@ def config(args):
             vasp_cmd=VASP_CMD_FLAG, template=QUEUE_SCRIPT, queue_type=QUEUE_TYPE)
 
 def db_remove(args):
-    dfttkdb.remove_data_by_metadata(tag=args.TAG, rem_mode=args.MODE, forcedelete=args.FORCE)
+    querydb.remove_data_by_metadata(tag=args.TAG, rem_mode=args.MODE, forcedelete=args.FORCE)
 
 def run_dfttk():
     """
@@ -568,7 +568,7 @@ def run_dfttk():
 
     #SUB-PROCESS: db_romove
     pdbrm = subparsers.add_parser("db_remove", help="Remove data in MongoDb.")
-    pdbrm.add_argument('-tag', '--tag', dest='TAG', help='Specify the tag. If the tag is not specified (None), then remove collection. Default: None')
+    pdbrm.add_argument('-tag', '--tag', dest='TAG', help='Specify the tag. Default: None')
     pdbrm.add_argument('-m', '--mode', dest='MODE', default='vol', help='Specify the remove mode. Default: vol. '
         '1. vol: all volume except dos and bandstructure. 2. allvol: all volume. 3. all: all data.'
         '4. property: all data except volume data. 5. any single properties or volume data, e.g. chgcar, or dos')
