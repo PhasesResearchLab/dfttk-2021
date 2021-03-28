@@ -101,10 +101,10 @@ class Quasiharmonic(object):
             # we set natom to 1 always because we want the property per formula unit here.
             thermal_electronic_props = [calculate_thermal_electronic_contribution(dos, t0=t_min, t1=t_max, td=t_step, natom=1) for dos in dos_objects]
             self.F_el = [p['free_energy'] for p in thermal_electronic_props]
-           print("xxxxxxxxxxxxxx 7")
+            print("xxxxxxxxxxxxxx 7")
         else:
-           print("xxxxxxxxxxxxxx 8")
-           self.F_el = np.zeros((self.volumes.size, self.temperatures.size))
+            print("xxxxxxxxxxxxxx 8")
+            self.F_el = np.zeros((self.volumes.size, self.temperatures.size))
         print("xxxxxxxxxxxxxx 9")
 
         # Set up the array of Gibbs energies
