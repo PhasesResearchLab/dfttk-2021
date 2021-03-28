@@ -305,6 +305,7 @@ class QHAAnalysis(FiretaskBase):
             # get a Structure. We only need one for the masses and number of atoms in the unit cell.
             if structure is None:
                 structure = Structure.from_dict(calc['output']['structure'])
+        print ("xxxxxxxxxxxxxxxxxxxxxxxx 1")
 
         # sort everything in volume order
         # note that we are doing volume last because it is the thing we are sorting by!
@@ -326,7 +327,9 @@ class QHAAnalysis(FiretaskBase):
         # phonon properties
         # check if phonon calculations existed
         #always perform phonon calculations when when enough phonon calculations found
+        print ("xxxxxxxxxxxxxxxxxxxxxxxx 2")
         num_phonons = len(list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})))       
+        print ("xxxxxxxxxxxxxxxxxxxxxxxx", num_phonons)
         qha_result['has_phonon'] = num_phonons >= 5
         #if self['phonon']:
         if qha_result['has_phonon']:
