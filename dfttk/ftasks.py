@@ -285,6 +285,7 @@ class QHAAnalysis(FiretaskBase):
 
     def run_task(self, fw_spec):
         # handle arguments and database setup
+        print ("xxxxxxxxxxxxxxxxxxxxxxxx")
         db_file = env_chk(self.get("db_file"), fw_spec)
         tag = self["tag"]
 
