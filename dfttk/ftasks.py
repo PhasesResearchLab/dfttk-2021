@@ -338,15 +338,22 @@ class QHAAnalysis(FiretaskBase):
         if qha_result['has_phonon']:
             # get the vibrational properties from the FW spec
             phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
+            print ("xxxxxxxxxxxxxxxxxxxxxxxx 10")
             vol_vol = [calc['volume'] for calc in phonon_calculations]  # these are just used for sorting and will be thrown away
+            print ("xxxxxxxxxxxxxxxxxxxxxxxx 10 vol", vol_vol)
             vol_f_vib = [calc['F_vib'] for calc in phonon_calculations]
+            print ("xxxxxxxxxxxxxxxxxxxxxxxx 11")
             # sort them order of the unit cell volumes
             vol_f_vib = sort_x_by_y(vol_f_vib, vol_vol)
+            print ("xxxxxxxxxxxxxxxxxxxxxxxx 12")
             f_vib = np.vstack(vol_f_vib)
+            print ("xxxxxxxxxxxxxxxxxxxxxxxx 13")
             qha = Quasiharmonic(energies, volumes, structure, dos_objects=dos_objs, F_vib=f_vib,
                                 t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'],
                                 poisson=poisson, bp2gru=bp2gru)
+            print ("xxxxxxxxxxxxxxxxxxxxxxxx 14")
             qha_result['phonon'] = qha.get_summary_dict()
+            print ("xxxxxxxxxxxxxxxxxxxxxxxx 15")
             qha_result['phonon']['temperatures'] = qha_result['phonon']['temperatures'].tolist()
         print ("xxxxxxxxxxxxxxxxxxxxxxxx", qha_result)
 
