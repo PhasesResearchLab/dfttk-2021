@@ -79,7 +79,7 @@ class Quasiharmonic(object):
         self.eos = EOS(eos)
 
         # get the vibrational properties as a function of V and T
-        print ("xxxxxxxxxxxx volumes", volumes.shape, volumes)
+        print ("xxxxxxxxxxxx volumes", self.volumes.shape, self.volumes)
         if F_vib is None:  # use the Debye model
             vib_kwargs = vib_kwargs or {}
             debye_model = DebyeModel(energies, volumes, structure, t_min=t_min, t_step=t_step,
