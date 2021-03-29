@@ -79,12 +79,15 @@ class QHAAnalysis_failure(FiretaskBase):
 
     required_params = ["phonon", "db_file", "t_min", "t_max", "t_step", "tag"]
 
-    optional_params = ["poisson", "bp2gru", "metadata", "test_failure"]
+    optional_params = ["poisson", "bp2gru", "metadata", "test_failure", "admin"]
 
     def run_task(self):
         tag = self["tag"]
+        admin = self.get('admin', False)
+        _db_file = self.get('db_file', db_file)
 
-        vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
+
+        vasp_db = VaspCalcDb.from_db_file(db_file=_db_file, admin=admin)
 
         # get the energies, volumes and DOS objects by searching for the tag
         static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
