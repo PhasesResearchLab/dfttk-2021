@@ -436,6 +436,9 @@ def run_ext_thfind(subparsers):
     pthfind.add_argument("-get", "--get", dest="get", action='store_true', default=False,
                       help="call thelec module to get the thermodyamic data for all found entries. \n"
                            "Default: False")
+    pthfind.add_argument("-qpr", "--qha_phonon_repair", dest="qha_phonon_repair", action='store_true', default=False,
+                      help="repair previous qha_phonon collection. \n"
+                           "Default: False")
     pthfind.add_argument("-check", "--check", dest="check", action='store_true', default=False,
                       help="check database. \n"
                            "Default: False")
@@ -478,6 +481,26 @@ def ext_thfind(args, vasp_db=None):
                 #args.phasename = None
             else:
                 ext_thelec(args,plotfiles=t, vasp_db=vasp_db)
+    elif args.qha_phonon_repair:
+        from dfttk.scripts.qha_phonon_repair import QHAAnalysis_failure
+        for t in tags:
+            if isinstance(t,dict):
+                tag = t['tag']
+                qha_phonon = list(vasp_db.db['qha_phonon'].find({'metadata.tag': tag})) 
+                if len(qha_phonon) : continue # already ok skip
+                phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
+                T = phonon_calculations[0]['temperatures']
+                t_min = min(T)
+                t_max = max(T)
+                t_step = T[1]-T[0]
+                print("Repairing data by metadata tag:", t)
+  
+                proc = QHAAnalysis_failure(phonon=True, t_min=t_min, t_max=t_max,
+                t_step=t_step, db_file=db_file, test_failure=False, admin=True,
+                tag=tag)
+                proc.run_task()
+
+      
 
 
 def run_ext_EVfind(subparsers):

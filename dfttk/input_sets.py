@@ -112,9 +112,10 @@ class RelaxSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
+       if 'magmom' in uis:
+            RelaxSet.CONFIG['INCAR'].pop('MAGMOM')
         RelaxSet.CONFIG['INCAR'].update(uis)
         super(RelaxSet, self).__init__(structure, RelaxSet.CONFIG, sort_structure=False, **kwargs)
-
 
 class PreStaticSet(DictSet):
     """Set tuned for metal relaxations (correct smearing).

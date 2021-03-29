@@ -99,7 +99,7 @@ class Quasiharmonic(object):
             thermal_electronic_props = [calculate_thermal_electronic_contribution(dos, t0=t_min, t1=t_max, td=t_step, natom=1) for dos in dos_objects]
             self.F_el = [p['free_energy'] for p in thermal_electronic_props]
         else:
-            self.F_el = np.zeros((self.volumes.size, self.temperatures.size))
+            self.F_el = np.zeros((self.volumes.size, self.F_vib.shape[1]))
 
         # Set up the array of Gibbs energies
         # G = E_0(V) + F_vib(V,T) + F_el(V,T) + PV

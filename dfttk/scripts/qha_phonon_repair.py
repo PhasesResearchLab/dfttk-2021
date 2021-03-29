@@ -79,13 +79,12 @@ class QHAAnalysis_failure(FiretaskBase):
 
     required_params = ["phonon", "db_file", "t_min", "t_max", "t_step", "tag"]
 
-    optional_params = ["poisson", "bp2gru", "metadata", "test_failure", "admin", "everyT"]
+    optional_params = ["poisson", "bp2gru", "metadata", "test_failure", "admin"]
 
     def run_task(self):
         tag = self["tag"]
         admin = self.get('admin', False)
         _db_file = self.get('db_file', db_file)
-        everyT = self.get('everyT', 1)
 
 
         vasp_db = VaspCalcDb.from_db_file(db_file=_db_file, admin=admin)
@@ -116,7 +115,7 @@ class QHAAnalysis_failure(FiretaskBase):
         qha_result['structure'] = structure.as_dict()
         qha_result['formula_pretty'] = structure.composition.reduced_formula
         qha_result['elements'] = sorted([el.name for el in structure.composition.elements])
-        qha_result['metadata'] = self.get('metadata', {})
+        qha_result['metadata'] = self.get('metadata', {'tag':tag})
         #qha_result['has_phonon'] = self['phonon']
 
         poisson = self.get('poisson', 0.363615)
@@ -136,7 +135,7 @@ class QHAAnalysis_failure(FiretaskBase):
             for calc in phonon_calculations:
                 if calc['volume'] in vol_vol: continue
                 vol_vol.append(calc['volume'])
-                vol_f_vib.append(calc['F_vib'][::everyT])
+                vol_f_vib.append(calc['F_vib'])
             # sort them order of the unit cell volumes
             vol_f_vib = sort_x_by_y(vol_f_vib, vol_vol)
             f_vib = np.vstack(vol_f_vib)
@@ -153,9 +152,8 @@ class QHAAnalysis_failure(FiretaskBase):
                 _dos_objs.append(dos_objs[iv])
             volumes = _volumes
             energies = _energies
-            dos_objs = _dos_objs
-            assert len(volumes)==f_vib.shape[0]       
-  
+            dos_objs = _dos_objs            
+                
             qha = Quasiharmonic(energies, volumes, structure, dos_objects=dos_objs, F_vib=f_vib,
                                 t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'],
                                 poisson=poisson, bp2gru=bp2gru)
@@ -217,24 +215,4 @@ class QHAAnalysis_failure(FiretaskBase):
         else:
             vasp_db.db['qha'].insert_one(qha_result)
 
-
-@pytest.mark.QHA_failure
-def test_EVcheck_QHA():
-    tags = ['ec77b415-8e36-440a-997c-1c3d512099ce',
-            '7e74e496-90b1-41c1-8113-38eec730b9f2']
-    for tag in tags:
-        vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
-        phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
-        T = phonon_calculations[0]['temperatures']
-        t_min = min(T)
-        everyT = 10
-        t_step = (T[1]-T[0])*everyT
-        t_max = max(T)
-        nT = int((t_max-t_min)/t_step)
-        t_max = t_min + nT*t_step
-
-        proc = QHAAnalysis_failure(phonon=True, t_min=t_min, t_max=t_max,
-            t_step=t_step, everyT=everyT, db_file=db_file, test_failure=True,
-            tag=tag)
-        proc.run_task()
 

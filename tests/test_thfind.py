@@ -152,7 +152,7 @@ def test_thelec_Al(capsys,tmp_path):
     compound, phasename ="Al", "Al_Fm-3m_225PBE"
     print ("testing thelec for", compound)
     run_thelec(capsys,tmp_path,compound, phasename, 
-    ext_module=ext_thelec, metatag='9e653d55-2766-48db-b2da-05933d31e5ea',
+    ext_module=ext_thelec, metatag='ec77b415-8e36-440a-997c-1c3d512099ce',
     nfiles=8)
 
 
