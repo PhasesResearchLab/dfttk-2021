@@ -132,6 +132,21 @@ class QHAAnalysis_failure(FiretaskBase):
             # sort them order of the unit cell volumes
             vol_f_vib = sort_x_by_y(vol_f_vib, vol_vol)
             f_vib = np.vstack(vol_f_vib)
+
+            # by Yi Wang, after a long day debug, finally I fixex the bug below
+            # i.e, sometimes, the number of phonon volumes is less than that of static!
+            _volumes = []
+            _energies = []
+            _dos_objs = []
+            for iv,vol in enumerate(volumes):
+                if vol not in vol_vol:  continue
+                _volumes.append(vol)
+                _energies.append(energies[iv])
+                _dos_objs.append(dos_objs[iv])
+            volumes = _volumes
+            energies = _energies
+            dos_objs = _dos_objs            
+                
             qha = Quasiharmonic(energies, volumes, structure, dos_objects=dos_objs, F_vib=f_vib,
                                 t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'],
                                 poisson=poisson, bp2gru=bp2gru)
@@ -196,8 +211,15 @@ class QHAAnalysis_failure(FiretaskBase):
 
 @pytest.mark.QHA_failure
 def test_EVcheck_QHA():
-    proc = QHAAnalysis_failure(phonon=True, t_min=5, t_max=1000,
-        t_step=5, db_file=db_file, test_failure=True,
-        tag='df06adfc-cd9e-4eaa-abc9-441d9156dd31')
+    tag='df06adfc-cd9e-4eaa-abc9-441d9156dd31'
+    vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
+    phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
+    T = phonon_calculations[0]['temperatures']
+    t_min = min(T)
+    t_max = max(T)
+    t_step = T[1]-T[0]
+    proc = QHAAnalysis_failure(phonon=True, t_min=t_min, t_max=t_max,
+        t_step=t_step, db_file=db_file, test_failure=True,
+        tag=tag)
     proc.run_task()
 

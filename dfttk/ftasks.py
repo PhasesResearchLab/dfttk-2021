@@ -336,6 +336,21 @@ class QHAAnalysis(FiretaskBase):
             # sort them order of the unit cell volumes
             vol_f_vib = sort_x_by_y(vol_f_vib, vol_vol)
             f_vib = np.vstack(vol_f_vib)
+ 
+            # by Yi Wang, after a long day debug, finally I fixex the bug below
+            # i.e, sometimes, the number of phonon volumes is less than that of static!
+            _volumes = []
+            _energies = []
+            _dos_objs = []
+            for iv,vol in enumerate(volumes):
+                if vol not in vol_vol:  continue
+                _volumes.append(vol)
+                _energies.append(energies[iv])
+                _dos_objs.append(dos_objs[iv])
+            volumes = _volumes
+            energies = _energies
+            dos_objs = _dos_objs 
+            
             qha = Quasiharmonic(energies, volumes, structure, dos_objects=dos_objs, F_vib=f_vib,
                                 t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'],
                                 poisson=poisson, bp2gru=bp2gru)
