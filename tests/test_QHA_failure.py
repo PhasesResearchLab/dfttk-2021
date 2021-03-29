@@ -211,7 +211,7 @@ class QHAAnalysis_failure(FiretaskBase):
 
 @pytest.mark.QHA_failure
 def test_EVcheck_QHA():
-    tag='df06adfc-cd9e-4eaa-abc9-441d9156dd31'
+    tag='ec77b415-8e36-440a-997c-1c3d512099ce'
     vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
     phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
     T = phonon_calculations[0]['temperatures']
