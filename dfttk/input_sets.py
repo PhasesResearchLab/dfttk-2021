@@ -234,7 +234,7 @@ class ForceConstantsSet(DictSet):
                     supermag.append('{}*{}'.format(ncell*int(n[0]),float(n[1])))
             #print(supermag)
             uis['magmom']=supermag
-            kwargs.pop('ncell')
+        if 'ncell' in kwargs: kwargs.pop('ncell')
         ForceConstantsSet.CONFIG['INCAR'].update(uis)
         kwargs.update({'user_potcar_functional':ForceConstantsSet.CONFIG['POTCAR_FUNCTIONAL']})
         kwargs.update({'user_incar_settings':ForceConstantsSet.CONFIG['INCAR']})
