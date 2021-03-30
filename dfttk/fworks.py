@@ -1,4 +1,5 @@
 import warnings
+import numpy as np
 from uuid import uuid4
 from copy import deepcopy
 from fireworks import Firework, PyTask
@@ -377,6 +378,8 @@ class PhononFW(Firework):
             metadata['tag'] = tag
 
         override_default_vasp_params = override_default_vasp_params or {}
+        ncell = int(0.5+np.linalg.det(supercell_matrix))
+        override_default_vasp_params["ncell"] = ncell
         vasp_input_set = vasp_input_set or ForceConstantsSet(structure, **override_default_vasp_params)
 
         supercell_structure = deepcopy(structure)

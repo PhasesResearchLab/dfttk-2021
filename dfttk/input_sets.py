@@ -220,7 +220,25 @@ class ForceConstantsSet(DictSet):
             else:
                 uis.update({'ISPIN': 1})
         ForceConstantsSet.CONFIG['INCAR'].update(uis)
-
+        if 'magmom' in uis:
+            if 'MAGMOM' in ForceConstantsSet.CONFIG['INCAR']:
+                ForceConstantsSet.CONFIG['INCAR'].pop('MAGMOM')
+            mag = uis['magmom']
+            supermag = []
+            ncell = kwargs.get('ncell')
+            for site in mag:
+                n = str(site).split('*')
+                if len(n)==1:
+                    supermag.append('{}*{}'.format(ncell,float(n[0])))
+                else:
+                    supermag.append('{}*{}'.format(ncell*int(n[0]),float(n[1])))
+            #print(supermag)
+            uis['magmom']=supermag
+            kwargs.pop('ncell')
+        ForceConstantsSet.CONFIG['INCAR'].update(uis)
+        kwargs.update({'user_potcar_functional':ForceConstantsSet.CONFIG['POTCAR_FUNCTIONAL']})
+        kwargs.update({'user_incar_settings':ForceConstantsSet.CONFIG['INCAR']})
+ 
         super(ForceConstantsSet, self).__init__(
             structure, ForceConstantsSet.CONFIG, sort_structure=False, **kwargs)
 
@@ -276,6 +294,12 @@ class StaticSet(DictSet):
             else:
                 uis.update({'ISPIN': 1})
         StaticSet.CONFIG['INCAR'].update(uis)
+        if 'magmom' in uis:
+            if 'MAGMOM' in StaticSet.CONFIG['INCAR']:
+                StaticSet.CONFIG['INCAR'].pop('MAGMOM')
+        StaticSet.CONFIG['INCAR'].update(uis)
+        kwargs.update({'user_potcar_functional':StaticSet.CONFIG['POTCAR_FUNCTIONAL']})
+        kwargs.update({'user_incar_settings':StaticSet.CONFIG['INCAR']})
         super(StaticSet, self).__init__(structure, StaticSet.CONFIG, sort_structure=False, **kwargs)
 
 
