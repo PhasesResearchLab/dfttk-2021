@@ -112,11 +112,13 @@ class RelaxSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
+        """
         if 'magmom' in uis:
             RelaxSet.CONFIG['INCAR'].pop('MAGMOM')
         RelaxSet.CONFIG['INCAR'].update(uis)
         kwargs.update({'user_potcar_functional':RelaxSet.CONFIG['POTCAR_FUNCTIONAL']})
         kwargs.update({'user_incar_settings':RelaxSet.CONFIG['INCAR']})
+        """
         super(RelaxSet, self).__init__(structure, RelaxSet.CONFIG, sort_structure=False, **kwargs)
 
 class PreStaticSet(DictSet):

@@ -11,7 +11,7 @@ from dfttk.scripts.run_dfttk_ext import ext_EVfind, ext_thfind, ext_thelec
 
 head,tail = os.path.split(__file__)
 db_file = os.path.join(head,"db.json")
-expt = os.path.join(head,"ExptData.json")
+print("db_file", db_file)
 vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
 
 
@@ -57,12 +57,12 @@ class _thargs:
         self.fitF = False
         self.plotonly = False
         self.debug = True
-        self.expt = expt
+        self.expt = None
         self.xlim = None
         self.doscar = None
         self.poscar = None
         self.vdos = None
-
+        self.qha_phonon_repair = False
 
 @pytest.fixture(scope="module", autouse=True)
 def failure_tracking_fixture(request):
@@ -152,8 +152,8 @@ def test_thelec_Al(capsys,tmp_path):
     compound, phasename ="Al", "Al_Fm-3m_225PBE"
     print ("testing thelec for", compound)
     run_thelec(capsys,tmp_path,compound, phasename, 
-    ext_module=ext_thelec, metatag='ec77b415-8e36-440a-997c-1c3d512099ce',
-    nfiles=8)
+    ext_module=ext_thelec, metatag='12b9ba49-78f9-44b3-bbb0-b7b6b00e2d61',
+    nfiles=5)
 
 
 @pytest.mark.Al2O3

@@ -1,5 +1,5 @@
-#this is for the test database. so that one does not to install MongoDB locally
 {
+    "_comment": "this is for the test database. so that one does not have to install MongoDB locally",
     "database": "test-results",
     "collection": "tasks",
     "readonly_user": "test-ro",
