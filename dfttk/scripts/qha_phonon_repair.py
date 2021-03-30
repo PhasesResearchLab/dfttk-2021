@@ -132,12 +132,18 @@ class QHAAnalysis_failure(FiretaskBase):
             phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
             vol_vol = []
             vol_f_vib = []
+            vol_s_vib = []
+            vol_c_vib = []
             for calc in phonon_calculations:
                 if calc['volume'] in vol_vol: continue
                 vol_vol.append(calc['volume'])
                 vol_f_vib.append(calc['F_vib'])
+                vol_s_vib.append(calc['S_vib'])
+                vol_c_vib.append(calc['CV_vib'])
             # sort them order of the unit cell volumes
             vol_f_vib = sort_x_by_y(vol_f_vib, vol_vol)
+            vol_s_vib = sort_x_by_y(vol_s_vib, vol_vol)
+            vol_c_vib = sort_x_by_y(vol_c_vib, vol_vol)
             f_vib = np.vstack(vol_f_vib)
 
             # by Yi Wang, after a long day debug, finally I fixex the bug below
@@ -158,6 +164,8 @@ class QHAAnalysis_failure(FiretaskBase):
                                 t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'],
                                 poisson=poisson, bp2gru=bp2gru)
             qha_result['phonon'] = qha.get_summary_dict()
+            qha_result['phonon']['entropies'] = vol_s_vib
+            qha_result['phonon']['heat_capacities'] = vol_c_vib
             qha_result['phonon']['temperatures'] = qha_result['phonon']['temperatures'].tolist()
 
         # calculate the Debye model results no matter what

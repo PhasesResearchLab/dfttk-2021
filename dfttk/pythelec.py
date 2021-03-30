@@ -1705,6 +1705,7 @@ class thelecMDB():
         if self.pyphon:
             self.toYphon()
             return
+        self.from_phonon_collection = False
         if self.qhamode=="debye":
             self.qha_items = self.vasp_db.db['qha'].find({'metadata.tag': self.tag})
         elif self.qhamode=="phonon":
@@ -1731,6 +1732,7 @@ class thelecMDB():
                     self.qhamode = 'phonon'
                     self.qha_items = self.vasp_db.db[self.qhamode].find({'metadata.tag': self.tag})
                     self.T_vib = self.qha_items[0]['temperatures'][::self.everyT]
+                    self.from_phonon_collection = True
                 except:
                     print ("\nWARNING! I cannot find required data from qha_phonon, am asking help from Yphon!\n")
                     self.pyphon = True
@@ -1738,7 +1740,7 @@ class thelecMDB():
 
 
     def get_qha(self):
-        if self.qhamode=='phonon':
+        if self.from_phonon_collection:
             _Vlat = []
             _Slat = []
             _Clat = []
