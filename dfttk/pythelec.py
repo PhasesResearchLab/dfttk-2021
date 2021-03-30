@@ -24,6 +24,7 @@ from dfttk.utils import sort_x_by_y
 from dfttk.analysis.ywplot import myjsonout
 from dfttk.analysis.ywutils import get_rec_from_metatag
 from dfttk.analysis.ywutils import formula2composition, reduced_formula
+import warnings
 
 
 k_B = physical_constants['Boltzmann constant in eV/K'][0]
@@ -378,8 +379,6 @@ def caclf(pe, pdos, NELECTRONS, Beta, mu_ref=0.0, dF=0.0, IntegrationFunc=trapz)
             if abs(t1-t0) <1.e-8:
                 mu_el = 0.5*(t0+t1)
                 break
-        #mu_el = brentq(gfind, t0, t1, args=(pe, pdos, NELECTRONS, Beta), maxiter=10000)
-        #print("xxxxxxx", mu_el,mu_old)
     tc = Beta*(pe-mu_el)
     tc = tc[np.where(tc<200)]
     k1 = len(tc)
@@ -1035,8 +1034,6 @@ class thelecMDB():
             volumes_b = (self.vasp_db).db['borncharge'].find({'metadata.tag': self.tag}, {'_id':0, 'volume':1})
             volumes_b = [i['volume'] for i in volumes_b]
             has_Born =  all(elem in volumes_b for elem in volumes_p)
-            #print("db_file", sorted(volumes_p))
-            #print("db_file", sorted(volumes_b))
         except:
             has_Born = False
         if has_Born:
@@ -1220,7 +1217,9 @@ class thelecMDB():
             self.VCij = sort_x_by_y(self.VCij, self.VCij)
         return has_Cij
 
-
+    
+    #For volume dependent thermoelectric calculations based on the output from BoltrzTraP2 code
+    #btp2_dir is parent path containing thermoelectric results at several volumes
     def get_btp2(self, btp2_dir):
         volumes_uniform_tau = []
         volumes_uniform_lambda = []
@@ -1363,12 +1362,10 @@ class thelecMDB():
         print ("extract the superfij.out used by Yphon ...")
         for i, vol in enumerate(self.volumes):
             if self.local!="":
-                #dir = self.local+'/Yphon/'+'V{:010.6f}'.format(vol)
                 dir = self.dirs[i]
             else:
-                dir = self.phasename+'/Yphon/'+'V{:010.6f}'.format(vol)
+                dir = os.path.join(self.phasename,'Yphon','V{:010.6f}'.format(vol))
             cwd = os.getcwd()
-            #print ("dir=",dir,vol,cwd)
             if not os.path.exists(dir): continue
 
             os.chdir( dir)
@@ -1395,8 +1392,7 @@ class thelecMDB():
 
         if len(self.Vlat)<=0:
             print("\nFETAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
-            #raise ValueError()
-            sys.exit()
+            raise ValueError()
         self.Slat = np.array(sort_x_by_y(self.Slat, self.Vlat))
         self.Clat = np.array(sort_x_by_y(self.Clat, self.Vlat))
         self.Flat = np.array(sort_x_by_y(self.Flat, self.Vlat))
@@ -1411,21 +1407,15 @@ class thelecMDB():
         print ("\nChecking compatibility between qha/Yphon data and static calculation:\n")
 
         for i,v in enumerate (self.Vlat):
-            """
-            try:
-                print (v, self.energies[list(self.volumes).index(round(v,8))])
-            except:
-                print("\nWarning! The static/qha calculations are not inconsistent! Let me see if I can resolve it\n")
-            """
             fvol = False
             for j,vol in enumerate(self.volumes):
                 if abs(vol-v)<1.e-12:
                     print (v, self.energies[j])
                     fvol = True
             if not fvol:
-                print("\nWarning! Not found v=",v,"\n")
+                warnings.warn("\nWarning! Not found v=",v,"\n")
         if len(self.Vlat)!=len(self.volumes):
-            print("\nWarning! The static/qha calculations are not inconsistent! Let me see if I can resolve it\n")
+            warnings.warn("\nWarning! The static/qha calculations are not inconsistent! Let me see if I can resolve it\n")
 
         _volumes = list(self.volumes)
         _v = []
@@ -1450,10 +1440,9 @@ class thelecMDB():
             else: good = False
 
         if not good:
-            print("xxxxxx", self.Vlat, self.volumes)
-            print("\nFETAL ERROR! It appears that the calculations are not all done!\n")
-            sys.exit()
-
+            print("static volume:", self.volumes)
+            print("phonon volume:", self.Vlat)
+            raise ValueError("\nFATAL ERROR! It appears that the calculations are not all done!\n")
 
 
     # get the energies, volumes and DOS objects by searching for the tag
@@ -1465,7 +1454,6 @@ class thelecMDB():
         structure = None  # single Structure for QHA calculation
         for calc in static_calculations:
             vol = calc['output']['structure']['lattice']['volume']
-            #if vol_within (vol, volumes):
             if vol in volumes:
                 print ("WARNING: skipped volume =", vol)
                 continue
@@ -1564,12 +1552,8 @@ class thelecMDB():
             structure = Structure.from_file(poscar)
             vol = structure.volume
             sss = (structure.lattice.matrix).tolist()
-            #print(sss)
             lattices.append(sss)
-            #print(sss)
-            #print(lattices)
-
-            #if vol_within (vol, volumes):
+ 
             if vol in volumes:
                 print ("WARNING: skipped volume =", vol)
                 continue
@@ -1593,7 +1577,6 @@ class thelecMDB():
                 print ('niggli reduced structure', reduced_structure)
                 print ("\n")
                 self.formula_pretty = structure.composition.reduced_formula
-                #print ("xxxxxx=", self.formula_pretty)
                 try:
                     formula2composition(formula_pretty)
                 except:
@@ -1624,8 +1607,6 @@ class thelecMDB():
         self.key_comments['E-V'] = {'lattices':sort_x_by_y(lattices, volumes),
             'volumes':self.volumes, 'energies':self.energies,
             'natoms':self.natoms}
-        #print (self.key_comments)
-        #self.volumes = np.array(list(map(float,sorted(volumes))))
         print ("found volumes from static calculations:", self.volumes)
 
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
@@ -1714,7 +1695,6 @@ class thelecMDB():
             try:
                 self.qhamode='phonon'
                 self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata.tag': self.tag})
-                #print("xxxx=", self.qha_items, self.everyT)
             except:
                 self.qhamode='debye'
                 self.qha_items = self.vasp_db.db['qha'].find({'metadata.tag': self.tag})
@@ -1732,9 +1712,9 @@ class thelecMDB():
                     self.qhamode = 'phonon'
                     self.qha_items = self.vasp_db.db[self.qhamode].find({'metadata.tag': self.tag})
                     self.T_vib = self.qha_items[0]['temperatures'][::self.everyT]
-                    self.from_phonon_collection = True
+                    self.from_phonon_collection = True 
                 except:
-                    print ("\nWARNING! I cannot find required data from qha_phonon, am asking help from Yphon!\n")
+                    warnings.warn ("\nWARNING! I cannot find required data from qha_phonon, am asking help from Yphon!\n")
                     self.pyphon = True
                     self.toYphon()            
 
@@ -1754,6 +1734,14 @@ class thelecMDB():
             self.volT = np.zeros(len(self.T_vib))
             self.GibT = np.zeros(len(self.T_vib))
             _Dlat = np.full((len(_Vlat)), 400.)
+        elif self.qhamode=='debye':
+            _Vlat = self.qha_items[0][self.qhamode]['volumes']
+            _Slat = self.qha_items[0][self.qhamode]['entropies']
+            _Clat = self.qha_items[0][self.qhamode]['heat_capacities']
+            _Flat = self.qha_items[0][self.qhamode]['helmholtz_energies']
+            self.volT = self.qha_items[0][self.qhamode]['optimum_volumes'][::self.everyT]
+            self.GibT = self.qha_items[0][self.qhamode]['gibbs_free_energy'][::self.everyT]
+            _Dlat = self.qha_items[0]['debye']['debye_temperatures']
         else:
             _Vlat = self.qha_items[0][self.qhamode]['volumes']
             _Slat = self.qha_items[0][self.qhamode]['entropies']
@@ -1880,11 +1868,7 @@ class thelecMDB():
         angstrom = 1e-30
         toJmol = Faraday_constant/self.natoms
         toGPa = electron_volt/angstrom*1.e-9
-        #with open(self.phasename+'/key_comments.json', 'w') as fp:
-        #    myjsonout(self.key_comments, fp, indent="", comma="")
 
-        #if self.debug:
-        #    fvol = open(self.phasename+'/fvol', "w")
         thermofile = self.phasename+'/'+self.outf
         with open(thermofile, 'w') as fvib:
             fvib.write('#Found quasiharmonic mode : {}\n'.format(self.qhamode))
@@ -2133,10 +2117,8 @@ class thelecMDB():
         T = uniform[0][:,1]
         nV = len(uniform)
         nT, nF = uniform[0].shape
-        #print("eeeeeeeee", self.VCij)
         with open (outf, 'w') as fp:
           headerfmt = "#{:>11s} {:>9s}" + " ".join(18 * ["{:>25s}"])
-                #added by Yi Wang 09/24/2020
           header = [
                     "mu-Ef[eV]", "T[K]", "N[e/uc]", "DOS(ef)[1/(Ha*uc)]", "S[V/K]",
                     "sigma/tau0[1/(ohm*m*s)]", "RH[m**3/C]", "kappae/tau0[W/(m*K*s)]",

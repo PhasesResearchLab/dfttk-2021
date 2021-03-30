@@ -79,7 +79,8 @@ In some cases, such as in the Windows environment, one may meet the error::
 
     ModuleNotFoundError: No module named 'ruamel' #106
 
-This is due to ``conda`` bug on namespace of ruamel_yaml vs ruamel.yaml. It takes me a week to find out the solution. One can resolve this by open the Annaconda Powershell Prompt as adminstrator and reinstall ruamel.yaml by::
+This is due to ``conda`` bug on namespace of ruamel_yaml vs ruamel.yaml. 
+ One can resolve this by open the Annaconda Powershell Prompt as adminstrator and reinstall ruamel.yaml by::
 
     conda install ruamel.yaml
 

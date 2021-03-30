@@ -398,7 +398,6 @@ class BornChargeSet(DictSet):
             BornChargeSet.CONFIG.update({'POTCAR_FUNCTIONAL':uis_pot})
 
         uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
-        #print ("xxxxxxxxx", kwargs)
         """
         old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', \
             'user_potcar_functional', 'user_incar_settings']

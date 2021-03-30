@@ -132,7 +132,7 @@ def caclf(_freq, _pdos, T, dmu=0.0, energyunit='J'):
     if T > 0: Beta = 1/(kB*T)
     else:
         if energyunit=='eV':
-            #print ("pppppppppp", u0/eV)
+            #convert energy unit to eV
             return u0/eV,u0/eV,0,0,0,0,0,0,0,0
         else:
             return u0,u0,0,0,0,0,0,0,0,0
@@ -224,7 +224,7 @@ def vibrational_contributions(T, dos_input=sys.stdin, _dmu=0.0, energyunit='J'):
     NN_ph = np.zeros(nT) # total number of phonon
     N_ph = np.zeros(nT) # total number of thermal Carrier
     C_ph_n = np.zeros(nT) # phonon specific heat at constant N
-    sound_ph = np.zeros(nT) # phonon seebeck corfficient (freq/k)
+    sound_ph = np.zeros(nT) # phonon seebeck coefficient (freq/k)
     sound_nn = np.zeros(nT) # averaged phonon frequency
     debyeT= np.zeros(nT) # averaged phonon frequency
 

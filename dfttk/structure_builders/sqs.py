@@ -97,7 +97,6 @@ class AbstractSQS(Structure):
             fractional_comp = dict(self_copy.composition.fractional_composition)
             estimated_density = 0
             for component in self_copy.composition.elements :
-                #temp = pmg.Element(component).data['Density of solid']
                 temp = pmg.core.periodic_table.Element(component).data['Density of solid']
                 density = float(temp.split(' ')[0])
                 estimated_density += (fractional_comp[component] * density)/1000

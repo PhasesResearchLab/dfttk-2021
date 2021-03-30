@@ -162,6 +162,7 @@ def remove_data_by_metadata(tag, db_file=None, rem_mode='vol', forcedelete=False
             #tag is None, which means remove the collection
             if input('Are you sure? This will remove the {} collections. (Y/N)'.format(collections))[0].upper() == 'Y':
                 flag_remove = True
+
     if flag_remove:
         for collectioni in collections:
             if collectioni in VOL_COLLECTION:
@@ -185,6 +186,7 @@ def remove_data_by_metadata(tag, db_file=None, rem_mode='vol', forcedelete=False
                 if tag:
                     vasp_db.db[collectioni].remove({'metadata.tag': tag})
                     print('The data with metadata.tag={} in {} collection is removed'.format(tag, collectioni))
-                #else:
-                #    vasp_db.db[collectioni].remove()
-                #    print('The data in {} collection is removed'.format(collectioni))
+                else:
+                    if input('Are you really sure to remove all the {} collections. (Yes/N)'.format(collections))[0].upper() == 'Yes':
+                        vasp_db.db[collectioni].remove()
+                        print('The data in {} collection is removed'.format(collectioni))

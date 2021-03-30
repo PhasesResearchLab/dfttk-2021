@@ -9,6 +9,7 @@
 #PBS -o FW_job.out
 #PBS -e FW_job.error
 
+#these are very special rquired versions for aci-roar 
 module load intel/19.1.2
 module load impi/2019.8
 module use /gpfs/group/RISE/sw7/modules

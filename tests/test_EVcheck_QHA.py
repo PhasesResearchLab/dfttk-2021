@@ -99,9 +99,4 @@ def test_eosfit_stderr():
 def test_EVcheck_QHA():
     wf = Firework(EVcheck_QHA(db_file=db_file,vasp_cmd=VASP_CMD,tag="test",metadata={}))
     #print(wf.as_dict())
-    """
-    from dfttk.analysis.ywplot import myjsonout
-    with open('test_EVcheck_QHA.json', 'w') as fp:
-        #json.dump(wf, fp, indent=4)
-        myjsonout(wf, fp, indent="", comma="")
-    """
+

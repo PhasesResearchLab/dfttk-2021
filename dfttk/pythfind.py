@@ -68,11 +68,8 @@ class thfindMDB ():
             self.qhamode = 'phonon'
         if args.qhamode == 'debye' : self.qhamode = 'qha'
 
-        #db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
-
         if not self.plotonly:
             try:
-                #self.vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
                 self.vasp_db = vasp_db
                 self.items = (self.vasp_db).db[self.qhamode].find({})
                 if self.qhamode=='phonon':
@@ -83,14 +80,9 @@ class thfindMDB ():
                         {'metadata':1, 'structure':1}))
             except:
                 self.vasp_db = None
-                print("\n*********WARNING: CANNOT get MongoDB service, so I will proceed using local data")
-                print("*********WARNING: CANNOT get MongoDB service, so I will proceed using local data")
-                print("*********WARNING: CANNOT get MongoDB service, so I will proceed using local data\n")
+                warnings.warn("\n*********WARNING: CANNOT get MongoDB service, so I will proceed using local data")
 
-        #items = vasp_db.db['phonon'].find(properties=['metadata.tag','F_vib', 'CV_vib', 'S_vib'])
-        #items = vasp_db.db['phonon'].find({F_vib: {$gt: 0}})
-        #items = vasp_db.db['phonon'].find({'metadata.tag': "djdjd"})
-        #items = vasp_db.db['phonon'].find({})
+
         self.check = args.check
         self.remove = args.remove
 
@@ -397,17 +389,12 @@ class thfindMDB ():
         phases =  [""] * len(hit)
         supercellsize =  [0] * len(hit)
         phonon_count = [0] * len(hit)
-        #phonon_calc = (self.vasp_db).db['phonon'].find({},{'metadata':1})
         phonon_calc = list((self.vasp_db).db['phonon'].find({"S_vib": { "$exists": True } },\
             {'metadata':1, 'unitcell':1, 'supercell_matrix':1}))
 
         for i,mm in enumerate(hit):
-            #print ('db_file', mm)
-            #phonon_calc = (self.vasp_db).db['phonon'].\
-            #    find({'$and':[ {'metadata.tag': mm} ]})
             for calc in phonon_calc:
                 if calc['metadata']['tag']!=mm: continue
-                #print (calc['metadata']['tag'])
                 phonon_count[i] += 1
                 if phonon_count[i]==1:
                     structure = Structure.from_dict(calc['unitcell'])

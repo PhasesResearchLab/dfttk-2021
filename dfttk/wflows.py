@@ -3,6 +3,8 @@ Custom DFTTK Workflows
 """
 from pathlib import Path
 import os
+#unfortunately atomate 0.9.8 explicitly use the HOME environment which is not compatible
+#with Windows, so it is added here
 os.environ["HOME"] = str(Path.home())
 
 import numpy as np

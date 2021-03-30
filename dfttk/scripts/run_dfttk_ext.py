@@ -497,6 +497,7 @@ def ext_thfind(args, vasp_db=None):
   
                 proc = QHAAnalysis_failure(phonon=True, t_min=t_min, t_max=t_max,
                 t_step=t_step, db_file=db_file, test_failure=False, admin=True,
+                metadata={'tag':tag},
                 tag=tag)
                 proc.run_task()
 
