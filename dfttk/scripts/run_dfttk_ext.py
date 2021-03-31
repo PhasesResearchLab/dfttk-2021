@@ -406,9 +406,12 @@ def run_ext_thelec(subparsers):
     run_ext_EVfind(subparsers)
 
 
-def run_ext_thfind(subparsers):
+def run_ext_thfind(subparsers, test=None):
     #SUB-PROCESS: thfind
-    pthfind = subparsers.add_parser("thfind", help="Check the dfttk DFT calculation results followed by calling the 'thelec' module to get thermodynamic properties when the option '-get' is given.")
+    if test is None:
+        pthfind = subparsers.add_parser("thfind", help="Check the dfttk DFT calculation results followed by calling the 'thelec' module to get thermodynamic properties when the option '-get' is given.")
+    else:
+        pthfind = test
     pthfind.add_argument("-w", "--within", dest="within", nargs="?", type=str, default=None,
                       help="find calculations within element list\n"
                            "Default: None")
@@ -446,6 +449,9 @@ def run_ext_thfind(subparsers):
                       help="remove database document entries under given conditions (under development). \n"
                            "Default: False")
     shared_aguments(pthfind)
+
+    if test is not None: return 
+
     pthfind.set_defaults(func=ext_thfind)
 
 

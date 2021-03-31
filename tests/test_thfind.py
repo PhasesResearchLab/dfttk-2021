@@ -1,3 +1,5 @@
+import argparse
+from dfttk.scripts.run_dfttk_ext import run_ext_thfind
 from pymatgen.core import Structure
 import pytest
 import shutil
@@ -15,6 +17,7 @@ print("db_file", db_file)
 vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
 
 
+"""
 class _thargs:
     def __init__(self):
         self.local = ""
@@ -63,6 +66,26 @@ class _thargs:
         self.poscar = None
         self.vdos = None
         self.qha_phonon_repair = False
+"""
+
+
+def _thargs():
+    parser = argparse.ArgumentParser(description='test DFTTK.')
+    #subparsers = parser.add_subparsers()
+    run_ext_thfind(parser,test=parser)
+    args, unknown = parser.parse_known_args() 
+    return args
+
+@pytest.mark.get_thargs
+def test_args():
+    _thargs()
+    """
+        for arg in vars(_thargs()):
+        print(arg)
+    for arg in vars(args):
+        print(arg,getattr(args, arg))
+    """
+
 
 @pytest.fixture(scope="module", autouse=True)
 def failure_tracking_fixture(request):
@@ -105,7 +128,6 @@ def run_thelec(capsys,tmp_path,compound, phasename,
     assert len(filenames) >= 19
     #if not failure_tracking_fixture(request):
     shutil.rmtree(test_dir)
-
 
 @pytest.mark.EVfind
 def test_EVfind(capsys, tmp_path):
