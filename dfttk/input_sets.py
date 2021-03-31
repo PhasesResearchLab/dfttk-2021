@@ -116,6 +116,7 @@ class RelaxSet(DictSet):
         if 'magmom' in uis:
             if 'MAGMOM' in RelaxSet.CONFIG['INCAR']:
                 RelaxSet.CONFIG['INCAR'].pop('MAGMOM')
+        if 'ncell' in kwargs: kwargs.pop('ncell')
         RelaxSet.CONFIG['INCAR'].update(uis)
         kwargs.update({'user_potcar_functional':RelaxSet.CONFIG['POTCAR_FUNCTIONAL']})
         kwargs.update({'user_incar_settings':RelaxSet.CONFIG['INCAR']})
@@ -168,7 +169,7 @@ class PreStaticSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
-
+        if 'ncell' in kwargs: kwargs.pop('ncell')
         PreStaticSet.CONFIG['INCAR'].update(uis)
         super(PreStaticSet, self).__init__(structure, PreStaticSet.CONFIG, sort_structure=False, **kwargs)
 
@@ -297,6 +298,7 @@ class StaticSet(DictSet):
         if 'magmom' in uis:
             if 'MAGMOM' in StaticSet.CONFIG['INCAR']:
                 StaticSet.CONFIG['INCAR'].pop('MAGMOM')
+        if 'ncell' in kwargs: kwargs.pop('ncell')
         StaticSet.CONFIG['INCAR'].update(uis)
         kwargs.update({'user_potcar_functional':StaticSet.CONFIG['POTCAR_FUNCTIONAL']})
         kwargs.update({'user_incar_settings':StaticSet.CONFIG['INCAR']})
@@ -380,6 +382,7 @@ class ForcesSet(DictSet):
             except KeyError:
                 pass
         self.kwargs = kwargs
+        if 'ncell' in kwargs: kwargs.pop('ncell')
         super(ForcesSet, self).__init__(structure, ForcesSet.CONFIG, sort_structure=False, **kwargs)
 
 
@@ -466,7 +469,7 @@ class BornChargeSet(DictSet):
         if 'SIGMA' in BornChargeSet.CONFIG['INCAR'] and 'ISMEAR' in BornChargeSet.CONFIG['INCAR'] :
             if BornChargeSet.CONFIG['INCAR']['ISMEAR'] == -5:
                 BornChargeSet.CONFIG['INCAR'].pop('SIGMA')
-
+        if 'ncell' in kwargs: kwargs.pop('ncell')
         kwargs.update({'user_potcar_functional':BornChargeSet.CONFIG['POTCAR_FUNCTIONAL']})
         kwargs.update({'user_incar_settings':BornChargeSet.CONFIG['INCAR']})
 
@@ -570,7 +573,7 @@ class ElasticSet(DictSet):
             grid_density = 8000
         kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
         ElasticSet.CONFIG['KPOINTS'] = kpoints
-
+        if 'ncell' in kwargs: kwargs.pop('ncell')
         kwargs.update({'user_potcar_functional':ElasticSet.CONFIG['POTCAR_FUNCTIONAL']})
         kwargs.update({'user_incar_settings':ElasticSet.CONFIG['INCAR']})
         super(ElasticSet, self).__init__(structure, ElasticSet.CONFIG, sort_structure=False, **kwargs)
