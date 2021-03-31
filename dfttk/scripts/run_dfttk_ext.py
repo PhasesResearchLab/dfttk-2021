@@ -406,12 +406,12 @@ def run_ext_thelec(subparsers):
     run_ext_EVfind(subparsers)
 
 
-def run_ext_thfind(subparsers, test=None):
+def run_ext_thfind(subparsers):
     #SUB-PROCESS: thfind
-    if test is None:
+    if subparsers is not None:
         pthfind = subparsers.add_parser("thfind", help="Check the dfttk DFT calculation results followed by calling the 'thelec' module to get thermodynamic properties when the option '-get' is given.")
     else:
-        pthfind = test
+        pthfind = argparse.ArgumentParser(description='get all default DFTTK args.')
     pthfind.add_argument("-w", "--within", dest="within", nargs="?", type=str, default=None,
                       help="find calculations within element list\n"
                            "Default: None")
@@ -450,7 +450,7 @@ def run_ext_thfind(subparsers, test=None):
                            "Default: False")
     shared_aguments(pthfind)
 
-    if test is not None: return 
+    if subparsers is None: return pthfind
 
     pthfind.set_defaults(func=ext_thfind)
 

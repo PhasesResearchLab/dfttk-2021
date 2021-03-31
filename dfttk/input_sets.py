@@ -24,7 +24,8 @@ POTCAR_UPDATES = {
     }
 '''
 
-#Reset the POTCAR, suggested by Yi Wang, Aug. 24, 2020 
+
+#Reset the POTCAR
 POTCAR_UPDATES = {
         'Cu': 'Cu',  # 11 electrons, default was Cu_pv (17 electrons)
         'Mo': 'Mo_sv',  # 14 electrons, default was Mo_pv (12 electrons)
@@ -32,6 +33,7 @@ POTCAR_UPDATES = {
         'Ti': 'Ti_sv',  # 12 electrons, default Ti_pv (10 electrons)
         'V': 'V_sv',  # 13 electrons, default V_pv (11 electrons)
 }
+
 
 def magnetic_check(structure):
     '''
@@ -45,6 +47,7 @@ def magnetic_check(structure):
     magnetic_elements.extend(list(range(58, 72)))
     magnetic_elements.extend(list(range(91, 119)))
     return any(ele.Z in magnetic_elements for ele in structure.species)
+
 
 def metal_check(structure):
     '''
@@ -60,6 +63,7 @@ def metal_check(structure):
     metal_elements.extend(list(range(55, 86)))
     metal_elements.extend(list(range(87, 119)))
     return all(ele.Z in metal_elements for ele in structure.species)
+
 
 class RelaxSet(DictSet):
     """
@@ -119,8 +123,8 @@ class RelaxSet(DictSet):
         RelaxSet.CONFIG['INCAR'].update(uis)
         kwargs.update({'user_potcar_functional':RelaxSet.CONFIG['POTCAR_FUNCTIONAL']})
         kwargs.update({'user_incar_settings':RelaxSet.CONFIG['INCAR']})
-
         super(RelaxSet, self).__init__(structure, RelaxSet.CONFIG, sort_structure=False, **kwargs)
+
 
 class PreStaticSet(DictSet):
     """Set tuned for metal relaxations (correct smearing).
@@ -170,7 +174,6 @@ class PreStaticSet(DictSet):
                 uis.update({'ISPIN': 1})
         PreStaticSet.CONFIG['INCAR'].update(uis)
         super(PreStaticSet, self).__init__(structure, PreStaticSet.CONFIG, sort_structure=False, **kwargs)
-
 
 
 class ForceConstantsSet(DictSet):
@@ -455,16 +458,8 @@ class BornChargeSet(DictSet):
                 BornChargeSet.CONFIG['INCAR'].pop('SIGMA')
         kwargs.update({'user_potcar_functional':BornChargeSet.CONFIG['POTCAR_FUNCTIONAL']})
         kwargs.update({'user_incar_settings':BornChargeSet.CONFIG['INCAR']})
-
-
         super(BornChargeSet, self).__init__(structure, BornChargeSet.CONFIG, sort_structure=False, **kwargs)
-        """
-        print("eeeeeee", BornChargeSet.CONFIG)
-        uis.pop('NPAR')
-        print("eeeeeee", kwargs)
-        uis.update({'NCORE': 1})
-        uis.pop('NCORE')
-        """
+
 
 class ElasticSet(DictSet):
     """Set tuned for metal relaxations (correct smearing).

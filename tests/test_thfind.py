@@ -17,74 +17,17 @@ print("db_file", db_file)
 vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
 
 
-"""
-class _thargs:
-    def __init__(self):
-        self.local = ""
-        self.within = None
-        self.containall = None
-        self.excludeall = None
-        self.excludeany = None
-        self.containany = None
-        self.nV = 6
-        self.supercellN = 0
-        self.findbandgap = False
-        self.get = False
-        self.check = False
-        self.remove = False
-        self.pyphon = False
-        self.t0 = 0
-        self.t1 = 4000
-        self.td = 10
-        self.xdn = -100
-        self.xup = 100
-        self.dope = 0
-        self.ndosmx = 1001
-        self.gaussian = 1000
-        self.natom = 1
-        self.nT = 257
-        self.everyT = 1
-        self.outf = "fvib_ele"
-        self.noel = False
-        self.metatag = None
-        self.qhamode = None
-        self.phasename = None
-        self.jobpath = None
-        self.eqmode = 4
-        self.elmode = 0
-        self.smooth = False
-        self.plot = None
-        self.renew = False
-        self.refresh = False
-        self.SGTEfitCp = False
-        self.fitF = False
-        self.plotonly = False
-        self.debug = True
-        self.expt = None
-        self.xlim = None
-        self.doscar = None
-        self.poscar = None
-        self.vdos = None
-        self.qha_phonon_repair = False
-"""
-
-
 def _thargs():
-    parser = argparse.ArgumentParser(description='test DFTTK.')
-    #subparsers = parser.add_subparsers()
-    run_ext_thfind(parser,test=parser)
+    parser = run_ext_thfind(None)
     args, unknown = parser.parse_known_args() 
     return args
 
+
 @pytest.mark.get_thargs
 def test_args():
-    _thargs()
-    """
-        for arg in vars(_thargs()):
-        print(arg)
+    args=_thargs()
     for arg in vars(args):
         print(arg,getattr(args, arg))
-    """
 
 
 @pytest.fixture(scope="module", autouse=True)
