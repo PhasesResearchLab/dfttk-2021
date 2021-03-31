@@ -379,8 +379,9 @@ class PhononFW(Firework):
 
         override_default_vasp_params = override_default_vasp_params or {}
         ncell = int(0.5+np.linalg.det(supercell_matrix))
-        override_default_vasp_params["ncell"] = ncell
-        vasp_input_set = vasp_input_set or ForceConstantsSet(structure, **override_default_vasp_params)
+        tmp = Copy.deepcopy(override_default_vasp_params)
+        tmp["ncell"] = ncell
+        vasp_input_set = vasp_input_set or ForceConstantsSet(structure, **tmp)
 
         supercell_structure = deepcopy(structure)
         supercell_structure.make_supercell(supercell_matrix)
