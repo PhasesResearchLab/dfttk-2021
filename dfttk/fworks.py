@@ -1,4 +1,5 @@
 import warnings
+import copy
 import numpy as np
 from uuid import uuid4
 from copy import deepcopy
