@@ -222,19 +222,6 @@ class ForceConstantsSet(DictSet):
         if 'magmom' in uis:
             if 'MAGMOM' in ForceConstantsSet.CONFIG['INCAR']:
                 ForceConstantsSet.CONFIG['INCAR'].pop('MAGMOM')
-            mag = uis['magmom']
-            supermag = []
-            ncell = kwargs.get('ncell')
-            print ("eeeeeeeeeeeeee",mag, ncell)
-            for site in mag:
-                n = str(site).split('*')
-                if len(n)==1:
-                    supermag.append('{}*{}'.format(ncell,float(n[0])))
-                else:
-                    supermag.append('{}*{}'.format(ncell*int(n[0]),float(n[1])))
-            #print(supermag)
-            uis['magmom']=supermag
-        if 'ncell' in kwargs: kwargs.pop('ncell')
         ForceConstantsSet.CONFIG['INCAR'].update(uis)
         kwargs.update({'user_potcar_functional':ForceConstantsSet.CONFIG['POTCAR_FUNCTIONAL']})
         kwargs.update({'user_incar_settings':ForceConstantsSet.CONFIG['INCAR']})

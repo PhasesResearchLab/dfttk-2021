@@ -381,7 +381,19 @@ class PhononFW(Firework):
         override_default_vasp_params = override_default_vasp_params or {}
         ncell = int(0.5+np.linalg.det(supercell_matrix))
         tmp = copy.deepcopy(override_default_vasp_params)
-        tmp["ncell"] = ncell
+        if 'user_incar_settings' in tmp:
+          if 'magmom' in tmp['user_incar_settings']:
+            mag = tmp['user_incar_settings']['magmom']
+            supermag = []
+            for site in mag:
+                n = str(site).split('*')
+                if len(n)==1:
+                    supermag.append('{}*{}'.format(ncell,float(n[0])))
+                else:
+                    supermag.append('{}*{}'.format(ncell*int(n[0]),float(n[1])))
+            tmp['user_incar_settings']['magmom']=supermag
+            print("phonon setting", tmp)
+
         vasp_input_set = vasp_input_set or ForceConstantsSet(structure, **tmp)
 
         supercell_structure = deepcopy(structure)
