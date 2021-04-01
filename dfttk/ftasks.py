@@ -1138,6 +1138,7 @@ class CheckSymmetryToDb(FiretaskBase):
  
 import bson
 import pickle
+import zlib
 @explicit_serialize
 class InsertXMLToDb(FiretaskBase):
     '''
@@ -1157,7 +1158,7 @@ class InsertXMLToDb(FiretaskBase):
 
             xml_data = {'metadata': {'tag': self.get('tag')},
                        'type': self.xml,
-                       'xmldata': bson.Binary(pickle.dumps(self.xmldata)),
+                       'xmldata': bson.Binary(pickle.dumps(zlib.compress(self.xmldata))),
                        'volume': structure.volume,
                        'last_updated':datetime.datetime.utcnow(),
                        'structure': structure.as_dict(),
