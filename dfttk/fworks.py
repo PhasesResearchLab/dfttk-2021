@@ -12,7 +12,7 @@ from atomate.vasp.firetasks.run_calc import RunVaspCustodian
 from dfttk.input_sets import RelaxSet, StaticSet, ForceConstantsSet, ATATIDSet, BornChargeSet
 from dfttk.ftasks import WriteVaspFromIOSetPrevStructure, SupercellTransformation, CalculatePhononThermalProperties, \
     CheckSymmetry, CheckRelaxation, ScaleVolumeTransformation, TransmuteStructureFile, WriteATATFromIOSet, RunATATCustodian, RunVaspCustodianNoValidate, \
-    Record_relax_running_path, Record_PreStatic_result, CheckSymmetryToDb, PhononStable, BornChargeToDb,
+    Record_relax_running_path, Record_PreStatic_result, CheckSymmetryToDb, PhononStable, BornChargeToDb, \
     InsertXMLToDb
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
