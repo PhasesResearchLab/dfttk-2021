@@ -1136,9 +1136,36 @@ class CheckSymmetryToDb(FiretaskBase):
         vasp_db.db['relaxations'].insert_one(symm_check_data)
         return FWAction(update_spec={'symmetry_checks_passed': symm_check_data['symmetry_checks_passed']})
  
-
+import bson
 @explicit_serialize
 class InsertXMLToDb(FiretaskBase):
+    '''
+    Store the CheckSymmetry result to MongoDB, the stored collection is named as 'relaxations'
+    '''
+    required_params = ["xml", "db_file", "tag"]
+    optional_params = ['metadata','structure']
+
+    def run_task(self, fw_spec):
+        self.xml = self.get("xml", None)
+        if self.xml is not None:
+            self.db_file = env_chk(self.get("db_file"), fw_spec)
+            self.vasp_db = VaspCalcDb.from_db_file(self.db_file, admin=True)
+            with open (self.xml, 'r') as f:
+                self.xmldata = f.readlines()
+            structure = self.get('structure', Structure.from_file('POSCAR'))
+
+            xml_data = {'metadata': {'tag': self.get('tag')},
+                       'type': self.xml,
+                       'xmldata': bson.Binary(pickle.dumps(self.xmldata)),
+                       'volume': structure.volume,
+                       'last_updated':datetime.datetime.utcnow(),
+                       'structure': structure.as_dict(),
+                       'formula_pretty': structure.composition.reduced_formula}
+            self.vasp_db.db['xml'].insert_one(xml_data)
+
+
+@explicit_serialize
+class InsertXMLToDb_v0(FiretaskBase):
     '''
     Store the CheckSymmetry result to MongoDB, the stored collection is named as 'relaxations'
     '''
