@@ -1150,7 +1150,9 @@ class InsertXMLToDb(FiretaskBase):
         if self.xml is not None:
             self.db_file = env_chk(self.get("db_file"), fw_spec)
             self.vasp_db = VaspCalcDb.from_db_file(self.db_file, admin=True)
-            self.xmldata = ET.parse(self.xml)
+            #self.xmldata = ET.parse(self.xml)
+            with open (self.xml, 'r') as f:
+                self.xmldata = f.readlines()
             structure = self.get('structure', Structure.from_file('POSCAR'))
 
             xml_data = {'metadata': {'tag': self.get('tag')},
