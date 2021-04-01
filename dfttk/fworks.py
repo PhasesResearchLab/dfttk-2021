@@ -225,8 +225,13 @@ class StaticFW(Firework):
                 store_volumetric_data = ()
         else:
             raise ValueError('The store_volumetric_data should be list or bool')
-        store_volumetric_data=store_volumetric_data+("vasprun.xml",)
-
+        if isinstance(store_volumetric_data, (tuple)):
+            store_volumetric_data=store_volumetric_data+("vasprun.xml",)
+        elif isinstance(store_volumetric_data, (list)):
+            store_volumetric_data.append("vasprun.xml")
+        else:
+            store_volumetric_data=("vasprun.xml")
+            
         override_default_vasp_params = override_default_vasp_params or {}
         vasp_input_set = vasp_input_set or StaticSet(structure, isif=isif, **override_default_vasp_params)
         site_properties = deepcopy(structure).site_properties
