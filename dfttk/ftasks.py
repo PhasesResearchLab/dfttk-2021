@@ -1137,7 +1137,7 @@ class CheckSymmetryToDb(FiretaskBase):
         return FWAction(update_spec={'symmetry_checks_passed': symm_check_data['symmetry_checks_passed']})
  
 import bson
-import pickle
+import cPickle as pickle
 import zlib
 @explicit_serialize
 class InsertXMLToDb(FiretaskBase):
@@ -1156,10 +1156,9 @@ class InsertXMLToDb(FiretaskBase):
                 self.xmldata = f.readlines()
             structure = self.get('structure', Structure.from_file('POSCAR'))
 
-            #           'xmldata': bson.Binary(pickle.dumps(zlib.compress(self.xmldata))),
             xml_data = {'metadata': {'tag': self.get('tag')},
                        'type': self.xml,
-                       'xmldata': bson.Binary(zlib.compress(self.xmldata)),
+                       'xmldata': bson.Binary(pickle.dumps(self.xmldata)),
                        'volume': structure.volume,
                        'last_updated':datetime.datetime.utcnow(),
                        'structure': structure.as_dict(),
