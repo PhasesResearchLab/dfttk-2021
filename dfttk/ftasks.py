@@ -1137,7 +1137,7 @@ class CheckSymmetryToDb(FiretaskBase):
         return FWAction(update_spec={'symmetry_checks_passed': symm_check_data['symmetry_checks_passed']})
  
 import bson
-import cPickle as pickle
+import pickle
 import zlib
 @explicit_serialize
 class InsertXMLToDb(FiretaskBase):
