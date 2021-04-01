@@ -1156,9 +1156,10 @@ class InsertXMLToDb(FiretaskBase):
                 self.xmldata = f.readlines()
             structure = self.get('structure', Structure.from_file('POSCAR'))
 
+            #           'xmldata': bson.Binary(pickle.dumps(self.xmldata)),
             xml_data = {'metadata': {'tag': self.get('tag')},
                        'type': self.xml,
-                       'xmldata': bson.Binary(pickle.dumps(self.xmldata)),
+                       'xmldata': bson.Binary(zlib.compress(self.xmldata)),
                        'volume': structure.volume,
                        'last_updated':datetime.datetime.utcnow(),
                        'structure': structure.as_dict(),
