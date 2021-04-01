@@ -1160,7 +1160,7 @@ class InsertXMLToDb(FiretaskBase):
                        'last_updated':datetime.datetime.utcnow(),
                        'structure': structure.as_dict(),
                        'formula_pretty': structure.composition.reduced_formula}
-            vasp_db.db['xml'].insert_one(xml_data)
+            self.vasp_db.db['xml'].insert_one(xml_data)
 
 @explicit_serialize
 class BornChargeToDb(FiretaskBase):
