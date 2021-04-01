@@ -12,7 +12,8 @@ from atomate.vasp.firetasks.run_calc import RunVaspCustodian
 from dfttk.input_sets import RelaxSet, StaticSet, ForceConstantsSet, ATATIDSet, BornChargeSet
 from dfttk.ftasks import WriteVaspFromIOSetPrevStructure, SupercellTransformation, CalculatePhononThermalProperties, \
     CheckSymmetry, CheckRelaxation, ScaleVolumeTransformation, TransmuteStructureFile, WriteATATFromIOSet, RunATATCustodian, RunVaspCustodianNoValidate, \
-    Record_relax_running_path, Record_PreStatic_result, CheckSymmetryToDb, PhononStable, BornChargeToDb
+    Record_relax_running_path, Record_PreStatic_result, CheckSymmetryToDb, PhononStable, BornChargeToDb,
+    InsertXMLToDb
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 
@@ -225,13 +226,6 @@ class StaticFW(Firework):
                 store_volumetric_data = ()
         else:
             raise ValueError('The store_volumetric_data should be list or bool')
-        if isinstance(store_volumetric_data, (tuple)):
-            store_volumetric_data=store_volumetric_data+("vasprun.xml",)
-        elif isinstance(store_volumetric_data, (list)):
-            store_volumetric_data.append("vasprun.xml")
-        else:
-            store_volumetric_data=("vasprun.xml")
-        print (store_volumetric_data)
 
         override_default_vasp_params = override_default_vasp_params or {}
         vasp_input_set = vasp_input_set or StaticSet(structure, isif=isif, **override_default_vasp_params)
@@ -261,6 +255,9 @@ class StaticFW(Firework):
             t.append(VaspToDb(db_file=">>db_file<<", parse_dos=True, additional_fields={"task_label": name, "metadata": metadata,
                                 "version_atomate": atomate_ver, "version_dfttk": dfttk_ver, "adopted": True, "tag": tag},
                                 store_volumetric_data=store_volumetric_data))
+            t.append(InsertXMLToDb(db_file=">>db_file<<", structure=structure, 
+                                tag=tag, xml="vasprun.xml"))
+
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, site_properties=site_properties))
         super(StaticFW, self).__init__(t, parents=parents, name="{}-{}".format(
             structure.composition.reduced_formula, name), **kwargs)
