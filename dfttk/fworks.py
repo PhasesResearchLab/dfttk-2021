@@ -231,7 +231,8 @@ class StaticFW(Firework):
             store_volumetric_data.append("vasprun.xml")
         else:
             store_volumetric_data=("vasprun.xml")
-            
+        print (store_volumetric_data)
+
         override_default_vasp_params = override_default_vasp_params or {}
         vasp_input_set = vasp_input_set or StaticSet(structure, isif=isif, **override_default_vasp_params)
         site_properties = deepcopy(structure).site_properties
