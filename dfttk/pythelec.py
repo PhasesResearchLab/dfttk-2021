@@ -9,6 +9,7 @@ import subprocess
 import math
 import copy
 import json
+import pickle
 import numpy as np
 from scipy.constants import physical_constants
 from scipy.optimize import brentq, curve_fit
@@ -862,6 +863,12 @@ def vol_within(vol, volumes, thr=0.001):
     return False
 
 
+def vol_closest(vol, volumes, thr=1.e-6):
+    for i,v in enumerate(volumes):
+        if (abs(vol-v) < thr*vol): return i
+    return -1
+
+
 class thelecMDB():
     """
     API to calculate the thermal electronic properties from the saved dos and volume dependence in MongDB database
@@ -964,10 +971,10 @@ class thelecMDB():
             print("\nit seems phonon for", i['volume'],"is not finished yet  and so it is discared\n")
             return None
         vol = 'V{:010.6f}'.format(float(i['volume']))
-        voldir = phdir+'/'+vol
+        voldir = os.path.join(phdir,vol)
         if not os.path.exists(voldir):
             os.mkdir(voldir)
-        elif os.path.exists(voldir+'/superfij.out'): return voldir
+        elif os.path.exists(os.path.join(voldir,'superfij.out')): return voldir
 
         poscar = structure.to(fmt="poscar")
         unitcell_l = str(poscar).split('\n')
@@ -988,24 +995,25 @@ class thelecMDB():
         natoms = len(supercell_structure.sites)
         poscar = supercell_structure.to(fmt="poscar")
         supercell_l = str(poscar).split('\n')
-        structure.to(filename=voldir+'/POSCAR')
+        structure.to(filename=os.path.join(voldir,'POSCAR'))
 
 
-        with open (voldir+'/metadata.json','w') as out:
+        with open (os.path.join(voldir,'metadata.json'),'w') as out:
             mm = i['metadata']
             mm['volume'] = i['volume']
             mm['energy'] = self.energies[(list(self.volumes)).index(i['volume'])]
             out.write('{}\n'.format(mm))
-        if len(self.xml)!=0:
-            ii = self.xml.index(i['volume'])
-            with open (os.path.join(voldir,'metadata.json'),'w') as out:
-                for line in self.xmlvol[ii]:
-                    out.write('{}\n'.format(line))
 
 
-        with open (voldir+'/OSZICAR','w') as out:
+        if len(self.xmlvol)!=0:
+            ii = vol_closest(mm['volume'],self.xmlvol)
+            with open (os.path.join(voldir,self.xmltype),'wb') as out:
+                out.write(self.xmlgz[ii])
+
+ 
+        with open (os.path.join(voldir,'OSZICAR'),'w') as out:
             out.write('   1 F= xx E0= {}\n'.format(self.energies[(list(self.volumes)).index(i['volume'])]))
-        with open (voldir+'/superfij.out','w') as out:
+        with open (os.path.join(voldir,'superfij.out'),'w') as out:
             for line in range (2,5):
                 out.write('{}\n'.format(unitcell_l[line]))
             for line in range (2,5):
@@ -1290,7 +1298,7 @@ class thelecMDB():
             self.T_vib = T_remesh(self.t0, self.t1, self.td, _nT=self.nT)
 
         print ("extract the superfij.out used by Yphon ...")
-        phdir = self.phasename+'/Yphon'
+        phdir = os.path.join(self.phasename,'Yphon')
         if not os.path.exists(phdir):
             os.mkdir(phdir)
 
@@ -1530,12 +1538,15 @@ class thelecMDB():
         #self.volumes = sort_x_by_y(volumes,volumes)
         self.volumes = np.array(list(map(float,sorted(volumes))))
         print ("found volumes from static calculations:", volumes)
-        self.xml = []
+        
         self.xmlvol = []
-        xml = self.vasp_db.collection['xml'].find({'$and':[ {'metadata.tag': self.tag}, {'type': 'vasprun.xml'} ]})
+        self.xmlgz = []
+        self.xmltype = 'vasprun.xml.gz'
+        xml = list(self.vasp_db.db['xmlgz'].find({'$and':[ {'metadata.tag': self.tag}, {'type': self.xmltype} ]}))
         for x in xml:
-            self.xml.append(pickle.loads['xmldata'])
-            self.xmlvol.append(volume)
+            self.xmlgz.append(pickle.loads(x['xmldata']))
+            self.xmlvol.append(x['volume'])
+            print ("found xml file:", self.xmltype, "at", x['volume'])
 
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
         if not os.path.exists(self.phasename):
@@ -1545,7 +1556,7 @@ class thelecMDB():
     # get the energies, volumes and DOS objects by searching for the tag
     def find_static_calculations_local(self):
         from os import walk
-        yphondir = self.local+"/Yphon"
+        yphondir = os.path.join(self.local,"Yphon")
         if not os.path.exists(yphondir): yphondir = self.local
 
         _, static_calculations, _ = next(walk(yphondir))
@@ -1558,9 +1569,9 @@ class thelecMDB():
         dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
         _structure = None  # single Structure for QHA calculation
         for calc in static_calculations:
-            poscar = yphondir + '/' + calc + '/POSCAR'
+            poscar = os.path.join(yphondir, calc, 'POSCAR')
             if not os.path.exists(poscar) : continue
-            oszicar = yphondir + '/' + calc + '/OSZICAR'
+            oszicar = os.path.join(yphondir, calc, 'OSZICAR')
             if not os.path.exists(oszicar) : continue
             print ("Handling data in ", os.path.join(yphondir,calc))
             structure = Structure.from_file(poscar)
@@ -1606,7 +1617,7 @@ class thelecMDB():
                 key_comments['comments'] = 'local calculations'
                 self.key_comments = key_comments
 
-            doscar = yphondir + '/' + calc + '/DOSCAR.gz'
+            doscar = os.path.join(yphondir, calc, 'DOSCAR.gz')
             if not os.path.exists(doscar) : continue
             dos_objs.append(doscar)
 
@@ -1639,8 +1650,8 @@ class thelecMDB():
             self.energies = np.array(readme['E-V']['energies'])
         self.dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
         for vol in self.volumes:
-            dir = self.phasename+'/Yphon/'+'V{:010.6f}'.format(vol)
-            self.dos_objs.append(dir+'/DOSCAR.gz')
+            dir = os.path.join(self.phasename,'Yphon','V{:010.6f}'.format(vol))
+            self.dos_objs.append(os.path.join(dir,'DOSCAR.gz'))
 
 
     def get_static_calculations(self):
@@ -1676,13 +1687,13 @@ class thelecMDB():
             """
             """
             if self.vasp_db==None: continue
-            phdir = self.phasename+'/Yphon'
+            phdir = os.path.join(self.phasename,'Yphon')
             if not os.path.exists(phdir): os.mkdir(Yphon)
             vol = 'V{:010.6f}'.format(self.volumes[i])
-            voldir = phdir+'/'+vol
+            voldir = os.path.join(phdir, vol)
             if not os.path.exists(voldir):
                 os.mkdir(voldir)
-            doscar = voldir+'/DOSCAR.gz'
+            doscar = os.path.join(voldir,'DOSCAR.gz')
             if not os.path.exists(doscar):
                 with gzip.open (doscar,'wt') as out:
                     for j in range(5):
