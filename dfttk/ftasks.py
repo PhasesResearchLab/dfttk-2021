@@ -1160,7 +1160,7 @@ class InsertXMLToDb(FiretaskBase):
             #           'xmldata': bson.Binary(pickle.dumps(self.xmldata)),
             xml_data = {'metadata': {'tag': self.get('tag')},
                        'type': self.xml,
-                       'xmldata': b64.urlsafe_b64encode(zlib.compress(self.xmldata))),
+                       'xmldata': b64.urlsafe_b64encode(zlib.compress(self.xmldata)),
                        'volume': structure.volume,
                        'last_updated':datetime.datetime.utcnow(),
                        'structure': structure.as_dict(),
