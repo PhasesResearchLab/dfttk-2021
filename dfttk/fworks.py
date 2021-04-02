@@ -205,7 +205,7 @@ class StaticFW(Firework):
     def __init__(self, structure, isif=2, scale_lattice=None, name="static", vasp_input_set=None, 
                  vasp_cmd="vasp", metadata=None, prev_calc_loc=True, Prestatic=False, modify_incar=None, 
                  db_file=None, parents=None, tag=None, override_default_vasp_params=None,
-                 store_volumetric_data=False, **kwargs):
+                 store_volumetric_data=False, store_raw_vasprunxml=False, **kwargs):
 
         # TODO: @computron - I really don't like how you need to set the structure even for
         # prev_calc_loc jobs. Sometimes it makes appending new FWs to an existing workflow
@@ -255,7 +255,8 @@ class StaticFW(Firework):
             t.append(VaspToDb(db_file=">>db_file<<", parse_dos=True, additional_fields={"task_label": name, "metadata": metadata,
                                 "version_atomate": atomate_ver, "version_dfttk": dfttk_ver, "adopted": True, "tag": tag},
                                 store_volumetric_data=store_volumetric_data))
-            t.append(InsertXMLToDb(db_file=">>db_file<<", structure=structure, 
+            if store_raw_vasprunxml:
+                t.append(InsertXMLToDb(db_file=">>db_file<<", structure=structure, 
                                 tag=tag, xml="vasprun.xml"))
 
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, site_properties=site_properties))

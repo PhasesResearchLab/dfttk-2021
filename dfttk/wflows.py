@@ -308,7 +308,7 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
                         metadata=None, name='EV_QHA', override_default_vasp_params=None, modify_incar_params={},
                         modify_kpoints_params={}, verbose=False, level=1, phonon_supercell_matrix_min=60,
                         phonon_supercell_matrix_max=120, optimize_sc=False, force_phonon=False, stable_tor=0.01,
-                        store_volumetric_data=False):
+                        store_volumetric_data=False, store_raw_vasprunxml=False):
     """
     E - V
     curve
@@ -417,6 +417,7 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
     check_qha_fw = Firework(EVcheck_QHA(site_properties=site_properties,verbose=verbose, stable_tor=stable_tor,
                                         phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, force_phonon=force_phonon,
                                         override_symmetry_tolerances=override_symmetry_tolerances, store_volumetric_data=store_volumetric_data,
+                                        store_raw_vasprunxml=store_raw_vasprunxml,
                                         **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
                             parents=check_qha_parent, name='{}-EVcheck_QHA'.format(structure.composition.reduced_formula))
     fws.append(check_qha_fw)
