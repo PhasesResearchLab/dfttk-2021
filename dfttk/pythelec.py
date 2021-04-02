@@ -965,7 +965,6 @@ class thelecMDB():
             return None
         vol = 'V{:010.6f}'.format(float(i['volume']))
         voldir = phdir+'/'+vol
-        #print("eeeeeeeee", vol)
         if not os.path.exists(voldir):
             os.mkdir(voldir)
         elif os.path.exists(voldir+'/superfij.out'): return voldir
@@ -990,11 +989,20 @@ class thelecMDB():
         poscar = supercell_structure.to(fmt="poscar")
         supercell_l = str(poscar).split('\n')
         structure.to(filename=voldir+'/POSCAR')
+
+
         with open (voldir+'/metadata.json','w') as out:
             mm = i['metadata']
             mm['volume'] = i['volume']
             mm['energy'] = self.energies[(list(self.volumes)).index(i['volume'])]
             out.write('{}\n'.format(mm))
+        if len(self.xml)!=0:
+            ii = self.xml.index(i['volume'])
+            with open (os.path.join(voldir,'metadata.json'),'w') as out:
+                for line in self.xmlvol[ii]:
+                    out.write('{}\n'.format(line))
+
+
         with open (voldir+'/OSZICAR','w') as out:
             out.write('   1 F= xx E0= {}\n'.format(self.energies[(list(self.volumes)).index(i['volume'])]))
         with open (voldir+'/superfij.out','w') as out:
@@ -1522,6 +1530,12 @@ class thelecMDB():
         #self.volumes = sort_x_by_y(volumes,volumes)
         self.volumes = np.array(list(map(float,sorted(volumes))))
         print ("found volumes from static calculations:", volumes)
+        self.xml = []
+        self.xmlvol = []
+        xml = self.vasp_db.collection['xml'].find({'$and':[ {'metadata.tag': self.tag}, {'type': 'vasprun.xml'} ]})
+        for x in xml:
+            self.xml.append(pickle.loads['xmldata'])
+            self.xmlvol.append(volume)
 
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
         if not os.path.exists(self.phasename):
