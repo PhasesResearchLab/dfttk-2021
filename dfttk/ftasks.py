@@ -1152,7 +1152,7 @@ class InsertXMLToDb(FiretaskBase):
             fp = open(self.xml,"r")
             with open (self.xml, 'r') as f:
                 xmldata = f.readlines()
-            bindata = gzip.compress(bytes(xmldata),'utf-8')
+            bindata = gzip.compress(bytes(xmldata,'utf-8'))
             #with gzip.open("zen.txt.gz", "wb") as f:
             #f.write(bindata)
             self.db_file = env_chk(self.get("db_file"), fw_spec)
