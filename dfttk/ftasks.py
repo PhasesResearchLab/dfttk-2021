@@ -10,7 +10,8 @@ import numpy as np
 import copy
 import six
 import shlex
-import xml.etree.ElementTree as ET
+import bson
+import pickle
 from phonopy.interface.vasp import Vasprun as PhonopyVasprun
 from pymatgen.core import Structure
 from pymatgen.io.vasp.inputs import Incar
@@ -1136,10 +1137,7 @@ class CheckSymmetryToDb(FiretaskBase):
         vasp_db.db['relaxations'].insert_one(symm_check_data)
         return FWAction(update_spec={'symmetry_checks_passed': symm_check_data['symmetry_checks_passed']})
  
-import bson
-import pickle
-import zlib
-import base64 as b64
+
 @explicit_serialize
 class InsertXMLToDb(FiretaskBase):
     '''
@@ -1157,11 +1155,10 @@ class InsertXMLToDb(FiretaskBase):
                 self.xmldata = f.readlines()
             structure = self.get('structure', Structure.from_file('POSCAR'))
 
-            #           'xmldata': bson.Binary(pickle.dumps(self.xmldata)),
             xml_data = {'metadata': {'tag': self.get('tag')},
                        'type': self.xml,
-                       'xmldata': b64.urlsafe_b64encode(zlib.compress(self.xmldata)),
-                       'volume': structure.volume,
+                       'xmldata': bson.Binary(pickle.dumps(self.xmldata)),
+                      'volume': structure.volume,
                        'last_updated':datetime.datetime.utcnow(),
                        'structure': structure.as_dict(),
                        'formula_pretty': structure.composition.reduced_formula}
