@@ -1149,10 +1149,9 @@ class InsertXMLToDb(FiretaskBase):
     def run_task(self, fw_spec):
         self.xml = self.get("xml", None)
         if self.xml is not None:
-            fp = open(self.xml,"r")
-            with open (self.xml, 'r') as f:
-                xmldata = f.readlines()
-            bindata = gzip.compress(bytes(xmldata,'utf-8'))
+            with open (self.xml, 'rb') as f:
+                xmldata = f.read()
+            bindata = gzip.compress(bytes(xmldata))
             #with gzip.open("zen.txt.gz", "wb") as f:
             #f.write(bindata)
             self.db_file = env_chk(self.get("db_file"), fw_spec)
