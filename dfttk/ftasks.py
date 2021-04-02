@@ -1151,7 +1151,7 @@ class InsertXMLToDb(FiretaskBase):
         if self.xml is not None:
             fp = open(self.xml,"r")
             with open (self.xml, 'r') as f:
-                xmldata = f.readlines()>>> data = fp.read()
+                xmldata = f.readlines()
             bindata = gzip.compress(xmldata)
             #with gzip.open("zen.txt.gz", "wb") as f:
             #f.write(bindata)
@@ -1161,7 +1161,7 @@ class InsertXMLToDb(FiretaskBase):
             structure = self.get('structure', Structure.from_file('POSCAR'))
 
             xml_data = {'metadata': {'tag': self.get('tag')},
-                       'type': self.xml,
+                       'type': self.xml+".gz",
                        'xmldata': bson.Binary(pickle.dumps(bindata)),
                        'volume': structure.volume,
                        'last_updated':datetime.datetime.utcnow(),
