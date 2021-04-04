@@ -258,7 +258,6 @@ class StaticFW(Firework):
             #if store_raw_vasprunxml:
             if True:
                 from dfttk.nonscalc import nonscalc,nonscalc_restore,InsertXMLToDb
-                """
                 print ("eeeeeeeeeeeeee 0", store_raw_vasprunxml)
                 t.append(nonscalc())
                 print ("eeeeeeeeeeeeee 1", store_raw_vasprunxml)
@@ -266,6 +265,7 @@ class StaticFW(Firework):
                 print ("eeeeeeeeeeeeee 2", store_raw_vasprunxml)
                 t.append(nonscalc_restore())
                 print ("eeeeeeeeeeeeee 3", store_raw_vasprunxml)
+                """
                 """
                 t.append(InsertXMLToDb(db_file=">>db_file<<", structure=structure, 
                     tag=tag, xml="vasprun.xml"))
