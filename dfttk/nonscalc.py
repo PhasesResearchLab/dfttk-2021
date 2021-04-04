@@ -22,7 +22,7 @@ class nonscalc(FiretaskBase):
                 else:
                     f.write(line)
 
-        shutil.copyfile("KPOINTS","KPOINT.bef")
+        shutil.copyfile("KPOINTS","KPOINTS.Static")
         with open("KPOINTS", "r") as f:
             lines = f.readlines()
         with open("KPOINTS", "w") as f:
@@ -33,15 +33,6 @@ class nonscalc(FiretaskBase):
                 f.write(' {}'.format(mesh[i]*2))
             f.write('\n')            
 
-
-@explicit_serialize
-class nonscalc_restore(FiretaskBase):
-    '''
-    nonselfconsistent calculation using denser k-mesh
-    '''
-    def run_task(self, fw_spec):
-        shutil.copyfile("INCAR.bef","INCAR.bef")
-        shutil.copyfile("KPOINTS","KPOINT.bef")
 
 
 @explicit_serialize
@@ -54,6 +45,10 @@ class InsertXMLToDb(FiretaskBase):
 
     def run_task(self, fw_spec):
         self.xml = self.get("xml", None)
+        shutil.copyfile("INCAR","INCAR.nscf")
+        shutil.copyfile("KPOINTS","KPOINTS.nscf")
+        shutil.copyfile("INCAR.Static","INCAR")
+        shutil.copyfile("KPOINTS.Static","KPOINTS")
         if self.xml is not None:
             with open (self.xml, 'rb') as f:
                 xmldata = f.read()

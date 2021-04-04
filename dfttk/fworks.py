@@ -229,7 +229,7 @@ class StaticFW(Firework):
         override_default_vasp_params = override_default_vasp_params or {}
         vasp_input_set = vasp_input_set or StaticSet(structure, isif=isif, **override_default_vasp_params)
         site_properties = deepcopy(structure).site_properties
-
+        self.store_raw_vasprunxml = store_raw_vasprunxml
         # Avoids delivery (prev_calc_loc == '' (instead by True))
         t = []
         if type(prev_calc_loc) == str:
@@ -254,8 +254,8 @@ class StaticFW(Firework):
             t.append(VaspToDb(db_file=">>db_file<<", parse_dos=True, additional_fields={"task_label": name, "metadata": metadata,
                                 "version_atomate": atomate_ver, "version_dfttk": dfttk_ver, "adopted": True, "tag": tag},
                                 store_volumetric_data=store_volumetric_data))
-            print ("eeeeeeeeeeeeee", store_raw_vasprunxml)
-            #if store_raw_vasprunxml:
+            print ("eeeeeeeeeeeeee", self.store_raw_vasprunxml)
+            #if self.store_raw_vasprunxml:
             if True:
                 from dfttk.nonscalc import nonscalc,nonscalc_restore,InsertXMLToDb
                 print ("eeeeeeeeeeeeee 0", store_raw_vasprunxml)
@@ -263,10 +263,6 @@ class StaticFW(Firework):
                 print ("eeeeeeeeeeeeee 1", store_raw_vasprunxml)
                 t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
                 print ("eeeeeeeeeeeeee 2", store_raw_vasprunxml)
-                t.append(nonscalc_restore())
-                print ("eeeeeeeeeeeeee 3", store_raw_vasprunxml)
-                """
-                """
                 t.append(InsertXMLToDb(db_file=">>db_file<<", structure=structure, 
                     tag=tag, xml="vasprun.xml"))
                 print ("eeeeeeeeeeeeee 4", store_raw_vasprunxml)
