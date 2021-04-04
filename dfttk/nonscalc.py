@@ -7,7 +7,7 @@ from atomate.utils.utils import load_class, env_chk
 
 
 @explicit_serialize
-class nonscalc():
+class nonscalc(FiretaskBase):
     '''
     nonselfconsistent calculation using denser k-mesh
     '''
@@ -35,7 +35,7 @@ class nonscalc():
 
 
 @explicit_serialize
-class nonscalc_restore():
+class nonscalc_restore(FiretaskBase):
     '''
     nonselfconsistent calculation using denser k-mesh
     '''
