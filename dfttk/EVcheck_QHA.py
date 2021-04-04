@@ -351,6 +351,7 @@ class EVcheck_QHA(FiretaskBase):
                     check_result = Firework(EVcheck_QHA(structure=relax_structure, relax_scheme=relax_scheme, store_volumetric_data=store_volumetric_data,
                                                         run_num=run_num, verbose=verbose, site_properties=site_properties, stable_tor=stable_tor,
                                                         phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, force_phonon=force_phonon,
+                                                        store_raw_vasprunxml=store_raw_vasprunxml,
                                                         **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
                                             parents=calcs, name='{}-EVcheck_QHA'.format(structure.composition.reduced_formula))
                     fws.append(check_result)
@@ -714,6 +715,7 @@ class PreEV_check(FiretaskBase):
                                                     metadata = metadata, t_min = t_min, t_max = t_max, t_step = t_step, phonon = phonon, deformations =deformations,
                                                     phonon_supercell_matrix = phonon_supercell_matrix, symmetry_tolerance = symmetry_tolerance,
                                                     modify_incar_params = modify_incar_params, verbose = verbose, pass_isif4=pass_isif4,
+                                                    store_raw_vasprunxml=store_raw_vasprunxml,
                                                     modify_kpoints_params = modify_kpoints_params, site_properties=site_properties),
                                         parents = ps2_relax_fw, name='%s-EVcheck_QHA' %structure.composition.reduced_formula, store_volumetric_data=store_volumetric_data)
                 fws.append(check_result)

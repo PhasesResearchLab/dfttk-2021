@@ -413,7 +413,7 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
                               name="{}-CheckRelaxScheme".format(structure.composition.reduced_formula))
     fws.append(check_relax_fw)
     check_qha_parent.append(check_relax_fw)
-
+    
     check_qha_fw = Firework(EVcheck_QHA(site_properties=site_properties,verbose=verbose, stable_tor=stable_tor,
                                         phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, force_phonon=force_phonon,
                                         override_symmetry_tolerances=override_symmetry_tolerances, store_volumetric_data=store_volumetric_data,
