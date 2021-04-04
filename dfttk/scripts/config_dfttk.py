@@ -47,16 +47,24 @@ def get_machines(nodes=1, ppn=16, user_machines=None):
                 "pre_rocket": "module load vasp/5.4.4",
                 "post_rocket": "",
                 "vasp_cmd": "ibrun -np "+str(nodes*ppn)+" vasp_std"}
-          ,"aci-b":{"queue": "open", #aci-b is obsolete, however, this could be a template  PBS
+          ,"aci-vasp5":{"queue": "open", #aci-b is obsolete, however, this could be a template  PBS
                 "_fw_q_type": "PBS",
                 "account": "open",
-                "pre_rocket": "module load intel impi vasp",
+                "pre_rocket": "module load intel/19.1.2\n"+\
+                              "module load impi/2019.8\n"+\
+                              "module use /gpfs/group/RISE/sw7/modules\n"+\
+                              "module load vasp\n"+\
+                              "export UCX_TLS=all",
                 "post_rocket": "",
                 "vasp_cmd": "mpirun vasp_std"}
           ,"aci-vasp6":{"queue": "open", #aci-b is obsolete, however, this could be a template  PBS
                 "_fw_q_type": "PBS",
                 "account": "open",
-                "pre_rocket": "module use /gpfs/group/RISE/sw7/modules\nmodule load vasp/vasp-6.2.0",
+                "pre_rocket": "module load intel/19.1.2\n"+\
+                              "module load impi/2019.8\n"+\
+                              "module use /gpfs/group/RISE/sw7/modules\n"+\
+                              "module load vasp/vasp-6.2.0-test\n"+\
+                              "export UCX_TLS=all",
                 "post_rocket": "",
                 "vasp_cmd": "mpirun vasp_std"}
           ,"aci-roar":{"queue": "open",
