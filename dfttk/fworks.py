@@ -255,7 +255,8 @@ class StaticFW(Firework):
                                 "version_atomate": atomate_ver, "version_dfttk": dfttk_ver, "adopted": True, "tag": tag},
                                 store_volumetric_data=store_volumetric_data))
             print ("eeeeeeeeeeeeee", store_raw_vasprunxml)
-            if store_raw_vasprunxml:
+            #if store_raw_vasprunxml:
+            if True:
                 from dfttk.nonscalc import nonscalc,nonscalc_restore,InsertXMLToDb
                 print ("eeeeeeeeeeeeee 0", store_raw_vasprunxml)
                 t.append(nonscalc())
