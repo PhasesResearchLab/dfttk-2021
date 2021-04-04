@@ -254,13 +254,19 @@ class StaticFW(Firework):
             t.append(VaspToDb(db_file=">>db_file<<", parse_dos=True, additional_fields={"task_label": name, "metadata": metadata,
                                 "version_atomate": atomate_ver, "version_dfttk": dfttk_ver, "adopted": True, "tag": tag},
                                 store_volumetric_data=store_volumetric_data))
+            print ("eeeeeeeeeeeeee", store_raw_vasprunxml)
             if store_raw_vasprunxml:
-                from dfttk.nonscalc import nonscalc,nonscalc_restore,InsertXMLToDb 
+                from dfttk.nonscalc import nonscalc,nonscalc_restore,InsertXMLToDb
+                print ("eeeeeeeeeeeeee 0", store_raw_vasprunxml)
                 t.append(nonscalc())
+                print ("eeeeeeeeeeeeee 1", store_raw_vasprunxml)
                 t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
+                print ("eeeeeeeeeeeeee 2", store_raw_vasprunxml)
                 t.append(nonscalc_restore())
+                print ("eeeeeeeeeeeeee 3", store_raw_vasprunxml)
                 t.append(InsertXMLToDb(db_file=">>db_file<<", structure=structure, 
                     tag=tag, xml="vasprun.xml"))
+                print ("eeeeeeeeeeeeee 4", store_raw_vasprunxml)
 
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, site_properties=site_properties))
         super(StaticFW, self).__init__(t, parents=parents, name="{}-{}".format(

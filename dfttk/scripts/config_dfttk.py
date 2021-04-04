@@ -63,7 +63,7 @@ def get_machines(nodes=1, ppn=16, user_machines=None):
                 "pre_rocket": "module load intel/19.1.2\n"+\
                               "module load impi/2019.8\n"+\
                               "module use /gpfs/group/RISE/sw7/modules\n"+\
-                              "module load vasp/vasp-6.2.0-test\n"+\
+                              "module load vasp/vasp-6.2.0\n"+\
                               "export UCX_TLS=all",
                 "post_rocket": "",
                 "vasp_cmd": "mpirun vasp_std"}
