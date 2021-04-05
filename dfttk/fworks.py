@@ -25,7 +25,7 @@ from monty.serialization import loadfn, dumpfn
 if os.path.exists('SETTINGS.yaml'): #treat settings in 'SETTINGS.yaml' as globally accessible
     user_SETTINGS.user_settings=loadfn('SETTINGS.yaml')
 """
-import dfttk.run_task_ext
+import dfttk.run_task_ext.run_task_ext 
 
 STORE_VOLUMETRIC_DATA = ("chgcar", "aeccar0", "aeccar2", "elfcar", "locpot")
 
