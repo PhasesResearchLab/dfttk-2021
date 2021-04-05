@@ -10,22 +10,26 @@ from atomate.utils.utils import load_class, env_chk
 from atomate.vasp.firetasks.run_calc import RunVaspCustodian
 from pymatgen.core import Structure
 import dfttk.scripts.user_SETTINGS as user_SETTINGS
-
+"""
 from monty.serialization import loadfn, dumpfn
 if os.path.exists('SETTINGS.yaml'): #treat settings in 'SETTINGS.yaml' as globally accessible
     user_SETTINGS.user_settings=loadfn('SETTINGS.yaml')
     print("eeeeeeeeeeeee", user_SETTINGS.user_settings)
     global_user_SETTINGS = user_SETTINGS.user_settings
+"""
 
-
-def run_task_ext(t,vasp_cmd,db_file,structure,tag):
-    print(user_SETTINGS.user_settings)
+def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
     """
+    print(user_SETTINGS.user_settings)
     global global_user_SETTINGS
     print("lllllllll", global_user_SETTINGS)
     #if user_SETTINGS.user_settings.get('store_raw_vasprunxml', False):
     """
-    if True:
+    try:
+        store_raw_vasprunxml = override_default_vasp_params['user_incar_settings']['store_raw_vasprunxml']
+    except:
+        store_raw_vasprunxml = False
+    if store_raw_vasprunxml:
         t.append(nonscalc())
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
         t.append(InsertXMLToDb(db_file=db_file, structure=structure, 
@@ -92,8 +96,8 @@ class InsertXMLToDb(FiretaskBase):
             structure = self.get('structure', Structure.from_file('POSCAR'))
 
             xml_data = {'metadata': {'tag': self.get('tag')},
-                        self.xml+".gz": bson.Binary(pickle.dumps(binxmldata)),
-                       'DOSCAR.gz': bson.Binary(pickle.dumps(bindoscar)),
+                        self.xml.replace(".","_")+"_gz": bson.Binary(pickle.dumps(binxmldata)),
+                       'DOSCAR_gz': bson.Binary(pickle.dumps(bindoscar)),
                        'volume': structure.volume,
                        'last_updated':datetime.datetime.utcnow(),
                        'structure': structure.as_dict(),
