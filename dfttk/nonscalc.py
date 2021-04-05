@@ -5,6 +5,7 @@ import shutil
 from fireworks import explicit_serialize, FiretaskBase, FWAction
 from atomate.vasp.database import VaspCalcDb
 from atomate.utils.utils import load_class, env_chk
+from pymatgen.core import Structure
 
 
 @explicit_serialize
