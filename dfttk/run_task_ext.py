@@ -32,6 +32,8 @@ class nonscalc(FiretaskBase):
             for line in lines:
                 if line.lower().startswith("icharg"):
                     f.write('ICHARG=11\n')
+                elif line.lower().startswith("lorbit"):
+                    continue
                 else:
                     f.write(line)
 

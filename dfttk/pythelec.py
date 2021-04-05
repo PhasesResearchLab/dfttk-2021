@@ -1007,9 +1007,10 @@ class thelecMDB():
 
         if len(self.xmlvol)!=0:
             ii = vol_closest(mm['volume'],self.xmlvol)
-            with open (os.path.join(voldir,self.xmltype),'wb') as out:
+            with open (os.path.join(voldir,'vasprun.xml.gz'),'wb') as out:
                 out.write(self.xmlgz[ii])
-
+            with open (os.path.join(voldir,'DOSCAR.gz'),'wb') as out:
+                out.write(self.dosgz[ii])
  
         with open (os.path.join(voldir,'OSZICAR'),'w') as out:
             out.write('   1 F= xx E0= {}\n'.format(self.energies[(list(self.volumes)).index(i['volume'])]))
@@ -1305,9 +1306,7 @@ class thelecMDB():
         has_Born = self.get_dielecfij(phdir)
 
         for i in (self.vasp_db).db['phonon'].find({'metadata.tag': self.tag}):
-            #print("eeeeeeeee", i['volume'])
             if i['volume'] not in self.volumes: continue
-            #print("eeeeeeeee", i['volume'])
             voldir = self.get_superfij(i, phdir)
             if voldir is None: continue
 
@@ -1541,12 +1540,13 @@ class thelecMDB():
         
         self.xmlvol = []
         self.xmlgz = []
-        self.xmltype = 'vasprun.xml.gz'
-        xml = list(self.vasp_db.db['xmlgz'].find({'$and':[ {'metadata.tag': self.tag}, {'type': self.xmltype} ]}))
+        self.dosgz = []
+        xml = list(self.vasp_db.db['xmlgz'].find({'$and':[ {'metadata.tag': self.tag}]}))
         for x in xml:
-            self.xmlgz.append(pickle.loads(x['xmldata']))
+            self.xmlgz.append(pickle.loads(x['vasprun.xml.gz']))
+            self.dosgz.append(pickle.loads(x['DOSCAR.gz']))
             self.xmlvol.append(x['volume'])
-            print ("found xml file:", self.xmltype, "at", x['volume'])
+            print ("found refined file:", 'vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
 
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
         if not os.path.exists(self.phasename):
@@ -2181,18 +2181,11 @@ class thelecMDB():
         if len(self.VCij) == 0: return
         T = self.T[self.T <=self.TupLimit]
         nT = len(T)
-        """
-        print ('eeeeeeee', nT, self.blat[0:nT])
-        print ('eeeeeeee', self.volT[0:nT])
-        print ('eeeeeeee', T)
-        print ('eeeeeeee', min(self.volT) , min(self.VCij) , max(self.volT) , max(self.VCij))
-        """
         if min(self.volT[0:nT]) < min(self.VCij) or max(self.volT[0:nT]) > max(self.VCij): return
         self.Cij_T = np.zeros((nT, 6, 6), dtype=float)
         electron_volt = physical_constants["electron volt"][0]
         angstrom = 1e-30
         toGPa = electron_volt/angstrom*1.e-9
-        #print("eeeeeeeee", self.VCij)
         for i in range(6):
             for j in range(6):
                 f2 = splrep(self.VCij, self.Cij[:,i,j])

@@ -98,7 +98,6 @@ class EVfindMDB ():
                 if volume not in volumes[hit.index(mm)]:
                     volumes[hit.index(mm)].append(volume)
                     count[hit.index(mm)] += 1
-                #if mm=='5252ccc3-e8da-499f-bb9e-9cf7eb1c5370': print("eeeeeeeee",mm, pot)
             else:
                 ITEMS.append(i)
                 hit.append(mm)
@@ -106,7 +105,6 @@ class EVfindMDB ():
                 volumes.append([i['output']['structure']['lattice']['volume']])
 
                 pot = i['input']['pseudo_potential']['functional'].upper()
-                #if mm=='5252ccc3-e8da-499f-bb9e-9cf7eb1c5370': print("eeeeeeeee",mm, pot)
                 if pot=="":
                     pot = i['orig_inputs']['potcar']['functional'].upper()
                     if pot=='Perdew-Zunger81'.upper(): pot="LDA"

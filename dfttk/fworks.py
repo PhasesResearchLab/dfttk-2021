@@ -231,7 +231,6 @@ class StaticFW(Firework):
         override_default_vasp_params = override_default_vasp_params or {}
         vasp_input_set = vasp_input_set or StaticSet(structure, isif=isif, **override_default_vasp_params)
         site_properties = deepcopy(structure).site_properties
-        #raise ValueError('eeeeeeeeeeeeA very specific bad thing happened.')
         # Avoids delivery (prev_calc_loc == '' (instead by True))
         t = []
         if type(prev_calc_loc) == str:
@@ -256,7 +255,15 @@ class StaticFW(Firework):
             t.append(VaspToDb(db_file=">>db_file<<", parse_dos=True, additional_fields={"task_label": name, "metadata": metadata,
                                 "version_atomate": atomate_ver, "version_dfttk": dfttk_ver, "adopted": True, "tag": tag},
                                 store_volumetric_data=store_volumetric_data))
-            run_task_ext(t,vasp_cmd,">>db_file<<",structure,tag)
+            #run_task_ext(t,vasp_cmd,">>db_file<<",structure,tag)
+            from dfttk.run_task_ext import nonscalc, InsertXMLToDb
+            import dfttk.scripts.user_SETTINGS
+            if user_SETTINGS.user_settings.get('store_raw_vasprunxml', False):
+                t.append(nonscalc())
+                t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
+                t.append(InsertXMLToDb(db_file=">>db_file<<", structure=structure, 
+                    tag=tag, xml="vasprun.xml"))
+
 
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, site_properties=site_properties))
         super(StaticFW, self).__init__(t, parents=parents, name="{}-{}".format(
