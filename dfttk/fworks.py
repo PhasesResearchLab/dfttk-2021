@@ -15,6 +15,8 @@ from dfttk.ftasks import WriteVaspFromIOSetPrevStructure, SupercellTransformatio
     Record_relax_running_path, Record_PreStatic_result, CheckSymmetryToDb, PhononStable, BornChargeToDb
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
+from dfttk.run_task_ext import nonscalc, InsertXMLToDb
+import dfttk.scripts.user_SETTINGS as user_SETTINGS
 
 STORE_VOLUMETRIC_DATA = ("chgcar", "aeccar0", "aeccar2", "elfcar", "locpot")
 
@@ -256,8 +258,8 @@ class StaticFW(Firework):
                                 "version_atomate": atomate_ver, "version_dfttk": dfttk_ver, "adopted": True, "tag": tag},
                                 store_volumetric_data=store_volumetric_data))
             #run_task_ext(t,vasp_cmd,">>db_file<<",structure,tag)
-            from dfttk.run_task_ext import nonscalc, InsertXMLToDb
-            import dfttk.scripts.user_SETTINGS
+            #from dfttk.run_task_ext import nonscalc, InsertXMLToDb
+            #import dfttk.scripts.user_SETTINGS as user_SETTINGS
             if user_SETTINGS.user_settings.get('store_raw_vasprunxml', False):
                 t.append(nonscalc())
                 t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
