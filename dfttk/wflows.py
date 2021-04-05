@@ -370,6 +370,8 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
 
     override_symmetry_tolerances = override_symmetry_tolerances or {'tol_energy':0.025, 'tol_strain':0.05, 'tol_bond':0.10}
     override_default_vasp_params = override_default_vasp_params or {}
+    self.store_raw_vasprunxml = store_raw_vasprunxml
+    print ("eeeeeeeeeeeeee 10", store_raw_vasprunxml)
 
     site_properties = deepcopy(structure).site_properties
 
@@ -413,11 +415,11 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
                               name="{}-CheckRelaxScheme".format(structure.composition.reduced_formula))
     fws.append(check_relax_fw)
     check_qha_parent.append(check_relax_fw)
-    
+    print ("eeeeeeeeeeeeee 11", store_raw_vasprunxml)
     check_qha_fw = Firework(EVcheck_QHA(site_properties=site_properties,verbose=verbose, stable_tor=stable_tor,
                                         phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, force_phonon=force_phonon,
                                         override_symmetry_tolerances=override_symmetry_tolerances, store_volumetric_data=store_volumetric_data,
-                                        store_raw_vasprunxml=store_raw_vasprunxml,
+                                        store_raw_vasprunxml=self.store_raw_vasprunxml,
                                         **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
                             parents=check_qha_parent, name='{}-EVcheck_QHA'.format(structure.composition.reduced_formula))
     fws.append(check_qha_fw)

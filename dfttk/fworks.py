@@ -230,6 +230,7 @@ class StaticFW(Firework):
         vasp_input_set = vasp_input_set or StaticSet(structure, isif=isif, **override_default_vasp_params)
         site_properties = deepcopy(structure).site_properties
         self.store_raw_vasprunxml = store_raw_vasprunxml
+        print ("eeeeeeeeeeeeee -1", self.store_raw_vasprunxml)
         # Avoids delivery (prev_calc_loc == '' (instead by True))
         t = []
         if type(prev_calc_loc) == str:
