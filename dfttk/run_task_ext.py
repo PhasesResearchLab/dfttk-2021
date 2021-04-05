@@ -20,9 +20,11 @@ if os.path.exists('SETTINGS.yaml'): #treat settings in 'SETTINGS.yaml' as global
 
 def run_task_ext(t,vasp_cmd,db_file,structure,tag):
     print(user_SETTINGS.user_settings)
+    """
     global global_user_SETTINGS
     print("lllllllll", global_user_SETTINGS)
     #if user_SETTINGS.user_settings.get('store_raw_vasprunxml', False):
+    """
     if True:
         t.append(nonscalc())
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
