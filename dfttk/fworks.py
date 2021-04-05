@@ -16,7 +16,7 @@ from dfttk.ftasks import WriteVaspFromIOSetPrevStructure, SupercellTransformatio
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 from dfttk.run_task_ext import nonscalc, InsertXMLToDb
-import dfttk.scripts.user_SETTINGS as user_SETTINGS
+#import dfttk.scripts.user_SETTINGS as user_SETTINGS
 
 STORE_VOLUMETRIC_DATA = ("chgcar", "aeccar0", "aeccar2", "elfcar", "locpot")
 
@@ -49,7 +49,6 @@ class OptimizeFW(Firework):
                  prev_calc_loc=True, parents=None, db_insert=False, tag=None,
                  run_isif2=False, pass_isif4=False, force_gamma=True, store_volumetric_data=False,
                  modify_incar=None, modify_incar_params={}, modify_kpoints_params={}, **kwargs):
-
         metadata = metadata or {}
         tag = tag or metadata.get('tag')
         # generate a tag with a warning
@@ -130,7 +129,6 @@ class RobustOptimizeFW(Firework):
                  prev_calc_loc=True, parents=None, db_insert=False, tag=None, modify_incar_params={},
                  modify_kpoints_params={}, energy_with_isif={}, store_volumetric_data=False, 
                  **kwargs):
-
         metadata = metadata or {}
         tag = tag or metadata.get('tag')
         # generate a tag with a warning
@@ -259,7 +257,9 @@ class StaticFW(Firework):
                                 store_volumetric_data=store_volumetric_data))
             #run_task_ext(t,vasp_cmd,">>db_file<<",structure,tag)
             #from dfttk.run_task_ext import nonscalc, InsertXMLToDb
-            #import dfttk.scripts.user_SETTINGS as user_SETTINGS
+            import dfttk.scripts.user_SETTINGS as user_SETTINGS
+            print (user_SETTINGS.user_settings)
+
             if user_SETTINGS.user_settings.get('store_raw_vasprunxml', False):
                 t.append(nonscalc())
                 t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
