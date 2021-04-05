@@ -240,6 +240,7 @@ class EVcheck_QHA(FiretaskBase):
         override_symmetry_tolerances = self.get('override_symmetry_tolerances', {})
         store_volumetric_data = self.get('store_volumetric_data', False)
         self.store_raw_vasprunxml=self.get('store_raw_vasprunxml', False)
+        print ("iiiiiiiiiiiiiiii 1",self.store_raw_vasprunxml)
 
         stable_tor = self.get('stable_tor', 0.01)
         force_phonon = self.get('force_phonon', False)
@@ -599,7 +600,7 @@ class PreEV_check(FiretaskBase):
     optional_params = ['deformations', 'relax_path', 'run_num', 'tolerance', 'threshold', 'del_limited', 'vol_spacing', 't_min',
                        't_max', 't_step', 'phonon', 'phonon_supercell_matrix', 'verbose', 'modify_incar_params', 'structure',
                        'modify_kpoints_params', 'symmetry_tolerance', 'run_isif2', 'pass_isif4', 'site_properties',
-                       'store_volumetric_data']
+                       'store_volumetric_data', 'store_raw_vasprunxml']
 
     def run_task(self, fw_spec):
         '''
@@ -638,6 +639,8 @@ class PreEV_check(FiretaskBase):
         pass_isif4 = self.get('pass_isif4') or False
         site_properties = self.get('site_properties') or None
         store_volumetric_data = self.get('store_volumetric_data', False)
+        store_raw_vasprunxml=self.get('store_raw_vasprunxml', False)
+        print("iiiiiiiiii 2", self.store_raw_vasprunxml)
         run_num += 1
 
         volumes, energies = self.get_orig_EV_structure(db_file, tag)
@@ -674,6 +677,7 @@ class PreEV_check(FiretaskBase):
                     for vol_add in vol_adds:
                         prestatic = StaticFW(structure=structure, job_type='normal', name='VR_%.3f-PreStatic' %vol_add,
                                            prev_calc_loc=False, vasp_input_set=vis_prestatic, vasp_cmd=">>vasp_cmd<<", db_file=db_file,
+                                           store_raw_vasprunxml=self.store_raw_vasprunxml,
                                            metadata=metadata, Prestatic=True)
                         fws.append(prestatic)
                         prestatic_calcs.append(prestatic)

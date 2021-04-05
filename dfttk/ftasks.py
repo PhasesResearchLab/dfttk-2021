@@ -801,6 +801,7 @@ class CheckRelaxation(FiretaskBase):
         site_properties = self.get('site_properties', None)
         self.store_volumetric_data = store_volumetric_data
         self.store_raw_vasprunxml = self.get('store_raw_vasprunxml', False)
+        print ("iiiiiiiiiiiiiiii 0",self.store_raw_vasprunxml)
         self.site_properties = site_properties
 
         tol_energy = self.get("tol_energy", 0.025)
