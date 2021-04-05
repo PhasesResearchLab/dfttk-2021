@@ -203,7 +203,7 @@ class EVcheck_QHA(FiretaskBase):
                        'del_limited', 'vol_spacing', 't_min', 't_max', 't_step', 'phonon', 'phonon_supercell_matrix',
                        'verbose', 'modify_incar_params', 'run_num','modify_kpoints_params', 'site_properties',
                        'override_symmetry_tolerances', 'override_default_vasp_params', 'db_file', 'vasp_cmd',
-                       'force_phonon', 'stable_tor', 'store_volumetric_data', 'store_raw_vasprunxml']
+                       'force_phonon', 'stable_tor', 'store_volumetric_data']
 
     def run_task(self, fw_spec):
         '''
@@ -239,8 +239,6 @@ class EVcheck_QHA(FiretaskBase):
         override_default_vasp_params = self.get('override_default_vasp_params', {})
         override_symmetry_tolerances = self.get('override_symmetry_tolerances', {})
         store_volumetric_data = self.get('store_volumetric_data', False)
-        self.store_raw_vasprunxml=self.get('store_raw_vasprunxml', False)
-        print ("iiiiiiiiiiiiiiii 1",self.store_raw_vasprunxml)
 
         stable_tor = self.get('stable_tor', 0.01)
         force_phonon = self.get('force_phonon', False)
@@ -337,7 +335,6 @@ class EVcheck_QHA(FiretaskBase):
                         static_fw = StaticFW(struct, isif=relax_scheme[-1], name='static_Vol{:.3f}'.format(vol_add),
                                         vasp_input_set=None, prev_calc_loc=True, parents=relax_parents_fw,
                                         store_volumetric_data=store_volumetric_data, 
-                                        store_raw_vasprunxml=self.store_raw_vasprunxml,
                                         **common_kwargs)
                         fws.append(static_fw)
                         calcs.append(static_fw)
@@ -352,7 +349,6 @@ class EVcheck_QHA(FiretaskBase):
                     check_result = Firework(EVcheck_QHA(structure=relax_structure, relax_scheme=relax_scheme, store_volumetric_data=store_volumetric_data,
                                                         run_num=run_num, verbose=verbose, site_properties=site_properties, stable_tor=stable_tor,
                                                         phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, force_phonon=force_phonon,
-                                                        store_raw_vasprunxml=store_raw_vasprunxml,
                                                         **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
                                             parents=calcs, name='{}-EVcheck_QHA'.format(structure.composition.reduced_formula))
                     fws.append(check_result)
@@ -600,7 +596,7 @@ class PreEV_check(FiretaskBase):
     optional_params = ['deformations', 'relax_path', 'run_num', 'tolerance', 'threshold', 'del_limited', 'vol_spacing', 't_min',
                        't_max', 't_step', 'phonon', 'phonon_supercell_matrix', 'verbose', 'modify_incar_params', 'structure',
                        'modify_kpoints_params', 'symmetry_tolerance', 'run_isif2', 'pass_isif4', 'site_properties',
-                       'store_volumetric_data', 'store_raw_vasprunxml']
+                       'store_volumetric_data']
 
     def run_task(self, fw_spec):
         '''
@@ -639,8 +635,6 @@ class PreEV_check(FiretaskBase):
         pass_isif4 = self.get('pass_isif4') or False
         site_properties = self.get('site_properties') or None
         store_volumetric_data = self.get('store_volumetric_data', False)
-        store_raw_vasprunxml=self.get('store_raw_vasprunxml', False)
-        print("iiiiiiiiii 2", self.store_raw_vasprunxml)
         run_num += 1
 
         volumes, energies = self.get_orig_EV_structure(db_file, tag)
@@ -677,7 +671,6 @@ class PreEV_check(FiretaskBase):
                     for vol_add in vol_adds:
                         prestatic = StaticFW(structure=structure, job_type='normal', name='VR_%.3f-PreStatic' %vol_add,
                                            prev_calc_loc=False, vasp_input_set=vis_prestatic, vasp_cmd=">>vasp_cmd<<", db_file=db_file,
-                                           store_raw_vasprunxml=self.store_raw_vasprunxml,
                                            metadata=metadata, Prestatic=True)
                         fws.append(prestatic)
                         prestatic_calcs.append(prestatic)
@@ -719,7 +712,6 @@ class PreEV_check(FiretaskBase):
                                                     metadata = metadata, t_min = t_min, t_max = t_max, t_step = t_step, phonon = phonon, deformations =deformations,
                                                     phonon_supercell_matrix = phonon_supercell_matrix, symmetry_tolerance = symmetry_tolerance,
                                                     modify_incar_params = modify_incar_params, verbose = verbose, pass_isif4=pass_isif4,
-                                                    store_raw_vasprunxml=store_raw_vasprunxml,
                                                     modify_kpoints_params = modify_kpoints_params, site_properties=site_properties),
                                         parents = ps2_relax_fw, name='%s-EVcheck_QHA' %structure.composition.reduced_formula, store_volumetric_data=store_volumetric_data)
                 fws.append(check_result)
