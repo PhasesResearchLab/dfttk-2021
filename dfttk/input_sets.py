@@ -120,6 +120,8 @@ class RelaxSet(DictSet):
         if 'magmom' in uis:
             if 'MAGMOM' in RelaxSet.CONFIG['INCAR']:
                 RelaxSet.CONFIG['INCAR'].pop('MAGMOM')
+
+
         RelaxSet.CONFIG['INCAR'].update(uis)
         kwargs.update({'user_potcar_functional':RelaxSet.CONFIG['POTCAR_FUNCTIONAL']})
         kwargs.update({'user_incar_settings':RelaxSet.CONFIG['INCAR']})
@@ -226,6 +228,10 @@ class ForceConstantsSet(DictSet):
             if 'MAGMOM' in ForceConstantsSet.CONFIG['INCAR']:
                 ForceConstantsSet.CONFIG['INCAR'].pop('MAGMOM')
         ForceConstantsSet.CONFIG['INCAR'].update(uis)
+        from pymatgen.io.vasp.inputs import Kpoints
+        #kpoints = Kpoints.automatic_gamma_density(structure, 4000)
+        ForceConstantsSet = Kpoints(kpts=[[3,3,3],])
+        ElasticSet.CONFIG['KPOINTS'] = kpoints
         kwargs.update({'user_potcar_functional':ForceConstantsSet.CONFIG['POTCAR_FUNCTIONAL']})
         kwargs.update({'user_incar_settings':ForceConstantsSet.CONFIG['INCAR']})
  
