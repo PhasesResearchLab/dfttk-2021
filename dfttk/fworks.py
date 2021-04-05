@@ -16,12 +16,16 @@ from dfttk.ftasks import WriteVaspFromIOSetPrevStructure, SupercellTransformatio
     Record_relax_running_path, Record_PreStatic_result, CheckSymmetryToDb, PhononStable, BornChargeToDb
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
+
+"""
 from dfttk.run_task_ext import nonscalc, InsertXMLToDb
 import dfttk.scripts.user_SETTINGS as user_SETTINGS
 
 from monty.serialization import loadfn, dumpfn
 if os.path.exists('SETTINGS.yaml'): #treat settings in 'SETTINGS.yaml' as globally accessible
     user_SETTINGS.user_settings=loadfn('SETTINGS.yaml')
+"""
+import dfttk.run_task_ext
 
 STORE_VOLUMETRIC_DATA = ("chgcar", "aeccar0", "aeccar2", "elfcar", "locpot")
 
@@ -260,9 +264,8 @@ class StaticFW(Firework):
             t.append(VaspToDb(db_file=">>db_file<<", parse_dos=True, additional_fields={"task_label": name, "metadata": metadata,
                                 "version_atomate": atomate_ver, "version_dfttk": dfttk_ver, "adopted": True, "tag": tag},
                                 store_volumetric_data=store_volumetric_data))
-            #run_task_ext(t,vasp_cmd,">>db_file<<",structure,tag)
-            #from dfttk.run_task_ext import nonscalc, InsertXMLToDb
-            import dfttk.scripts.user_SETTINGS as user_SETTINGS
+            run_task_ext(t,vasp_cmd,">>db_file<<",structure,tag)
+            """
             print (user_SETTINGS.user_settings.get('store_raw_vasprunxml', False))
 
             if user_SETTINGS.user_settings.get('store_raw_vasprunxml', False):
@@ -270,6 +273,7 @@ class StaticFW(Firework):
                 t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
                 t.append(InsertXMLToDb(db_file=">>db_file<<", structure=structure, 
                     tag=tag, xml="vasprun.xml"))
+            """
 
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, site_properties=site_properties))
         super(StaticFW, self).__init__(t, parents=parents, name="{}-{}".format(

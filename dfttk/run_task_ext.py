@@ -1,3 +1,4 @@
+import os
 import bson
 import pickle
 import gzip
@@ -10,8 +11,13 @@ from atomate.vasp.firetasks.run_calc import RunVaspCustodian
 from pymatgen.core import Structure
 import dfttk.scripts.user_SETTINGS as user_SETTINGS
 
+from monty.serialization import loadfn, dumpfn
+if os.path.exists('SETTINGS.yaml'): #treat settings in 'SETTINGS.yaml' as globally accessible
+    user_SETTINGS.user_settings=loadfn('SETTINGS.yaml')
+
 
 def run_task_ext(t,vasp_cmd,db_file,structure,tag):
+    print(user_SETTINGS.user_settings)
     if user_SETTINGS.user_settings.get('store_raw_vasprunxml', False):
         t.append(nonscalc())
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
