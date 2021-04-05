@@ -239,7 +239,7 @@ class EVcheck_QHA(FiretaskBase):
         override_default_vasp_params = self.get('override_default_vasp_params', {})
         override_symmetry_tolerances = self.get('override_symmetry_tolerances', {})
         store_volumetric_data = self.get('store_volumetric_data', False)
-        store_raw_vasprunxml=self.get('store_raw_vasprunxml', False)
+        self.store_raw_vasprunxml=self.get('store_raw_vasprunxml', False)
 
         stable_tor = self.get('stable_tor', 0.01)
         force_phonon = self.get('force_phonon', False)
@@ -336,7 +336,7 @@ class EVcheck_QHA(FiretaskBase):
                         static_fw = StaticFW(struct, isif=relax_scheme[-1], name='static_Vol{:.3f}'.format(vol_add),
                                         vasp_input_set=None, prev_calc_loc=True, parents=relax_parents_fw,
                                         store_volumetric_data=store_volumetric_data, 
-                                        store_raw_vasprunxml=store_raw_vasprunxml,
+                                        store_raw_vasprunxml=self.store_raw_vasprunxml,
                                         **common_kwargs)
                         fws.append(static_fw)
                         calcs.append(static_fw)
@@ -378,7 +378,7 @@ class EVcheck_QHA(FiretaskBase):
                 fws.append(debye_fw)
                 if phonon:
                     phonon_supercell_matrix = self.get('phonon_supercell_matrix')
-                    # do a Debye run before the phonon, so they can be done in stages.
+                    # do a Debye run Staticore the phonon, so they can be done in stages.
                     phonon_fw = Firework(QHAAnalysis(phonon=True, t_min=t_min, t_max=t_max, t_step=t_step, db_file=db_file, tag=tag,
                                                      metadata=metadata), parents=debye_fw, name="{}-qha_analysis-phonon".format(structure.composition.reduced_formula))
                     fws.append(phonon_fw)
