@@ -12,7 +12,7 @@ class nonscalc(FiretaskBase):
     nonselfconsistent calculation using denser k-mesh
     '''
     def run_task(self, fw_spec):
-        shutil.copyfile("INCAR","INCAR.bef")
+        shutil.copyfile("INCAR","INCAR.Static")
         with open("INCAR", "r") as f:
             lines = f.readlines()
         with open("INCAR", "w") as f:
