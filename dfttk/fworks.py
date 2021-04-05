@@ -16,15 +16,6 @@ from dfttk.ftasks import WriteVaspFromIOSetPrevStructure, SupercellTransformatio
     Record_relax_running_path, Record_PreStatic_result, CheckSymmetryToDb, PhononStable, BornChargeToDb
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
-
-"""
-from dfttk.run_task_ext import nonscalc, InsertXMLToDb
-import dfttk.scripts.user_SETTINGS as user_SETTINGS
-
-from monty.serialization import loadfn, dumpfn
-if os.path.exists('SETTINGS.yaml'): #treat settings in 'SETTINGS.yaml' as globally accessible
-    user_SETTINGS.user_settings=loadfn('SETTINGS.yaml')
-"""
 from dfttk.run_task_ext import run_task_ext
 
 STORE_VOLUMETRIC_DATA = ("chgcar", "aeccar0", "aeccar2", "elfcar", "locpot")

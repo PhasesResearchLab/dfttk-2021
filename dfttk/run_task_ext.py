@@ -9,22 +9,9 @@ from atomate.vasp.database import VaspCalcDb
 from atomate.utils.utils import load_class, env_chk
 from atomate.vasp.firetasks.run_calc import RunVaspCustodian
 from pymatgen.core import Structure
-import dfttk.scripts.user_SETTINGS as user_SETTINGS
-"""
-from monty.serialization import loadfn, dumpfn
-if os.path.exists('SETTINGS.yaml'): #treat settings in 'SETTINGS.yaml' as globally accessible
-    user_SETTINGS.user_settings=loadfn('SETTINGS.yaml')
-    print("eeeeeeeeeeeee", user_SETTINGS.user_settings)
-    global_user_SETTINGS = user_SETTINGS.user_settings
-"""
+
 
 def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
-    """
-    print(user_SETTINGS.user_settings)
-    global global_user_SETTINGS
-    print("lllllllll", global_user_SETTINGS)
-    #if user_SETTINGS.user_settings.get('store_raw_vasprunxml', False):
-    """
     try:
         store_raw_vasprunxml = override_default_vasp_params['user_incar_settings']['store_raw_vasprunxml']
     except:
