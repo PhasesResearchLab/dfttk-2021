@@ -231,7 +231,7 @@ class StaticFW(Firework):
         site_properties = deepcopy(structure).site_properties
         self.store_raw_vasprunxml = store_raw_vasprunxml
         print ("eeeeeeeeeeeeee -1", self.store_raw_vasprunxml)
-        raise ValueError('eeeeeeeeeeeeA very specific bad thing happened.')
+        #raise ValueError('eeeeeeeeeeeeA very specific bad thing happened.')
         # Avoids delivery (prev_calc_loc == '' (instead by True))
         t = []
         if type(prev_calc_loc) == str:
@@ -257,17 +257,12 @@ class StaticFW(Firework):
                                 "version_atomate": atomate_ver, "version_dfttk": dfttk_ver, "adopted": True, "tag": tag},
                                 store_volumetric_data=store_volumetric_data))
             print ("eeeeeeeeeeeeee", self.store_raw_vasprunxml)
-            #if self.store_raw_vasprunxml:
-            if True:
+            if self.store_raw_vasprunxml:
                 from dfttk.nonscalc import nonscalc,InsertXMLToDb
-                print ("eeeeeeeeeeeeee 0", store_raw_vasprunxml)
                 t.append(nonscalc())
-                print ("eeeeeeeeeeeeee 1", store_raw_vasprunxml)
                 t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
-                print ("eeeeeeeeeeeeee 2", store_raw_vasprunxml)
                 t.append(InsertXMLToDb(db_file=">>db_file<<", structure=structure, 
                     tag=tag, xml="vasprun.xml"))
-                print ("eeeeeeeeeeeeee 4", store_raw_vasprunxml)
 
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, site_properties=site_properties))
         super(StaticFW, self).__init__(t, parents=parents, name="{}-{}".format(
