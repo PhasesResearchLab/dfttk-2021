@@ -14,6 +14,7 @@ import dfttk.scripts.user_SETTINGS as user_SETTINGS
 from monty.serialization import loadfn, dumpfn
 if os.path.exists('SETTINGS.yaml'): #treat settings in 'SETTINGS.yaml' as globally accessible
     user_SETTINGS.user_settings=loadfn('SETTINGS.yaml')
+    print("eeeeeeeeeeeee", user_SETTINGS.user_settings)
 
 
 def run_task_ext(t,vasp_cmd,db_file,structure,tag):
