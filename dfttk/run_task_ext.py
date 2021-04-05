@@ -8,7 +8,7 @@ from atomate.vasp.database import VaspCalcDb
 from atomate.utils.utils import load_class, env_chk
 from atomate.vasp.firetasks.run_calc import RunVaspCustodian
 from pymatgen.core import Structure
-import dfttk.scripts.user_SETTINGS
+import dfttk.scripts.user_SETTINGS as user_SETTINGS
 
 
 def run_task_ext(t,vasp_cmd,db_file,structure,tag):
