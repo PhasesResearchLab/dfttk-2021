@@ -264,7 +264,7 @@ class StaticFW(Firework):
             t.append(VaspToDb(db_file=">>db_file<<", parse_dos=True, additional_fields={"task_label": name, "metadata": metadata,
                                 "version_atomate": atomate_ver, "version_dfttk": dfttk_ver, "adopted": True, "tag": tag},
                                 store_volumetric_data=store_volumetric_data))
-            run_task_ext(t,vasp_cmd,">>db_file<<",structure,tag)
+            run_task_ext(t,vasp_cmd,">>db_file<<",structure,tag,override_default_vasp_params)
             """
             print (user_SETTINGS.user_settings.get('store_raw_vasprunxml', False))
 
