@@ -230,8 +230,8 @@ class ForceConstantsSet(DictSet):
         ForceConstantsSet.CONFIG['INCAR'].update(uis)
         from pymatgen.io.vasp.inputs import Kpoints
         #kpoints = Kpoints.automatic_gamma_density(structure, 4000)
-        ForceConstantsSet = Kpoints(kpts=[[3,3,3],])
-        ElasticSet.CONFIG['KPOINTS'] = kpoints
+        kpoints = Kpoints(kpts=[[3,3,3],])
+        ForceConstantsSet.CONFIG['KPOINTS'] = kpoints
         kwargs.update({'user_potcar_functional':ForceConstantsSet.CONFIG['POTCAR_FUNCTIONAL']})
         kwargs.update({'user_incar_settings':ForceConstantsSet.CONFIG['INCAR']})
  
