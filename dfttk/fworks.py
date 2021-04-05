@@ -231,6 +231,7 @@ class StaticFW(Firework):
         site_properties = deepcopy(structure).site_properties
         self.store_raw_vasprunxml = store_raw_vasprunxml
         print ("eeeeeeeeeeeeee -1", self.store_raw_vasprunxml)
+        raise ValueError('eeeeeeeeeeeeA very specific bad thing happened.')
         # Avoids delivery (prev_calc_loc == '' (instead by True))
         t = []
         if type(prev_calc_loc) == str:
