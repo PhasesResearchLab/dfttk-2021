@@ -1,1 +1,1 @@
-user_settings = False
+user_settings = {}

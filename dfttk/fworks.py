@@ -1,5 +1,6 @@
 import warnings
 import copy
+import os
 import numpy as np
 from uuid import uuid4
 from copy import deepcopy
@@ -16,7 +17,11 @@ from dfttk.ftasks import WriteVaspFromIOSetPrevStructure, SupercellTransformatio
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 from dfttk.run_task_ext import nonscalc, InsertXMLToDb
-#import dfttk.scripts.user_SETTINGS as user_SETTINGS
+import dfttk.scripts.user_SETTINGS as user_SETTINGS
+
+from monty.serialization import loadfn, dumpfn
+if os.path.exists('SETTINGS.yaml'): #treat settings in 'SETTINGS.yaml' as globally accessible
+    user_SETTINGS.user_settings=loadfn('SETTINGS.yaml')
 
 STORE_VOLUMETRIC_DATA = ("chgcar", "aeccar0", "aeccar2", "elfcar", "locpot")
 
@@ -258,7 +263,7 @@ class StaticFW(Firework):
             #run_task_ext(t,vasp_cmd,">>db_file<<",structure,tag)
             #from dfttk.run_task_ext import nonscalc, InsertXMLToDb
             import dfttk.scripts.user_SETTINGS as user_SETTINGS
-            print (user_SETTINGS.user_settings)
+            print (user_SETTINGS.user_settings.get('store_raw_vasprunxml', False))
 
             if user_SETTINGS.user_settings.get('store_raw_vasprunxml', False):
                 t.append(nonscalc())
