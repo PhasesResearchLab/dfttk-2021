@@ -141,7 +141,6 @@ def get_wf_elastic(structure=None, metadata=None, tag=None, vasp_cmd=None, db_fi
                 #if vol in volumes_existed_calc:
                 if vol_in_volumes(vol, volumes_existed_calc):
                     print("Elasticity already calculated for volume=", vol)
-                    #"eeeeeeeeeee" debug 11/01/2020
                     continue
                 structures.append(struct_energy_elasticity[0][i])
                 bandgap.append(struct_energy_elasticity[2][i])
@@ -186,8 +185,6 @@ def get_wf_elastic(structure=None, metadata=None, tag=None, vasp_cmd=None, db_fi
                                 analysis=analysis, sym_reduce=sym_reduce, tag='{}-{}'.format(name, tag),
                                 vasp_cmd=vasp_cmd, **kwargs)
             wfs.append(wf_elastic)
-            #"eeeeeeeeeeee" debug
-            #break
     else:
         if structure is None:
                 raise ValueError('There is no optimized structure with tag={}, Please provide structure.'.format(tag))
@@ -370,7 +367,6 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
 
     override_symmetry_tolerances = override_symmetry_tolerances or {'tol_energy':0.025, 'tol_strain':0.05, 'tol_bond':0.10}
     override_default_vasp_params = override_default_vasp_params or {}
-    print ("eeeeeeeeeeeeee 10", store_raw_vasprunxml)
 
     site_properties = deepcopy(structure).site_properties
 
@@ -391,7 +387,8 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
     fws = []
 
     robust_opt_fw = RobustOptimizeFW(structure, prev_calc_loc=False, name='Full relax', store_volumetric_data=store_volumetric_data,
-                                     **robust_opt_kwargs, **vasp_kwargs, **common_kwargs)
+        store_raw_vasprunxml=store_raw_vasprunxml,
+        **robust_opt_kwargs, **vasp_kwargs, **common_kwargs)
     fws.append(robust_opt_fw)
     check_qha_parent = []
 
@@ -414,7 +411,6 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
                               name="{}-CheckRelaxScheme".format(structure.composition.reduced_formula))
     fws.append(check_relax_fw)
     check_qha_parent.append(check_relax_fw)
-    print ("eeeeeeeeeeeeee 11", store_raw_vasprunxml)
     check_qha_fw = Firework(EVcheck_QHA(site_properties=site_properties,verbose=verbose, stable_tor=stable_tor,
                                         phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, force_phonon=force_phonon,
                                         override_symmetry_tolerances=override_symmetry_tolerances, store_volumetric_data=store_volumetric_data,

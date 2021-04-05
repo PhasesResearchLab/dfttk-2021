@@ -126,7 +126,8 @@ class RobustOptimizeFW(Firework):
                  override_symmetry_tolerances=None, job_type="normal", vasp_input_set=None,
                  vasp_cmd="vasp", metadata=None, override_default_vasp_params=None, db_file=None,
                  prev_calc_loc=True, parents=None, db_insert=False, tag=None, modify_incar_params={},
-                 modify_kpoints_params={}, energy_with_isif={}, store_volumetric_data=False, **kwargs):
+                 modify_kpoints_params={}, energy_with_isif={}, store_volumetric_data=False, 
+                 store_raw_vasprunxml=False, **kwargs):
 
         metadata = metadata or {}
         tag = tag or metadata.get('tag')
@@ -170,7 +171,8 @@ class RobustOptimizeFW(Firework):
         relax_kwargs = {}
         t.append(CheckRelaxation(db_file=">>db_file<<", metadata=metadata, tag=tag, isif4=isif4, level=level, energy_with_isif=energy_with_isif,
                                  common_kwargs=common_kwargs, relax_kwargs=relax_kwargs, static_kwargs=static_kwargs, site_properties=site_properties,
-                                 store_volumetric_data=store_volumetric_data, **override_symmetry_tolerances))
+                                 store_volumetric_data=store_volumetric_data, 
+                                 store_raw_vasprunxml=store_raw_vasprunxml,**override_symmetry_tolerances))
         super().__init__(t, parents=parents, name="{}-{}".format(structure.composition.reduced_formula, name), **kwargs)
 
 
