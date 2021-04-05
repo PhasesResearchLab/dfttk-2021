@@ -6,7 +6,17 @@ import datetime
 from fireworks import explicit_serialize, FiretaskBase, FWAction
 from atomate.vasp.database import VaspCalcDb
 from atomate.utils.utils import load_class, env_chk
+from atomate.vasp.firetasks.run_calc import RunVaspCustodian
 from pymatgen.core import Structure
+import dfttk.scripts.user_SETTINGS
+
+
+def run_task_ext(t,vasp_cmd,db_file,structure,tag):
+    if user_SETTINGS.user_settings.get('store_raw_vasprunxml', False):
+        t.append(nonscalc())
+        t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
+        t.append(InsertXMLToDb(db_file=db_file, structure=structure, 
+            tag=tag, xml="vasprun.xml"))
 
 
 @explicit_serialize

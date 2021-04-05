@@ -15,6 +15,7 @@ import copy
 import os
 import sys
 import shutil
+import dfttk.scripts.user_SETTINGS
 
 
 def get_abspath(path):
@@ -304,6 +305,9 @@ def run(args):
     WRITE_OUT_WF = args.WRITE_OUT_WF    # Write out wf file or not
     TAG = args.TAG                      # Metadata from the command line
     APPEND = args.APPEND                # Append calculations, e.g. appending volumes or phonon or born
+
+    if os.path.exists('SETTING.yaml'): #treat 'SETTING.yaml' as globally accessible
+        user_SETTINGS.user_settings=loadfn('SETTING.yaml')
 
     if os.path.exists('db.json'):
         db_file = 'db.json'

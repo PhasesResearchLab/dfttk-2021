@@ -790,8 +790,7 @@ class CheckRelaxation(FiretaskBase):
 
     required_params = ["db_file", "tag", "common_kwargs"]
     optional_params = ["metadata", "tol_energy", "tol_strain", "tol_bond", 'level', 'isif4',  "energy_with_isif",
-                       "static_kwargs", "relax_kwargs", 'store_volumetric_data', 'site_properties',
-                       "store_raw_vasprunxml"]
+                       "static_kwargs", "relax_kwargs", 'store_volumetric_data', 'site_properties']
 
     def run_task(self, fw_spec):
         self.db_file = env_chk(self.get("db_file"), fw_spec)
@@ -800,8 +799,6 @@ class CheckRelaxation(FiretaskBase):
         store_volumetric_data = self.get('store_volumetric_data', False)
         site_properties = self.get('site_properties', None)
         self.store_volumetric_data = store_volumetric_data
-        self.store_raw_vasprunxml = self.get('store_raw_vasprunxml', False)
-        print ("iiiiiiiiiiiiiiii 0",self.store_raw_vasprunxml)
         self.site_properties = site_properties
 
         tol_energy = self.get("tol_energy", 0.025)
@@ -936,7 +933,7 @@ class CheckRelaxation(FiretaskBase):
                 md['symmetry_type'] = step["symmetry_type"]
                 common_copy["metadata"] = md
                 detour_fws.append(StaticFW(inp_structure, isif=step['isif'], store_volumetric_data=self.store_volumetric_data,
-                                           store_raw_vasprunxml=self.store_raw_vasprunxml,**static_kwargs, **common_copy))
+                                           **static_kwargs, **common_copy))
             elif job_type == "relax":
                 detour_fws.append(RobustOptimizeFW(inp_structure, isif=step["isif"], energy_with_isif=energy_with_isif,
                                 override_symmetry_tolerances=symmetry_options, store_volumetric_data=self.store_volumetric_data, **self["common_kwargs"]))

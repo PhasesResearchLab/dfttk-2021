@@ -127,7 +127,7 @@ class RobustOptimizeFW(Firework):
                  vasp_cmd="vasp", metadata=None, override_default_vasp_params=None, db_file=None,
                  prev_calc_loc=True, parents=None, db_insert=False, tag=None, modify_incar_params={},
                  modify_kpoints_params={}, energy_with_isif={}, store_volumetric_data=False, 
-                 store_raw_vasprunxml=False, **kwargs):
+                 **kwargs):
 
         metadata = metadata or {}
         tag = tag or metadata.get('tag')
@@ -172,7 +172,7 @@ class RobustOptimizeFW(Firework):
         t.append(CheckRelaxation(db_file=">>db_file<<", metadata=metadata, tag=tag, isif4=isif4, level=level, energy_with_isif=energy_with_isif,
                                  common_kwargs=common_kwargs, relax_kwargs=relax_kwargs, static_kwargs=static_kwargs, site_properties=site_properties,
                                  store_volumetric_data=store_volumetric_data, 
-                                 store_raw_vasprunxml=store_raw_vasprunxml,**override_symmetry_tolerances))
+                                 **override_symmetry_tolerances))
         super().__init__(t, parents=parents, name="{}-{}".format(structure.composition.reduced_formula, name), **kwargs)
 
 
@@ -206,7 +206,7 @@ class StaticFW(Firework):
     def __init__(self, structure, isif=2, scale_lattice=None, name="static", vasp_input_set=None, 
                  vasp_cmd="vasp", metadata=None, prev_calc_loc=True, Prestatic=False, modify_incar=None, 
                  db_file=None, parents=None, tag=None, override_default_vasp_params=None,
-                 store_volumetric_data=False, store_raw_vasprunxml=False, **kwargs):
+                 store_volumetric_data=False, **kwargs):
 
         # TODO: @computron - I really don't like how you need to set the structure even for
         # prev_calc_loc jobs. Sometimes it makes appending new FWs to an existing workflow
@@ -231,8 +231,6 @@ class StaticFW(Firework):
         override_default_vasp_params = override_default_vasp_params or {}
         vasp_input_set = vasp_input_set or StaticSet(structure, isif=isif, **override_default_vasp_params)
         site_properties = deepcopy(structure).site_properties
-        self.store_raw_vasprunxml = store_raw_vasprunxml
-        print ("eeeeeeeeeeeeee -1", self.store_raw_vasprunxml)
         #raise ValueError('eeeeeeeeeeeeA very specific bad thing happened.')
         # Avoids delivery (prev_calc_loc == '' (instead by True))
         t = []
@@ -258,14 +256,7 @@ class StaticFW(Firework):
             t.append(VaspToDb(db_file=">>db_file<<", parse_dos=True, additional_fields={"task_label": name, "metadata": metadata,
                                 "version_atomate": atomate_ver, "version_dfttk": dfttk_ver, "adopted": True, "tag": tag},
                                 store_volumetric_data=store_volumetric_data))
-            print ("eeeeeeeeeeeeee", self.store_raw_vasprunxml)
-            #if self.store_raw_vasprunxml:
-            if True:
-                from dfttk.nonscalc import nonscalc,InsertXMLToDb
-                t.append(nonscalc())
-                t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
-                t.append(InsertXMLToDb(db_file=">>db_file<<", structure=structure, 
-                    tag=tag, xml="vasprun.xml"))
+            run_task_ext(t,vasp_cmd,">>db_file<<",structure,tag)
 
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, site_properties=site_properties))
         super(StaticFW, self).__init__(t, parents=parents, name="{}-{}".format(
