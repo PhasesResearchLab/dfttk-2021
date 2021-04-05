@@ -256,7 +256,13 @@ class StaticFW(Firework):
                                 "version_atomate": atomate_ver, "version_dfttk": dfttk_ver, "adopted": True, "tag": tag},
                                 store_volumetric_data=store_volumetric_data))
             #run_task_ext(t,vasp_cmd,">>db_file<<",structure,tag)
-
+            from dfttk.run_task_ext import nonscalc, InsertXMLToDb
+            import dfttk.scripts.user_SETTINGS
+            if user_SETTINGS.user_settings.get('store_raw_vasprunxml', False):
+                t.append(nonscalc())
+                t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
+                t.append(InsertXMLToDb(db_file=">>db_file<<", structure=structure, 
+                    tag=tag, xml="vasprun.xml"))
 
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, site_properties=site_properties))
         super(StaticFW, self).__init__(t, parents=parents, name="{}-{}".format(
