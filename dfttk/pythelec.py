@@ -1543,8 +1543,8 @@ class thelecMDB():
         self.dosgz = []
         xml = list(self.vasp_db.db['xmlgz'].find({'$and':[ {'metadata.tag': self.tag}]}))
         for x in xml:
-            self.xmlgz.append(pickle.loads(x['vasprun.xml.gz']))
-            self.dosgz.append(pickle.loads(x['DOSCAR.gz']))
+            self.xmlgz.append(pickle.loads(x['vasprun_xml_gz']))
+            self.dosgz.append(pickle.loads(x['DOSCAR_gz']))
             self.xmlvol.append(x['volume'])
             print ("found refined file:", 'vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
 
