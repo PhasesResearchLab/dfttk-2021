@@ -15,11 +15,15 @@ from monty.serialization import loadfn, dumpfn
 if os.path.exists('SETTINGS.yaml'): #treat settings in 'SETTINGS.yaml' as globally accessible
     user_SETTINGS.user_settings=loadfn('SETTINGS.yaml')
     print("eeeeeeeeeeeee", user_SETTINGS.user_settings)
+     = user_SETTINGS.user_settings
 
 
 def run_task_ext(t,vasp_cmd,db_file,structure,tag):
     print(user_SETTINGS.user_settings)
-    if user_SETTINGS.user_settings.get('store_raw_vasprunxml', False):
+    global local_user_SETTINGS
+    print("lllllllllll", local_user_SETTINGS)
+    #if user_SETTINGS.user_settings.get('store_raw_vasprunxml', False):
+    if True:
         t.append(nonscalc())
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
         t.append(InsertXMLToDb(db_file=db_file, structure=structure, 
