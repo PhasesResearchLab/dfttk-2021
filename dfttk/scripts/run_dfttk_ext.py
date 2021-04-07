@@ -253,19 +253,19 @@ def record_cmd_print(fdir, readme, dir=None):
             myjsonout(readme, fp, indent="", comma="")
 
         if "ERROR" in readme.keys():
-            error ="**********FETAL ERROR encountered, you may check readme and E-V plot in the folder "+dir+"/figures"
+            error ="**********FATAL ERROR encountered, you may check readme and E-V plot in the folder "+dir+"/figures"
             volumes = readme['E-V']['volumes']
             energies = readme['E-V']['energies']
-            folder = dir+'/figures'
+            folder = os.path.join(dir,'figures')
             if not os.path.exists(folder): os.mkdir(folder)
             thermoplot(folder,"0 K total energies (eV/atom)",volumes, energies, plottitle=dir, lp=True)
-            with open (dir+"/ERROR", "w") as fp:
+            with open (os.path.join(dir,"ERROR"), "w") as fp:
                 fp.write('{}\n'.format(readme['ERROR']))
                 if dir!=None:
                     fp.write('{}\n'.format(error))
                     print ("\n", error, "\n")
         else:
-            if os.path.exists(dir+"/ERROR"): os.remove(dir+"/ERROR")
+            if os.path.exists(os.path.join(dir,"ERROR")): os.remove(os.path.join(dir,"ERROR"))
 
 
         with open ("runs.log", "a") as fp:
@@ -275,7 +275,7 @@ def record_cmd_print(fdir, readme, dir=None):
                 if os.path.exists(dir+'/fitF'): fp.write(', for fitF is  on: {}\n'.format(dir))
                 else: fp.write(', for fitF is off: {}\n'.format(dir))
             except:
-                fp.write('FETAL ERROR in {}\n'.format(dir))
+                fp.write('FATAL ERROR in {}\n'.format(dir))
                 pass
 
 def shared_aguments(pthelec):

@@ -1009,8 +1009,11 @@ class thelecMDB():
             ii = vol_closest(mm['volume'],self.xmlvol)
             with open (os.path.join(voldir,'vasprun.xml.gz'),'wb') as out:
                 out.write(self.xmlgz[ii])
+            """
+            #to be debugged
             with open (os.path.join(voldir,'DOSCAR.gz'),'wb') as out:
                 out.write(self.dosgz[ii])
+            """
  
         with open (os.path.join(voldir,'OSZICAR'),'w') as out:
             out.write('   1 F= xx E0= {}\n'.format(self.energies[(list(self.volumes)).index(i['volume'])]))
@@ -1348,9 +1351,9 @@ class thelecMDB():
             os.chdir( cwd )
 
         if len(self.Vlat)<=0:
-            print("\nFETAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
-            #raise ValueError()
-            sys.exit()
+            print("\nFATAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
+            raise ValueError()
+            #sys.exit()
         self.Slat = np.array(sort_x_by_y(self.Slat, self.Vlat))
         self.Clat = np.array(sort_x_by_y(self.Clat, self.Vlat))
         self.Flat = np.array(sort_x_by_y(self.Flat, self.Vlat))
@@ -1406,7 +1409,7 @@ class thelecMDB():
             os.chdir( cwd )
 
         if len(self.Vlat)<=0:
-            print("\nFETAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
+            print("\nFATAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
             raise ValueError()
         self.Slat = np.array(sort_x_by_y(self.Slat, self.Vlat))
         self.Clat = np.array(sort_x_by_y(self.Clat, self.Vlat))
@@ -1541,12 +1544,12 @@ class thelecMDB():
         self.xmlvol = []
         self.xmlgz = []
         self.dosgz = []
-        xml = list(self.vasp_db.db['xmlgz'].find({'$and':[ {'metadata.tag': self.tag}]}))
+        xml = list(self.vasp_db.db['xmlgz'].find({'$and':[ {'metadata.tag': self.tag}, { 'vasprun_xml_gz': { '$exists': True } }]}))
         for x in xml:
             self.xmlgz.append(pickle.loads(x['vasprun_xml_gz']))
             self.dosgz.append(pickle.loads(x['DOSCAR_gz']))
             self.xmlvol.append(x['volume'])
-            print ("found refined file:", 'vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
+            print ("found non-selfconsistent results with with k-mesh factor of 2x2x2:", 'vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
 
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
         if not os.path.exists(self.phasename):
@@ -2028,7 +2031,7 @@ class thelecMDB():
                 nT = i
                 break
         if nT < 3:
-            self.key_comments['ERROR'] = "Fetal ERROR! Calculation corrupted due to certain reason! Perhaps very bad E-V curve!"
+            self.key_comments['ERROR'] = "Fatal ERROR! Calculation corrupted due to certain reason! Perhaps very bad E-V curve!"
             return False
 
         vn = min(self.volT[0:nT])
