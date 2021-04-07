@@ -131,7 +131,7 @@ def remove_data_by_metadata(tag, db_file=None, rem_mode='vol', forcedelete=False
     VOL2_COLLECTION = ['bandstructure', 'dos']
     VOL_COLLECTION = VOL1_COLLECTION + VOL2_COLLECTION
     OTHER_COLLECTION = ['borncharge', 'phonon', 'qha', 'qha_phonon', 'relax',
-                        'relax_scheme', 'relaxations', 'tasks']
+                        'relax_scheme', 'relaxations', 'tasks', 'xmlgz']
     if isinstance(rem_mode, str):
         rem_mode = rem_mode.lower()
         if rem_mode == 'all':
