@@ -693,9 +693,9 @@ def config_atomate(path_to_store_config=".", config_folder="config", queue_scrip
         if file in option_file:
             eval(FileModule[file] + "(**param_dict).write_file()")
         if config_file[file]:
-            update_configfile(os.path.join(param_dict["path_to_store_config"], "config/" + file), config_file[file])
+            update_configfile(os.path.join(param_dict["path_to_store_config"], "config", file), config_file[file])
     #Add environment var
-    FW_CONFIG_FILE_VAL = os.path.join(path_to_store_config, "config/FW_config.yaml")
+    FW_CONFIG_FILE_VAL = os.path.join(path_to_store_config, "config","FW_config.yaml")
     add_path_var(force_override=True, FW_CONFIG_FILE=FW_CONFIG_FILE_VAL)
 
 
@@ -720,7 +720,7 @@ class ConfigTemplate(object):
         self.POST_ROCKET = kwargs.get("post_rocket", '')
 
     def write_file(self):
-        filename = os.path.join(self.PATH_TO_STORE_CONFIG, "config/" + self.FILENAME)
+        filename = os.path.join(self.PATH_TO_STORE_CONFIG, "config", self.FILENAME)
         with open(filename, 'w') as f:
             if filename.endswith(".json"):
                 from json import dump
@@ -761,9 +761,9 @@ class ConfigFW(ConfigTemplate):
         super(ConfigFW, self).__init__(**kwargs)
         self.FILENAME = "FW_config.yaml"
         self.DATA = {"CONFIG_FILE_DIR": os.path.join(self.PATH_TO_STORE_CONFIG, "config"),
-            "LAUNCHPAD_LOC": os.path.join(self.PATH_TO_STORE_CONFIG, "config/my_launchpad.yaml"),
-            "FWORKER_LOC": os.path.join(self.PATH_TO_STORE_CONFIG, "config/my_fworker.yaml"),
-            "QUEUEADAPTER_LOC": os.path.join(self.PATH_TO_STORE_CONFIG, "config/my_qadapter.yaml"),
+            "LAUNCHPAD_LOC": os.path.join(self.PATH_TO_STORE_CONFIG, "config","my_launchpad.yaml"),
+            "FWORKER_LOC": os.path.join(self.PATH_TO_STORE_CONFIG, "config","my_fworker.yaml"),
+            "QUEUEADAPTER_LOC": os.path.join(self.PATH_TO_STORE_CONFIG, "config","my_qadapter.yaml"),
             "QUEUE_JOBNAME_MAXLEN": 15,
             "ADD_USER_PACKAGES": ["atomate.vasp.firetasks", "atomate.feff.firetasks"]
         }
