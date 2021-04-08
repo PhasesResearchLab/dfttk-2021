@@ -3,6 +3,7 @@
 # common block named comcon
 from __future__ import division
 import sys
+import xml.etree.ElementTree as ET
 import gzip
 import os
 import subprocess
@@ -29,6 +30,24 @@ import warnings
 
 
 k_B = physical_constants['Boltzmann constant in eV/K'][0]
+
+
+def get_code_version(xml='vasprun.xml'):
+    if xml.endswith(".gz"):
+        tree = ET.parse(gzip.open(xml))
+    else:
+        tree = ET.parse(xml)
+    root = tree.getroot()
+    codename, version = "", ""
+    for i, elem in enumerate(root):
+        for code in elem:
+            codeprogram = code.get('name')
+            if codeprogram=='program':
+                codename = code.text
+            elif codeprogram=='version':
+                version = code.text
+            if codename!="" and version!="": return codename, version
+
 
 def substr(str1, str2, pos):
   try:
@@ -946,6 +965,9 @@ class thelecMDB():
         self.renew=renew
         self.refresh=args.refresh
         self.fitF=fitF
+        self.codename = ""
+        self.version = ""
+
         if self.debug:
             if self.dope==0.0: self.dope=-1.e-5
 
@@ -993,10 +1015,10 @@ class thelecMDB():
         punitcell_l = str(poscar).split('\n')
 
         natoms = len(supercell_structure.sites)
+        ##print(supercell_structure.sites)
         poscar = supercell_structure.to(fmt="poscar")
         supercell_l = str(poscar).split('\n')
         structure.to(filename=os.path.join(voldir,'POSCAR'))
-
 
         with open (os.path.join(voldir,'metadata.json'),'w') as out:
             mm = i['metadata']
@@ -1011,6 +1033,11 @@ class thelecMDB():
                 out.write(self.xmlgz[ii])
             with open (os.path.join(voldir,'DOSCAR.gz'),'wb') as out:
                 out.write(self.dosgz[ii])
+
+            if self.codename=="" and self.version=="":
+                self.codename, self.version = get_code_version(xml=os.path.join(voldir,'vasprun.xml.gz'))
+                print ("\nDFT code: ", self.codename, "version:", self.codename,"\n")
+
  
         with open (os.path.join(voldir,'OSZICAR'),'w') as out:
             out.write('   1 F= xx E0= {}\n'.format(self.energies[(list(self.volumes)).index(i['volume'])]))
@@ -1546,7 +1573,8 @@ class thelecMDB():
             self.xmlgz.append(pickle.loads(x['vasprun_xml_gz']))
             self.dosgz.append(pickle.loads(x['DOSCAR_gz']))
             self.xmlvol.append(x['volume'])
-            print ("found refined file:", 'vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
+            print ("found refined calculation:", 'vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
+
 
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
         if not os.path.exists(self.phasename):
