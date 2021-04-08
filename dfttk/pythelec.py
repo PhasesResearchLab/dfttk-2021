@@ -1031,6 +1031,7 @@ class thelecMDB():
             ii = vol_closest(mm['volume'],self.xmlvol)
             with open (os.path.join(voldir,'vasprun.xml.gz'),'wb') as out:
                 out.write(self.xmlgz[ii])
+
             with open (os.path.join(voldir,'DOSCAR.gz'),'wb') as out:
                 out.write(self.dosgz[ii])
 
@@ -1038,7 +1039,7 @@ class thelecMDB():
                 self.codename, self.version = get_code_version(xml=os.path.join(voldir,'vasprun.xml.gz'))
                 print ("\nDFT code: ", self.codename, "version:", self.codename,"\n")
 
- 
+
         with open (os.path.join(voldir,'OSZICAR'),'w') as out:
             out.write('   1 F= xx E0= {}\n'.format(self.energies[(list(self.volumes)).index(i['volume'])]))
         with open (os.path.join(voldir,'superfij.out'),'w') as out:
@@ -1261,7 +1262,7 @@ class thelecMDB():
             self.VCij = sort_x_by_y(self.VCij, self.VCij)
         return has_Cij
 
-    
+
     #For volume dependent thermoelectric calculations based on the output from BoltrzTraP2 code
     #btp2_dir is parent path containing thermoelectric results at several volumes
     def get_btp2(self, btp2_dir):
@@ -1375,9 +1376,9 @@ class thelecMDB():
             os.chdir( cwd )
 
         if len(self.Vlat)<=0:
-            print("\nFETAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
-            #raise ValueError()
-            sys.exit()
+            print("\nFATAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
+            raise ValueError()
+            #sys.exit()
         self.Slat = np.array(sort_x_by_y(self.Slat, self.Vlat))
         self.Clat = np.array(sort_x_by_y(self.Clat, self.Vlat))
         self.Flat = np.array(sort_x_by_y(self.Flat, self.Vlat))
@@ -1433,7 +1434,7 @@ class thelecMDB():
             os.chdir( cwd )
 
         if len(self.Vlat)<=0:
-            print("\nFETAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
+            print("\nFATAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
             raise ValueError()
         self.Slat = np.array(sort_x_by_y(self.Slat, self.Vlat))
         self.Clat = np.array(sort_x_by_y(self.Clat, self.Vlat))
@@ -1564,17 +1565,16 @@ class thelecMDB():
         #self.volumes = sort_x_by_y(volumes,volumes)
         self.volumes = np.array(list(map(float,sorted(volumes))))
         print ("found volumes from static calculations:", volumes)
-        
+
         self.xmlvol = []
         self.xmlgz = []
         self.dosgz = []
-        xml = list(self.vasp_db.db['xmlgz'].find({'$and':[ {'metadata.tag': self.tag}]}))
+        xml = list(self.vasp_db.db['xmlgz'].find({'$and':[ {'metadata.tag': self.tag}, { 'vasprun_xml_gz': { '$exists': True } }]}))
         for x in xml:
             self.xmlgz.append(pickle.loads(x['vasprun_xml_gz']))
             self.dosgz.append(pickle.loads(x['DOSCAR_gz']))
             self.xmlvol.append(x['volume'])
-            print ("found refined calculation:", 'vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
-
+            print ("found non-selfconsistent results with with k-mesh factor of 2x2x2:", 'vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
 
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
         if not os.path.exists(self.phasename):
@@ -1606,7 +1606,7 @@ class thelecMDB():
             vol = structure.volume
             sss = (structure.lattice.matrix).tolist()
             lattices.append(sss)
- 
+
             if vol in volumes:
                 print ("WARNING: skipped volume =", vol)
                 continue
@@ -1765,11 +1765,11 @@ class thelecMDB():
                     self.qhamode = 'phonon'
                     self.qha_items = self.vasp_db.db[self.qhamode].find({'metadata.tag': self.tag})
                     self.T_vib = self.qha_items[0]['temperatures'][::self.everyT]
-                    self.from_phonon_collection = True 
+                    self.from_phonon_collection = True
                 except:
                     warnings.warn ("\nWARNING! I cannot find required data from qha_phonon, am asking help from Yphon!\n")
                     self.pyphon = True
-                    self.toYphon()            
+                    self.toYphon()
 
 
     def get_qha(self):
@@ -2056,7 +2056,7 @@ class thelecMDB():
                 nT = i
                 break
         if nT < 3:
-            self.key_comments['ERROR'] = "Fetal ERROR! Calculation corrupted due to certain reason! Perhaps very bad E-V curve!"
+            self.key_comments['ERROR'] = "Fatal ERROR! Calculation corrupted due to certain reason! Perhaps very bad E-V curve!"
             return False
 
         vn = min(self.volT[0:nT])
