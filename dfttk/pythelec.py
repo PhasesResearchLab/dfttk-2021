@@ -966,7 +966,7 @@ class thelecMDB():
         self.refresh=args.refresh
         self.fitF=fitF
         self.codename = ""
-        self.version = ""
+        self.code_version = ""
 
         if self.debug:
             if self.dope==0.0: self.dope=-1.e-5
@@ -1035,9 +1035,9 @@ class thelecMDB():
             with open (os.path.join(voldir,'DOSCAR.gz'),'wb') as out:
                 out.write(self.dosgz[ii])
 
-            if self.codename=="" and self.version=="":
-                self.codename, self.version = get_code_version(xml=os.path.join(voldir,'vasprun.xml.gz'))
-                print ("\nDFT code: ", self.codename, "version:", self.codename,"\n")
+            if self.codename=="" and self.code_version=="":
+                self.codename, self.code_version = get_code_version(xml=os.path.join(voldir,'vasprun.xml.gz'))
+                print ("\nDFT code: ", self.codename, "version:", self.code_version,"\n")
 
 
         with open (os.path.join(voldir,'OSZICAR'),'w') as out:
@@ -1053,10 +1053,14 @@ class thelecMDB():
             force_constant_matrix = np.array(i['force_constants'])
             hessian_matrix = np.empty((natoms*3, natoms*3), dtype=float)
             for ii in range(natoms):
+                iiA = float(math.sqrt(supercell_structure.sites[ii].specie.atomic_mass))
                 for jj in range(natoms):
+                    jjA = 1.
+                    if self.code_version >="6.0.0":
+                        jjA = iiA*float(math.sqrt(supercell_structure.sites[jj].specie.atomic_mass))
                     for x in range(3):
                         for y in range(3):
-                            hessian_matrix[ii*3+x, jj*3+y] = -force_constant_matrix[ii,jj,x,y]
+                            hessian_matrix[ii*3+x, jj*3+y] = -force_constant_matrix[ii,jj,x,y]/jjA
             for xx in range(natoms*3):
                 for yy in range(natoms*3-1):
                     out.write('{} '.format(hessian_matrix[xx,yy]))
