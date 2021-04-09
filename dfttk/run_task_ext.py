@@ -47,7 +47,7 @@ class nonscalc(FiretaskBase):
         with open("KPOINTS", "w") as f:
             for i in range(0,2):
                 f.write(lines[i])
-            f.write("Gamma\n"])
+            f.write("Gamma\n")
             mesh = [int(x) for x in lines[3].split(" ") if x!=""]
             for i in range(0,3):
                 f.write(' {}'.format(mesh[i]*2))
