@@ -18,7 +18,7 @@ def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
         store_raw_vasprunxml = False
     if store_raw_vasprunxml:
         t.append(nonscalc())
-        t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, job_type="relax", auto_npar=">>auto_npar<<", gzip_output=False))
+        t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
         t.append(InsertXMLToDb(db_file=db_file, structure=structure, 
             tag=tag, xml="vasprun.xml"))
 
