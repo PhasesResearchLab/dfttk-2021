@@ -18,7 +18,7 @@ def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
         store_raw_vasprunxml = False
     if store_raw_vasprunxml:
         t.append(nonscalc())
-        t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
+        t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, job_type="relax", auto_npar=">>auto_npar<<", gzip_output=False))
         t.append(InsertXMLToDb(db_file=db_file, structure=structure, 
             tag=tag, xml="vasprun.xml"))
 
@@ -45,8 +45,9 @@ class nonscalc(FiretaskBase):
         with open("KPOINTS", "r") as f:
             lines = f.readlines()
         with open("KPOINTS", "w") as f:
-            for i in range(0,3):
+            for i in range(0,2):
                 f.write(lines[i])
+            f.write("Gamma\n"])
             mesh = [int(x) for x in lines[3].split(" ") if x!=""]
             for i in range(0,3):
                 f.write(' {}'.format(mesh[i]*2))
