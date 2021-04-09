@@ -1058,6 +1058,7 @@ class thelecMDB():
                     jjA = 1.
                     if self.code_version >="6.0.0":
                         jjA = iiA*float(math.sqrt(supercell_structure.sites[jj].specie.atomic_mass))
+                    jjA = 0.00413566553853809**2
                     for x in range(3):
                         for y in range(3):
                             hessian_matrix[ii*3+x, jj*3+y] = -force_constant_matrix[ii,jj,x,y]/jjA
