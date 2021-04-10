@@ -1052,14 +1052,24 @@ class thelecMDB():
                 out.write('{}\n'.format(supercell_l[line]))
             force_constant_matrix = np.array(i['force_constants'])
             hessian_matrix = np.empty((natoms*3, natoms*3), dtype=float)
+            """
+            PI2 = 2*3.141592653589793
+            THz = 1e12*PI2
+            AMU = 1.66053906660e-27
+            eV = 1.602176634e-19
+            M = 1.e10
+            THz_to_eV=THz**2 *AMU/eV/M/M
+            THz_to_eV = 0.004091649655126895
+            """
+
             for ii in range(natoms):
                for jj in range(natoms):
-                    THz_to_eV = 1.
-                    if self.code_version >="6.2.0":
-                        THz_to_eV = 0.00413566553853809 #
                     for x in range(3):
                         for y in range(3):
-                            hessian_matrix[ii*3+x, jj*3+y] = -force_constant_matrix[ii,jj,x,y]*THz_to_eV
+                            hessian_matrix[ii*3+x, jj*3+y] = -force_constant_matrix[ii,jj,x,y]
+            if self.code_version >="6.2.0":
+                hessian_matrix *= THz_to_eV
+
             for xx in range(natoms*3):
                 for yy in range(natoms*3-1):
                     out.write('{} '.format(hessian_matrix[xx,yy]))
