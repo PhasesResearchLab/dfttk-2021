@@ -1068,7 +1068,7 @@ class thelecMDB():
                         for y in range(3):
                             hessian_matrix[ii*3+x, jj*3+y] = -force_constant_matrix[ii,jj,x,y]
             if self.code_version >="6.2.0":
-                hessian_matrix *= THz_to_eV
+                hessian_matrix *= 0.004091649655126895
 
             for xx in range(natoms*3):
                 for yy in range(natoms*3-1):
