@@ -269,6 +269,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     return wf
 
 
+from atomate.utils.utils import get_meta_from_structure, get_fws_and_tasks
 def set_queue_options(
     original_wf,
     walltime=None,
@@ -308,7 +309,7 @@ def set_queue_options(
     if qos:
         qsettings.update({"qos": qos})
     if pmem:
-        qsettings.update({"pmem": pmen})
+        qsettings.update({"pmem": pmem})
 
     idx_list = get_fws_and_tasks(
         original_wf,
@@ -326,15 +327,15 @@ import atomate.vasp.powerups
 def Customizing_Workflows(original_wf):
     user_settings= loadfn('SETTINGS.yaml') or {}
     #ymal dict, see https://atomate.org/customizing_workflows.html
-    cm = user_settings.get('Customizing_Workflows', {})
-    if 'powerups' in cm:
-        if 'set_execution_options' in cm['powerups']:
-            fworker_name = cm['powerups']['set_execution_options']
-            original_wf = powerups.set_execution_options(original_wf, fworker_name=fworker_name)
-            set_queue_options
-        if 'set_queue_options' in cm['powerups']:
-            queue_options = cm['powerups']['set_queue_options']
-            original_wf = set_queue_options(original_wf, pmem=queue_option.get("pmem", None))
+    powerups = user_settings.get('powerups', {})
+    if 'set_execution_options' in powerups:
+        fworker_name = powerups['set_execution_options']
+        original_wf = powerups.set_execution_options(original_wf, fworker_name=fworker_name)
+        set_queue_options
+    if 'set_queue_options' in powerups:
+        queue_options = powerups['set_queue_options']
+        #print(queue_options,"eeeeeeeeeeee")
+        original_wf = set_queue_options(original_wf, pmem=queue_options.get("pmem", None))
     return original_wf
 
 def run(args):
@@ -463,6 +464,8 @@ def run(args):
 
         #Write Out the metadata for POST and continue purpose
         dumpfn(metadatas, "METADATAS.yaml")
+    for wflow in wfs:
+            revised_wflow = Customizing_Workflows(wflow)
 
     if LAUNCH:
         from fireworks import LaunchPad
