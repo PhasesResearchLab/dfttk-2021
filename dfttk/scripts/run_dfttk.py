@@ -311,6 +311,7 @@ def set_queue_options(
     if pmem:
         qsettings.update({"pmem": pmem})
 
+    print ("pmem", pmem)
     idx_list = get_fws_and_tasks(
         original_wf,
         fw_name_constraint=fw_name_constraint,
