@@ -309,7 +309,7 @@ def set_queue_options(
     if qos:
         qsettings.update({"qos": qos})
     if pmem:
-        qsettings.update({"pmem": pmem})
+        qsettings.update({"mem": pmem})
 
     idx_list = get_fws_and_tasks(
         original_wf,
