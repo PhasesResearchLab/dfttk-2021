@@ -268,6 +268,18 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
         raise ValueError("Currently, only the gibbs energy workflow is supported.")
     return wf
 
+def 
+import atomate.vasp.powerups
+def Customizing_Workflows(original_wf):
+    user_settings= loadfn('SETTINGS.yaml') or {}
+    #ymal dict, see https://atomate.org/customizing_workflows.html
+    cm = user_settings.get('Customizing_Workflows', {})
+    if 'powerups' in cm:
+        if 'set_execution_options' in cm['powerups']:
+            fworker_name = cm['powerups']['set_execution_options']
+            return powerups.set_execution_options(original_wf, fworker_name=fworker_name)
+    return original_wf
+
 def run(args):
     """
     Run dfttk
@@ -400,7 +412,8 @@ def run(args):
         lpad = LaunchPad.auto_load()
 
         for wflow in wfs:
-            lpad.add_wf(wflow)
+            revised_wflow = Customizing_Workflows(wflow)
+            lpad.add_wf(revised_wflow)
         if MAX_JOB:
             # Not False or Empty
             if MAX_JOB == 1:
