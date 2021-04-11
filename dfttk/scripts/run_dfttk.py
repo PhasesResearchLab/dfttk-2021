@@ -311,7 +311,6 @@ def set_queue_options(
     if pmem:
         qsettings.update({"pmem": pmem})
 
-    print ("pmem", pmem)
     idx_list = get_fws_and_tasks(
         original_wf,
         fw_name_constraint=fw_name_constraint,
@@ -324,17 +323,17 @@ def set_queue_options(
     return original_wf
 
 
-import atomate.vasp.powerups
+import atomate.vasp.powerups as powerups
 def Customizing_Workflows(original_wf):
     user_settings= loadfn('SETTINGS.yaml') or {}
     #ymal dict, see https://atomate.org/customizing_workflows.html
-    powerups = user_settings.get('powerups', {})
-    if 'set_execution_options' in powerups:
-        fworker_name = powerups['set_execution_options']
-        original_wf = powerups.set_execution_options(original_wf, fworker_name=fworker_name)
-        set_queue_options
-    if 'set_queue_options' in powerups:
-        queue_options = powerups['set_queue_options']
+    powerups_options = user_settings.get('powerups', {})
+    if 'set_execution_options' in powerups_options:
+        execution_options = powerups_options['set_execution_options']
+        original_wf = powerups.set_execution_options(original_wf, 
+            fworker_name=execution_options.get("fworker_name", None))
+    if 'set_queue_options' in powerups_options:
+        queue_options = powerups_options['set_queue_options']
         #print(queue_options,"eeeeeeeeeeee")
         original_wf = set_queue_options(original_wf, pmem=queue_options.get("pmem", None))
     return original_wf
@@ -465,16 +464,20 @@ def run(args):
 
         #Write Out the metadata for POST and continue purpose
         dumpfn(metadatas, "METADATAS.yaml")
+
+    _fws = []
     for wflow in wfs:
-            revised_wflow = Customizing_Workflows(wflow)
+        revised_wflow = Customizing_Workflows(wflow)
+        _fws.append(revised_wflow)
+    fws = _fws
 
     if LAUNCH:
         from fireworks import LaunchPad
         lpad = LaunchPad.auto_load()
 
         for wflow in wfs:
-            revised_wflow = Customizing_Workflows(wflow)
-            lpad.add_wf(revised_wflow)
+            lpad.add_wf(wflow)
+
         if MAX_JOB:
             # Not False or Empty
             if MAX_JOB == 1:
