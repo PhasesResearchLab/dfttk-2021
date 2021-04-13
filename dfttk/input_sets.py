@@ -121,6 +121,19 @@ class RelaxSet(DictSet):
             if 'MAGMOM' in RelaxSet.CONFIG['INCAR']:
                 RelaxSet.CONFIG['INCAR'].pop('MAGMOM')
 
+        if 'Relax_settings' in uis:
+            relax = uis['Relax_settings']
+            for ff in relax:
+                if ff=='PREC':
+                    RelaxSet.CONFIG['INCAR'].pop('ENCUT')
+                    RelaxSet.CONFIG['INCAR'].update({ff:relax.get(ff)})
+                elif ff=='KPAR':
+                    RelaxSet.CONFIG['INCAR'].update({ff:relax.get(ff)})
+                elif ff=='grid_density':
+                    RelaxSet.CONFIG['KPOINTS'].update({ff:relax.get(ff)})
+        #print (RelaxSet.CONFIG)
+
+
 
         RelaxSet.CONFIG['INCAR'].update(uis)
         kwargs.update({'user_potcar_functional':RelaxSet.CONFIG['POTCAR_FUNCTIONAL']})
