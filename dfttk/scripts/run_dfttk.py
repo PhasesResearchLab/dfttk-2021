@@ -325,7 +325,10 @@ def set_queue_options(
 
 import atomate.vasp.powerups as powerups
 def Customizing_Workflows(original_wf):
-    user_settings= loadfn('SETTINGS.yaml') or {}
+    if os.path.exists('SETTINGS.yaml'):
+        user_settings= loadfn('SETTINGS.yaml')
+    else:
+        user_settings={}
     #ymal dict, see https://atomate.org/customizing_workflows.html
     powerups_options = user_settings.get('powerups', {})
     if 'set_execution_options' in powerups_options:
