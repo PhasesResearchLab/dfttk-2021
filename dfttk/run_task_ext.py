@@ -9,6 +9,9 @@ from atomate.vasp.database import VaspCalcDb
 from atomate.utils.utils import load_class, env_chk
 from atomate.vasp.firetasks.run_calc import RunVaspCustodian
 from pymatgen.core import Structure
+import socket
+import pytz
+from tzlocal import get_localzone # $ pip install tzlocal
 
 
 def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
@@ -84,10 +87,12 @@ class InsertXMLToDb(FiretaskBase):
             structure = self.get('structure', Structure.from_file('POSCAR'))
 
             xml_data = {'metadata': {'tag': self.get('tag')},
+                        'hostname': socket.gethostname(),
                         self.xml.replace(".","_")+"_gz": bson.Binary(pickle.dumps(binxmldata)),
                        'DOSCAR_gz': bson.Binary(pickle.dumps(bindoscar)),
                        'volume': structure.volume,
                        'last_updated':datetime.datetime.utcnow(),
+                       'local_time':datetime.datetime.utcnow().astimezone(get_localzone()),
                        'structure': structure.as_dict(),
                        'formula_pretty': structure.composition.reduced_formula}
             self.vasp_db.db['xmlgz'].insert_one(xml_data) 
