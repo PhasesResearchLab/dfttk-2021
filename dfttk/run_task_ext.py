@@ -11,7 +11,7 @@ from atomate.vasp.firetasks.run_calc import RunVaspCustodian
 from pymatgen.core import Structure
 import socket
 import pytz
-from tzlocal import get_localzone # $ pip install tzlocal
+from dfttk.pythelec import get_code_version
 
 
 def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
@@ -19,11 +19,17 @@ def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
         store_raw_vasprunxml = override_default_vasp_params['user_incar_settings']['store_raw_vasprunxml']
     except:
         store_raw_vasprunxml = False
-    if store_raw_vasprunxml:
+    if isinstance(store_raw_vasprunxml, int): kmesh_factor = store_raw_vasprunxml
+    elif store_raw_vasprunxml: kmesh_factor = 2
+    else: kmesh_factor = 0
+    if kmesh_factor > 1:
         t.append(nonscalc())
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
         t.append(InsertXMLToDb(db_file=db_file, structure=structure, 
-            tag=tag, xml="vasprun.xml"))
+            tag=tag, xml="vasprun.xml", kmesh_factor = kmesh_factor))
+    elif kmesh_factor == 1:
+        t.append(InsertXMLToDb(db_file=db_file, structure=structure, 
+            tag=tag, xml="vasprun.xml", kmesh_factor = 1))
 
 
 @explicit_serialize
@@ -64,18 +70,20 @@ class InsertXMLToDb(FiretaskBase):
     Store the CheckSymmetry result to MongoDB, the stored collection is named as 'relaxations'
     '''
     required_params = ["xml", "db_file", "tag"]
-    optional_params = ['metadata','structure']
+    optional_params = ['metadata','structure', 'kmesh_factor']
 
     def run_task(self, fw_spec):
         self.xml = self.get("xml", None)
-        with open("KPOINTS", "r") as f:
-            kpoints = f.readlines()
-        with open("INCAR", "r") as f:
-            incar = f.readlines()
-        shutil.copyfile("INCAR","INCAR.nscf")
-        shutil.copyfile("KPOINTS","KPOINTS.nscf")
-        shutil.copyfile("INCAR.Static","INCAR")
-        shutil.copyfile("KPOINTS.Static","KPOINTS")
+        self.kmesh_factor = self.get("kmesh_factor", 1)
+        if self.kmesh_factor>1:
+            with open("KPOINTS", "r") as f:
+                kpoints = f.readlines()
+            with open("INCAR", "r") as f:
+                incar = f.readlines()
+            shutil.copyfile("INCAR","INCAR.nscf")
+            shutil.copyfile("KPOINTS","KPOINTS.nscf")
+            shutil.copyfile("INCAR.Static","INCAR")
+            shutil.copyfile("KPOINTS.Static","KPOINTS")
         if self.xml is not None:
             with open (self.xml, 'rb') as f:
                 xmldata = f.read()
@@ -97,8 +105,9 @@ class InsertXMLToDb(FiretaskBase):
                        'volume': structure.volume,
                        'INCAR': incar,
                        'KPOINTS': kpoints,
+                       'VASP': get_code_version(),
                        'last_updated':datetime.datetime.utcnow(),
-                       'local_time':datetime.datetime.utcnow().astimezone(get_localzone()),
+                       'US_eastern_time':datetime.datetime.now(pytz.timezone('US/Eastern')),
                        'structure': structure.as_dict(),
                        'formula_pretty': structure.composition.reduced_formula}
             self.vasp_db.db['xmlgz'].insert_one(xml_data) 
