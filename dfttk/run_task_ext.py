@@ -68,6 +68,10 @@ class InsertXMLToDb(FiretaskBase):
 
     def run_task(self, fw_spec):
         self.xml = self.get("xml", None)
+        with open("KPOINTS", "r") as f:
+            kpoints = f.readlines()
+        with open("INCAR", "r") as f:
+            incar = f.readlines()
         shutil.copyfile("INCAR","INCAR.nscf")
         shutil.copyfile("KPOINTS","KPOINTS.nscf")
         shutil.copyfile("INCAR.Static","INCAR")
@@ -91,6 +95,8 @@ class InsertXMLToDb(FiretaskBase):
                         self.xml.replace(".","_")+"_gz": bson.Binary(pickle.dumps(binxmldata)),
                        'DOSCAR_gz': bson.Binary(pickle.dumps(bindoscar)),
                        'volume': structure.volume,
+                       'INCAR': incar,
+                       'KPOINTS': kpoints,
                        'last_updated':datetime.datetime.utcnow(),
                        'local_time':datetime.datetime.utcnow().astimezone(get_localzone()),
                        'structure': structure.as_dict(),
