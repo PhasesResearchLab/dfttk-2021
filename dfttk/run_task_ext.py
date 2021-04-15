@@ -22,6 +22,7 @@ def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
     if isinstance(store_raw_vasprunxml, int): kmesh_factor = store_raw_vasprunxml
     elif store_raw_vasprunxml: kmesh_factor = 2
     else: kmesh_factor = 0
+    print ("eeeeeeeeeeeeeeee", store_raw_vasprunxml, kmesh_factor)
     if kmesh_factor > 1:
         t.append(nonscalc(kmesh_factor))
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))

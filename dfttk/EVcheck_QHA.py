@@ -353,10 +353,10 @@ class EVcheck_QHA(FiretaskBase):
                                                         **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
                                             parents=calcs, name='{}-EVcheck_QHA'.format(structure.composition.reduced_formula))
                     fws.append(check_result)
+                    for fw in fws:
+                         Customizing_Workflows(fw,user_settings=override_default_vasp_params)
                     strname = "{}:{}".format(structure.composition.reduced_formula, 'EV_QHA_Append')
                     wfs = Workflow(fws, name = strname, metadata=metadata)
-                    for wf in wfs:
-                        wf = Customizing_Workflows(wf,user_settings=override_default_vasp_params)
 
                     if modify_incar_params != {}:
                         from dfttk.utils import add_modify_incar_by_FWname
