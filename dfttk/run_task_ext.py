@@ -23,7 +23,7 @@ def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
     elif store_raw_vasprunxml: kmesh_factor = 2
     else: kmesh_factor = 0
     if kmesh_factor > 1:
-        t.append(nonscalc())
+        t.append(nonscalc(kmesh_factor))
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
         t.append(InsertXMLToDb(db_file=db_file, structure=structure, 
             tag=tag, xml="vasprun.xml", kmesh_factor = kmesh_factor))
@@ -59,8 +59,10 @@ class nonscalc(FiretaskBase):
             f.write("Gamma\n")
             mesh = [int(x) for x in lines[3].split(" ") if x!=""]
             for i in range(0,3):
-                f.write(' {}'.format(mesh[i]*2))
-            f.write('\n')            
+                f.write(' {}'.format(mesh[i]*self.kmesh_factor))
+            f.write('\n')
+    def __init(self, kmesh_factor):
+        self.kmesh_factor=kmesh_factor        
 
 
 
