@@ -19,10 +19,11 @@ def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
         store_raw_vasprunxml = override_default_vasp_params['user_incar_settings']['store_raw_vasprunxml']
     except:
         store_raw_vasprunxml = False
-    if isinstance(store_raw_vasprunxml, int): kmesh_factor = store_raw_vasprunxml
-    elif store_raw_vasprunxml: kmesh_factor = 2
+    if type(store_raw_vasprunxml)==int: kmesh_factor = store_raw_vasprunxml
+    elif type(store_raw_vasprunxml)==bool: 
+        if store_raw_vasprunxml: kmesh_factor = 2
+        else : kmesh_factor = 0
     else: kmesh_factor = 0
-    print ("eeeeeeeeeeeeeeee", store_raw_vasprunxml, kmesh_factor)
     if kmesh_factor > 1:
         t.append(nonscalc(kmesh_factor))
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
