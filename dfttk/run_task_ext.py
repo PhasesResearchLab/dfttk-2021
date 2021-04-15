@@ -75,11 +75,11 @@ class InsertXMLToDb(FiretaskBase):
     def run_task(self, fw_spec):
         self.xml = self.get("xml", None)
         self.kmesh_factor = self.get("kmesh_factor", 1)
+        with open("KPOINTS", "r") as f:
+            kpoints = f.readlines()
+        with open("INCAR", "r") as f:
+            incar = f.readlines()
         if self.kmesh_factor>1:
-            with open("KPOINTS", "r") as f:
-                kpoints = f.readlines()
-            with open("INCAR", "r") as f:
-                incar = f.readlines()
             shutil.copyfile("INCAR","INCAR.nscf")
             shutil.copyfile("KPOINTS","KPOINTS.nscf")
             shutil.copyfile("INCAR.Static","INCAR")
