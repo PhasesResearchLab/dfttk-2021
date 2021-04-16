@@ -24,9 +24,9 @@ def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
         if store_raw_vasprunxml: kmesh_factor = 2
         else : kmesh_factor = 0
     else: kmesh_factor = 0
-    print ("eeeeeeeeeeeeeeee", store_raw_vasprunxml, kmesh_factor)
+#    print ("eeeeeeeeeeeeeeee", store_raw_vasprunxml, kmesh_factor)
     if kmesh_factor > 1:
-        t.append(nonscalc(kmesh_factor))
+        t.append(nonscalc(kmesh_factor=kmesh_factor))
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
         t.append(InsertXMLToDb(db_file=db_file, structure=structure, 
             tag=tag, xml="vasprun.xml", kmesh_factor = kmesh_factor))
@@ -40,6 +40,7 @@ class nonscalc(FiretaskBase):
     '''
     nonselfconsistent calculation using denser k-mesh
     '''
+    optional_params =  = ["kmesh_factor"]
     def run_task(self, fw_spec):
         shutil.copyfile("INCAR","INCAR.Static")
         with open("INCAR", "r") as f:
@@ -56,18 +57,17 @@ class nonscalc(FiretaskBase):
         shutil.copyfile("KPOINTS","KPOINTS.Static")
         with open("KPOINTS", "r") as f:
             lines = f.readlines()
+
+        kmesh_factor=self.get("kmesh_factor", 1)  
         with open("KPOINTS", "w") as f:
             for i in range(0,2):
                 f.write(lines[i])
             f.write("Gamma\n")
             mesh = [int(x) for x in lines[3].split(" ") if x!=""]
             for i in range(0,3):
-                f.write(' {}'.format(mesh[i]*self.kmesh_factor))
+                f.write(' {}'.format(mesh[i]*kmesh_factor))
             f.write('\n')
-    def __init(self, kmesh_factor):
-        self.kmesh_factor=kmesh_factor        
-
-
+      
 
 @explicit_serialize
 class InsertXMLToDb(FiretaskBase):
