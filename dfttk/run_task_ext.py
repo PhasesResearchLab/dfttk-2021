@@ -40,7 +40,7 @@ class nonscalc(FiretaskBase):
     '''
     nonselfconsistent calculation using denser k-mesh
     '''
-    optional_params =  = ["kmesh_factor"]
+    optional_params = ["kmesh_factor"]
     def run_task(self, fw_spec):
         shutil.copyfile("INCAR","INCAR.Static")
         with open("INCAR", "r") as f:
