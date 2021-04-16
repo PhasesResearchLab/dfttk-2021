@@ -353,8 +353,7 @@ class EVcheck_QHA(FiretaskBase):
                                                         **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
                                             parents=calcs, name='{}-EVcheck_QHA'.format(structure.composition.reduced_formula))
                     fws.append(check_result)
-                    for fw in fws:
-                         Customizing_Workflows(fw,user_settings=override_default_vasp_params)
+                    fws=Customizing_Workflows(fws,user_settings=override_default_vasp_params)
                     strname = "{}:{}".format(structure.composition.reduced_formula, 'EV_QHA_Append')
                     wfs = Workflow(fws, name = strname, metadata=metadata)
 
