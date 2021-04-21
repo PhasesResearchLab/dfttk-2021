@@ -285,7 +285,7 @@ class thfindMDB ():
                 if self.supercellsize[i] < self.supercellN: continue
                 jobpath = findjobdir(self.jobpath, m['tag'])
                 if self.remove:
-                    sys.stdout.write('dfttk db_remove -all -tag {} phonon: {:>2}, static: {:>2}, SN: {:>3}, qha_phonon: {:<1.1s}, {}\n'\
+                    sys.stdout.write('dfttk db_remove --force -m all -tag {} phonon: {:>2}, static: {:>2}, SN: {:>3}, qha_phonon: {:<1.1s}, {}\n'\
                         .format(m['tag'], count[i], nS, self.supercellsize[i], str(qha_phonon_success), phases[i]))
                 elif jobpath==None:
                     sys.stdout.write('{}, phonon: {:>2}, static: {:>2}, SN: {:>3}, qha_phonon: {:<1.1s}, {}\n'\
