@@ -1031,11 +1031,6 @@ class thelecMDB():
             ii = vol_closest(mm['volume'],self.xmlvol)
             with open (os.path.join(voldir,'vasprun.xml.gz'),'wb') as out:
                 out.write(self.xmlgz[ii])
-<<<<<<< HEAD
-            with open (os.path.join(voldir,'DOSCAR.gz'),'wb') as out:
-                out.write(self.dosgz[ii])
- 
-=======
 
             with open (os.path.join(voldir,'DOSCAR.gz'),'wb') as out:
                 out.write(self.dosgz[ii])
@@ -1045,7 +1040,6 @@ class thelecMDB():
                 print ("\nDFT code: ", self.codename, "version:", self.code_version,"\n")
 
 
->>>>>>> 73af0b7f5450e3638aeb860c1b4985fdeb08b956
         with open (os.path.join(voldir,'OSZICAR'),'w') as out:
             out.write('   1 F= xx E0= {}\n'.format(self.energies[(list(self.volumes)).index(i['volume'])]))
         with open (os.path.join(voldir,'superfij.out'),'w') as out:
@@ -1471,11 +1465,11 @@ class thelecMDB():
         for i,v in enumerate (self.Vlat):
             fvol = False
             for j,vol in enumerate(self.volumes):
-                if abs(vol-v)<1.e-12:
+                if abs(vol-v)<1.e-10:
                     print (v, self.energies[j])
                     fvol = True
             if not fvol:
-                warnings.warn("\nWarning! Not found v=",v,"\n")
+                print("\nWarning! Not found v=",v,"\n")
         if len(self.Vlat)!=len(self.volumes):
             warnings.warn("\nWarning! The static/qha calculations are not inconsistent! Let me see if I can resolve it\n")
 
@@ -1664,9 +1658,12 @@ class thelecMDB():
                 key_comments['comments'] = 'local calculations'
                 self.key_comments = key_comments
 
-            doscar = os.path.join(yphondir, calc, 'DOSCAR.gz')
-            if not os.path.exists(doscar) : continue
-            dos_objs.append(doscar)
+            if os.path.exists(os.path.join(yphondir, calc, 'DOSCAR.gz')) : 
+                dos_objs.append(os.path.join(yphondir, calc, 'DOSCAR.gz'))
+            elif os.path.exists(os.path.join(yphondir, calc, 'DOSCAR')) : 
+                dos_objs.append(os.path.join(yphondir, calc, 'DOSCAR'))
+            else:
+                continue
 
         # sort everything in volume order
         # note that we are doing volume last because it is the thing we are sorting by!
@@ -1698,7 +1695,10 @@ class thelecMDB():
         self.dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
         for vol in self.volumes:
             dir = os.path.join(self.phasename,'Yphon','V{:010.6f}'.format(vol))
-            self.dos_objs.append(os.path.join(dir,'DOSCAR.gz'))
+            if os.path.exists(os.path.join(dir,'DOSCAR.gz')):
+                self.dos_objs.append(os.path.join(dir,'DOSCAR.gz'))
+            elif os.path.exists(os.path.join(dir,'DOSCAR')):
+                self.dos_objs.append(os.path.join(dir,'DOSCAR'))
 
 
     def get_static_calculations(self):
@@ -1712,9 +1712,12 @@ class thelecMDB():
         for i,dos in enumerate(self.dos_objs):
             #print ("processing dos object at volume: ", self.volumes[i], " with nT =", len(self.T))
             if isinstance(dos, str):
-                with gzip.open (dos,'rt') as _dos:
-                    prp_vol = runthelec(t0, t1, td, self.xdn, self.xup, self.dope, self.ndosmx,
-                        self.gaussian, self.natfactor, dos=_dos, _T=self.T, fout=sys.stdout, vol=self.volumes[i])
+                if dos.endswith(".gz"):
+                    _dos = gzip.open (dos,'rt')
+                else:
+                    _dos = open (dos,'r')
+                prp_vol = runthelec(t0, t1, td, self.xdn, self.xup, self.dope, self.ndosmx,
+                    self.gaussian, self.natfactor, dos=_dos, _T=self.T, fout=sys.stdout, vol=self.volumes[i])
             else:
                 prp_vol = runthelec(t0, t1, td, self.xdn, self.xup, self.dope, self.ndosmx,
                     self.gaussian, self.natfactor, dos=dos, _T=self.T, fout=sys.stdout, vol=self.volumes[i])
