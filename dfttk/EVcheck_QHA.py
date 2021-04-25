@@ -17,6 +17,7 @@ from dfttk.input_sets import PreStaticSet, RelaxSet, StaticSet, ForceConstantsSe
 from dfttk.fworks import OptimizeFW, StaticFW, PhononFW
 from dfttk.ftasks import QHAAnalysis
 from dfttk.analysis.quasiharmonic import Quasiharmonic
+from dfttk.scripts.assign_fworker_name import Customizing_Workflows
 
 from atomate.vasp.config import VASP_CMD, DB_FILE
 
@@ -354,6 +355,8 @@ class EVcheck_QHA(FiretaskBase):
                     fws.append(check_result)
                     strname = "{}:{}".format(structure.composition.reduced_formula, 'EV_QHA_Append')
                     wfs = Workflow(fws, name = strname, metadata=metadata)
+                    wfs=Customizing_Workflows(wfs,user_settings=override_default_vasp_params)
+
                     if modify_incar_params != {}:
                         from dfttk.utils import add_modify_incar_by_FWname
                         add_modify_incar_by_FWname(wfs, modify_incar_params = modify_incar_params)

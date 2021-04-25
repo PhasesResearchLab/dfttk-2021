@@ -442,6 +442,9 @@ def run_ext_thfind(subparsers):
     pthfind.add_argument("-qpr", "--qha_phonon_repair", dest="qha_phonon_repair", action='store_true', default=False,
                       help="repair previous qha_phonon collection. \n"
                            "Default: False")
+    pthfind.add_argument("-db", "--db_file", dest="db_file", nargs="?", type=str, default=None,
+                      help="alternative database other than default\n"
+                           "Default: None")
     pthfind.add_argument("-check", "--check", dest="check", action='store_true', default=False,
                       help="check database. \n"
                            "Default: False")
@@ -469,7 +472,9 @@ def ext_thfind(args, vasp_db=None):
         WORKFLOW = args.WORKFLOW
             workflow, current only get_wf_gibbs
     """
-    if vasp_db is None:
+    if args.db_file is not None:
+        vasp_db = VaspCalcDb.from_db_file(args.db_file, admin=False)        
+    elif vasp_db is None:
         db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
         vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
     proc=thfindMDB(args,vasp_db)

@@ -7,6 +7,7 @@ from dfttk.wflows import get_wf_gibbs, get_wf_EV_bjb, get_wf_gibbs_robust, get_w
 from dfttk.utils import recursive_glob
 from dfttk.structure_builders.parse_anrl_prototype import multi_replace
 from dfttk.scripts.querydb import get_eq_structure_by_metadata
+from dfttk.scripts.assign_fworker_name import Customizing_Workflows
 import dfttk.scripts.querydb as querydb
 from fireworks.fw_config import config_to_dict
 from monty.serialization import loadfn, dumpfn
@@ -174,6 +175,10 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     #override_default_vasp_params = {'user_incar_settings': {}, 'user_kpoints_settings': {}, 'user_potcar_functional': str}
     #If some value in 'user_incar_settings' is set to None, it will use vasp's default value
     override_default_vasp_params = settings.get('override_default_vasp_params', {})
+    #check if fworker_name is assigned
+    powerups = settings.get('powerups', {})
+    override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
+
     #dict, dict of class ModifyIncar with keywords in Workflow name. e.g.
     """
     modify_incar_params = { 'Full relax': {'incar_update': {"LAECHG":False,"LCHARG":False,"LWAVE":False}},
@@ -268,6 +273,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
         raise ValueError("Currently, only the gibbs energy workflow is supported.")
     return wf
 
+
 def run(args):
     """
     Run dfttk
@@ -336,6 +342,7 @@ def run(args):
                 user_settings.update({"phonon_supercell_matrix": "atoms"})
 
             wf = get_wf_single(structure, WORKFLOW=WORKFLOW, settings=user_settings)
+            wf = Customizing_Workflows(wf,user_settings=user_settings)
             if isinstance(wf, list):
                 wfs = wfs + wf
             else:
@@ -384,7 +391,7 @@ def run(args):
                         user_settings.update({"phonon_supercell_matrix": "atoms"})
 
                     wf = get_wf_single(structure, WORKFLOW=WORKFLOW, settings=user_settings)
-
+                    wf = Customizing_Workflows(wf,user_settings=user_settings)
                     metadatas[STR_FILE] = wf.as_dict()["metadata"]
                     wfs.append(wf)
 
@@ -395,12 +402,21 @@ def run(args):
         #Write Out the metadata for POST and continue purpose
         dumpfn(metadatas, "METADATAS.yaml")
 
+    """
+    _fws = []
+    for wflow in wfs:
+        revised_wflow = Customizing_Workflows(wflow,user_settings={})
+        _fws.append(revised_wflow)
+    fws = _fws
+    """
+
     if LAUNCH:
         from fireworks import LaunchPad
         lpad = LaunchPad.auto_load()
 
         for wflow in wfs:
             lpad.add_wf(wflow)
+
         if MAX_JOB:
             # Not False or Empty
             if MAX_JOB == 1:

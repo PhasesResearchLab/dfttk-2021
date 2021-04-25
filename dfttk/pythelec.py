@@ -3,6 +3,7 @@
 # common block named comcon
 from __future__ import division
 import sys
+import xml.etree.ElementTree as ET
 import gzip
 import os
 import subprocess
@@ -29,6 +30,24 @@ import warnings
 
 
 k_B = physical_constants['Boltzmann constant in eV/K'][0]
+
+
+def get_code_version(xml='vasprun.xml'):
+    if xml.endswith(".gz"):
+        tree = ET.parse(gzip.open(xml))
+    else:
+        tree = ET.parse(xml)
+    root = tree.getroot()
+    codename, version = "", ""
+    for i, elem in enumerate(root):
+        for code in elem:
+            codeprogram = code.get('name')
+            if codeprogram=='program':
+                codename = code.text
+            elif codeprogram=='version':
+                version = code.text
+            if codename!="" and version!="": return codename, version
+
 
 def substr(str1, str2, pos):
   try:
@@ -946,6 +965,9 @@ class thelecMDB():
         self.renew=renew
         self.refresh=args.refresh
         self.fitF=fitF
+        self.codename = ""
+        self.code_version = ""
+
         if self.debug:
             if self.dope==0.0: self.dope=-1.e-5
 
@@ -993,10 +1015,10 @@ class thelecMDB():
         punitcell_l = str(poscar).split('\n')
 
         natoms = len(supercell_structure.sites)
+        ##print(supercell_structure.sites)
         poscar = supercell_structure.to(fmt="poscar")
         supercell_l = str(poscar).split('\n')
         structure.to(filename=os.path.join(voldir,'POSCAR'))
-
 
         with open (os.path.join(voldir,'metadata.json'),'w') as out:
             mm = i['metadata']
@@ -1009,9 +1031,21 @@ class thelecMDB():
             ii = vol_closest(mm['volume'],self.xmlvol)
             with open (os.path.join(voldir,'vasprun.xml.gz'),'wb') as out:
                 out.write(self.xmlgz[ii])
+<<<<<<< HEAD
             with open (os.path.join(voldir,'DOSCAR.gz'),'wb') as out:
                 out.write(self.dosgz[ii])
  
+=======
+
+            with open (os.path.join(voldir,'DOSCAR.gz'),'wb') as out:
+                out.write(self.dosgz[ii])
+
+            if self.codename=="" and self.code_version=="":
+                self.codename, self.code_version = get_code_version(xml=os.path.join(voldir,'vasprun.xml.gz'))
+                print ("\nDFT code: ", self.codename, "version:", self.code_version,"\n")
+
+
+>>>>>>> 73af0b7f5450e3638aeb860c1b4985fdeb08b956
         with open (os.path.join(voldir,'OSZICAR'),'w') as out:
             out.write('   1 F= xx E0= {}\n'.format(self.energies[(list(self.volumes)).index(i['volume'])]))
         with open (os.path.join(voldir,'superfij.out'),'w') as out:
@@ -1024,11 +1058,24 @@ class thelecMDB():
                 out.write('{}\n'.format(supercell_l[line]))
             force_constant_matrix = np.array(i['force_constants'])
             hessian_matrix = np.empty((natoms*3, natoms*3), dtype=float)
+            """
+            PI2 = 2*3.141592653589793
+            THz = 1e12*PI2
+            AMU = 1.66053906660e-27
+            eV = 1.602176634e-19
+            M = 1.e10
+            THz_to_eV=THz**2 *AMU/eV/M/M
+            THz_to_eV = 0.004091649655126895
+            """
+
             for ii in range(natoms):
-                for jj in range(natoms):
+               for jj in range(natoms):
                     for x in range(3):
                         for y in range(3):
                             hessian_matrix[ii*3+x, jj*3+y] = -force_constant_matrix[ii,jj,x,y]
+            if self.code_version >="6.2.0":
+                hessian_matrix *= 0.004091649655126895
+
             for xx in range(natoms*3):
                 for yy in range(natoms*3-1):
                     out.write('{} '.format(hessian_matrix[xx,yy]))
@@ -1234,7 +1281,7 @@ class thelecMDB():
             self.VCij = sort_x_by_y(self.VCij, self.VCij)
         return has_Cij
 
-    
+
     #For volume dependent thermoelectric calculations based on the output from BoltrzTraP2 code
     #btp2_dir is parent path containing thermoelectric results at several volumes
     def get_btp2(self, btp2_dir):
@@ -1537,7 +1584,7 @@ class thelecMDB():
         #self.volumes = sort_x_by_y(volumes,volumes)
         self.volumes = np.array(list(map(float,sorted(volumes))))
         print ("found volumes from static calculations:", volumes)
-        
+
         self.xmlvol = []
         self.xmlgz = []
         self.dosgz = []
@@ -1578,7 +1625,7 @@ class thelecMDB():
             vol = structure.volume
             sss = (structure.lattice.matrix).tolist()
             lattices.append(sss)
- 
+
             if vol in volumes:
                 print ("WARNING: skipped volume =", vol)
                 continue
@@ -1737,11 +1784,11 @@ class thelecMDB():
                     self.qhamode = 'phonon'
                     self.qha_items = self.vasp_db.db[self.qhamode].find({'metadata.tag': self.tag})
                     self.T_vib = self.qha_items[0]['temperatures'][::self.everyT]
-                    self.from_phonon_collection = True 
+                    self.from_phonon_collection = True
                 except:
                     warnings.warn ("\nWARNING! I cannot find required data from qha_phonon, am asking help from Yphon!\n")
                     self.pyphon = True
-                    self.toYphon()            
+                    self.toYphon()
 
 
     def get_qha(self):

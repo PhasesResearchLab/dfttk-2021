@@ -25,13 +25,18 @@ It is recommended to install DFTTK under the `anaconda <https://docs.anaconda.co
     cd dfttk
     pip install -e .
 
-mkdir a folder named ``config`` whereever you want to followed by copy the file ``db.json``, ``my_launchpad.yaml`` from your MongoDB manager into ``config/``. See the section :ref:`Config MongoDB`
-
-Note for ACI/roar in Penn State, download the file `PBS_template_custom.txt <https://github.com/PhasesResearchLab/dfttk/tree/20210211/dfttk/scripts>`_ into config/. Then
+to get the laste updates for the Alpha version based on one's current version, run
 
 .. code-block:: bash
 
-    dfttk config -all --nodes 1 --ppn 16 --pmem 32gb -psp vasp_psp/ -M yourcomputer -qt yourbatch -mapi PMG_MAPI_KEY
+    git fetch origin
+    git checkout 20210405 #20210405 is a branch name which may be change in a time maner
+
+mkdir a folder named ``config`` whereever you want to followed by copy the file ``db.json``, ``my_launchpad.yaml`` from your MongoDB manager into ``config/``. See the section :ref:`Config MongoDB`
+
+.. code-block:: bash
+
+    dfttk config -all --nodes 1 --ppn 16 --pmem 32gb -aci -M yourcomputer -qt yourbatch -mapi PMG_MAPI_KEY
 
 where
 
