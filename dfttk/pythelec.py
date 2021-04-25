@@ -1009,11 +1009,8 @@ class thelecMDB():
             ii = vol_closest(mm['volume'],self.xmlvol)
             with open (os.path.join(voldir,'vasprun.xml.gz'),'wb') as out:
                 out.write(self.xmlgz[ii])
-            """
-            #to be debugged
             with open (os.path.join(voldir,'DOSCAR.gz'),'wb') as out:
                 out.write(self.dosgz[ii])
-            """
  
         with open (os.path.join(voldir,'OSZICAR'),'w') as out:
             out.write('   1 F= xx E0= {}\n'.format(self.energies[(list(self.volumes)).index(i['volume'])]))
