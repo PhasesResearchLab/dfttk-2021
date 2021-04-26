@@ -1461,7 +1461,7 @@ class thelecMDB():
 
     def check_vol(self):
         print ("\nChecking compatibility between qha/Yphon data and static calculation:\n")
-
+        print (self.Vlat)
         for i,v in enumerate (self.Vlat):
             fvol = False
             for j,vol in enumerate(self.volumes):
@@ -2479,7 +2479,7 @@ class thelecMDB():
         if self.pyphon:
             self.T = self.T_vib
         elif self.td < 0:
-            self.T = T_remesh(min(self.T_vib), min(self.t1,max(self.T_vib)), self.td, nT=self.nT)
+            self.T = T_remesh(min(self.T_vib), min(self.t1,max(self.T_vib)), self.td, _nT=self.nT)
             #print ("xxxxx 2", len(self.T))
         else:
             self.T = T[T<=self.t1]
