@@ -120,11 +120,14 @@ class RelaxSet(DictSet):
         if 'magmom' in uis:
             if 'MAGMOM' in RelaxSet.CONFIG['INCAR']:
                 RelaxSet.CONFIG['INCAR'].pop('MAGMOM')
+        elif uis['ISPIN']==1:
+                if 'MAGMON' in uis.keys():
+                    uis.pop['MAGMOM']
 
         if 'Relax_settings' in uis:
             relax = uis['Relax_settings']
             for ff in relax:
-                if ff=='PREC':
+                if ff.lower()=='prec':
                     if 'ENCUT' in RelaxSet.CONFIG['INCAR']:
                         RelaxSet.CONFIG['INCAR'].pop('ENCUT')
                     RelaxSet.CONFIG['INCAR'].update({ff:relax.get(ff)})
@@ -242,6 +245,9 @@ class ForceConstantsSet(DictSet):
         if 'magmom' in uis:
             if 'MAGMOM' in ForceConstantsSet.CONFIG['INCAR']:
                 ForceConstantsSet.CONFIG['INCAR'].pop('MAGMOM')
+        elif uis['ISPIN']==1:
+            if 'MAGMON' in uis.keys():
+                uis.pop['MAGMOM']
         ForceConstantsSet.CONFIG['INCAR'].update(uis)
         from pymatgen.io.vasp.inputs import Kpoints
         #kpoints = Kpoints.automatic_gamma_density(structure, 4000)
@@ -311,6 +317,9 @@ class StaticSet(DictSet):
         if 'magmom' in uis:
             if 'MAGMOM' in StaticSet.CONFIG['INCAR']:
                 StaticSet.CONFIG['INCAR'].pop('MAGMOM')
+        elif uis['ISPIN']==1:
+                if 'MAGMON' in uis.keys():
+                    uis.pop['MAGMOM']
         StaticSet.CONFIG['INCAR'].update(uis)
         pot = kwargs.get('user_potcar_functional', None)
         if pot:
@@ -540,10 +549,9 @@ class ElasticSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
-        else:
-            if uis['ISPIN']==1:
-                if 'MAGMON' in uis.keys():
-                    uis.pop['MAGMOM']
+        if uis['ISPIN']==1:
+            if 'MAGMON' in uis.keys():
+                uis.pop['MAGMOM']
 
         for key in uis.keys():
             if key not in ElasticSet.CONFIG['INCAR']:
