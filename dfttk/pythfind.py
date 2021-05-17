@@ -240,9 +240,14 @@ class thfindMDB ():
         for i,m in enumerate(hit):
             if self.skipby(phases[i], m['tag']): continue
             total += 1
+            """
             static_calculations = [f for f in all_static_calculations if f['metadata']['tag']==m['tag']]
             qha_calculations = [f for f in all_qha_calculations if f['metadata']['tag']==m['tag']]
             qha_phonon_calculations = [f for f in all_qha_phonon_calculations if f['metadata']['tag']==m['tag']]
+            """
+            static_calculations = [f for f in all_static_calculations if f['metadata']==m]
+            qha_calculations = [f for f in all_qha_calculations if f['metadata']==m]
+            qha_phonon_calculations = [f for f in all_qha_phonon_calculations if f['metadata']==m]
             qha_phonon_success =True
             if len(qha_calculations) > 0:
                 total_qha_phonon += 1
@@ -253,10 +258,10 @@ class thfindMDB ():
 
             nS = 0
             gapfound = False
-            potsoc = ""
-            for calc in static_calculations:
+            potsoc = None
+            for ii, calc in enumerate(static_calculations):
                 vol = calc['output']['structure']['lattice']['volume']
-                if potsoc=="":
+                if potsoc is None:
                     pot = calc['input']['pseudo_potential']['functional'].upper()
                     if pot=="":
                         pot = calc['orig_inputs']['potcar']['functional'].upper()

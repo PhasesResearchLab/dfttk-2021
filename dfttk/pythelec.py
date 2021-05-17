@@ -1465,7 +1465,7 @@ class thelecMDB():
         for i,v in enumerate (self.Vlat):
             fvol = False
             for j,vol in enumerate(self.volumes):
-                if abs(vol-v)<1.e-10:
+                if abs(vol-v)<1.e-8:
                     print (v, self.energies[j])
                     fvol = True
             if not fvol:
@@ -1503,7 +1503,8 @@ class thelecMDB():
 
     # get the energies, volumes and DOS objects by searching for the tag
     def find_static_calculations(self):
-        static_calculations = self.vasp_db.collection.find({'$and':[ {'metadata.tag': self.tag}, {'adopted': True} ]})
+        static_condition = {'metadata': {'tag':self.tag}}
+        static_calculations = self.vasp_db.collection.find({'$and':[static_condition , {'adopted': True} ]})
         energies = []
         volumes = []
         dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
@@ -1780,7 +1781,7 @@ class thelecMDB():
             #print("xxxx=",self.T_vib)
         except:
             try:
-                self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata.tag': self.tag})
+                self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata': self.tag})
                 self.T_vib = self.qha_items[0][self.qhamode]['temperatures'][::self.everyT]
             except:
                 try:
@@ -1832,6 +1833,7 @@ class thelecMDB():
         Dlat = []
         for i, vol in enumerate(_Vlat):
             if vol in Vlat: continue
+            if vol not in self.volumes: continue
             Vlat.append(vol)
             Slat.append(_Slat[i])
             Clat.append(_Clat[i])
@@ -2148,16 +2150,19 @@ class thelecMDB():
         R = []
         #print (self.key_comments)
         lat = self.key_comments['E-V']['lattices']
+        R_volumes = []
         for vol in self.volumes:
-            idx = self.key_comments['E-V']['volumes'].index(vol)
-            R.append(lat[idx])
+            if vol in self.key_comments['E-V']['volumes']:
+                idx = self.key_comments['E-V']['volumes'].index(vol)
+                R_volumes.append(vol)
+                R.append(lat[idx])
         T = self.T[self.T <=self.TupLimit]
         nT = len(T)
         R = np.array(R)
         R_T = np.zeros((nT, 3, 3), dtype=float)
         for i in range(3):
             for j in range(3):
-                f2 = splrep(self.volumes, R[:,i,j])
+                f2 = splrep(R_volumes, R[:,i,j])
                 R_T[:,i,j] = splev(self.volT[0:nT], f2)
         R_T_dT = np.zeros((nT, 3, 3), dtype=float)
         for i in range(3):
