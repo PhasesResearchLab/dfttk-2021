@@ -13,6 +13,7 @@ import json
 import pickle
 import numpy as np
 from scipy.constants import physical_constants
+import scipy.constants as scipy_constants 
 from scipy.optimize import brentq, curve_fit
 from scipy.integrate import cumtrapz, trapz, simps
 from scipy.interpolate import interp1d, splev, splrep, BSpline
@@ -25,7 +26,7 @@ import dfttk.pyphon as ywpyphon
 from dfttk.utils import sort_x_by_y
 from dfttk.analysis.ywplot import myjsonout
 from dfttk.analysis.ywutils import get_rec_from_metatag
-from dfttk.analysis.ywutils import formula2composition, reduced_formula
+from dfttk.analysis.ywutils import formula2composition, reduced_formula, MM_of_Elements
 import warnings
 
 
@@ -966,7 +967,7 @@ class thelecMDB():
         self.refresh=args.refresh
         self.fitF=fitF
         self.codename = ""
-        self.code_version = ""
+        self.k_ph_mode = args.k_ph_mode
 
         if self.debug:
             if self.dope==0.0: self.dope=-1.e-5
@@ -1509,6 +1510,7 @@ class thelecMDB():
         volumes = []
         dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
         structure = None  # single Structure for QHA calculation
+        self.structure = None
         for calc in static_calculations:
             vol = calc['output']['structure']['lattice']['volume']
             if vol in volumes:
@@ -1520,6 +1522,7 @@ class thelecMDB():
             # get a Structure. We only need one for the masses and number of atoms in the unit cell.
             if structure is None:
                 structure = Structure.from_dict(calc['output']['structure'])
+                self.structure = structure
                 print(structure)
                 print ("\n")
                 reduced_structure = structure.get_reduced_structure(reduction_algo='niggli')
@@ -1530,6 +1533,7 @@ class thelecMDB():
                     formula2composition(formula_pretty)
                 except:
                     self.formula_pretty = reduced_formula(reduced_structure.composition.alphabetical_formula)
+
                 self.natoms = len(structure.sites)
                 sa = SpacegroupAnalyzer(structure)
 
@@ -1610,6 +1614,7 @@ class thelecMDB():
         _matrixs = []
         dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
         _structure = None  # single Structure for QHA calculation
+        self.structure = None
         for calc in static_calculations:
             poscar = os.path.join(yphondir, calc, 'POSCAR')
             if not os.path.exists(poscar) : continue
@@ -1617,6 +1622,8 @@ class thelecMDB():
             if not os.path.exists(oszicar) : continue
             print ("Handling data in ", os.path.join(yphondir,calc))
             structure = Structure.from_file(poscar)
+            if self.structure == None:
+                self.structure = structure
             vol = structure.volume
             sss = (structure.lattice.matrix).tolist()
             lattices.append(sss)
@@ -1694,13 +1701,71 @@ class thelecMDB():
             self.volumes = np.array(readme['E-V']['volumes'])
             self.energies = np.array(readme['E-V']['energies'])
         self.dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
+        self.structure = None
         for vol in self.volumes:
             dir = os.path.join(self.phasename,'Yphon','V{:010.6f}'.format(vol))
+            if self.structure == None:
+                poscar = os.path.join(dir, 'POSCAR')
+                if not os.path.exists(poscar) : continue
+                self.structure = Structure.from_file(poscar)
             if os.path.exists(os.path.join(dir,'DOSCAR.gz')):
                 self.dos_objs.append(os.path.join(dir,'DOSCAR.gz'))
             elif os.path.exists(os.path.join(dir,'DOSCAR')):
                 self.dos_objs.append(os.path.join(dir,'DOSCAR'))
 
+
+    def get_lattice_conductivity(self, _i, T, vol):   
+        reduced_structure = self.structure.get_reduced_structure(reduction_algo='niggli')
+        formula_pretty = self.structure.composition.reduced_formula
+        try:
+            formula2composition(formula_pretty)
+        except:
+            formula_pretty = reduced_formula(reduced_structure.composition.alphabetical_formula)
+        el, com = formula2composition(self.formula_pretty, normalize=True)
+        M_average = 0.0
+        for i, e in enumerate(el):
+            M_average += com[i]*MM_of_Elements[e]
+        natoms_prim = len(reduced_structure.sites)
+        debyeT = np.zeros(len(self.Clat[:,_i]))
+        for i, c in enumerate(self.Clat[:,_i]):
+            debyeT[i] = get_debye_T_from_phonon_Cv(T, c, 400., self.natoms)
+        f1 = interp1d(self.volumes, debyeT)
+        theta_D = f1(vol)
+        logvol = np.log(self.volumes)
+        logdeb = np.log(debyeT)
+        gamma = -CenDif(np.log(vol), logvol, logdeb, kind='linear')
+        fac0 = 0.849*3*4.**(1./3)
+        fac1 = 20*np.pi**2*(1-0.514/gamma+0.228/gamma/gamma)
+        k_B = physical_constants["Boltzmann constant"][0]
+        hbar = scipy_constants.hbar
+        p_mass = physical_constants["atomic mass constant"][0]
+        theta_a = natoms_prim**(-1./3)*theta_D
+        fac2 = (k_B*theta_a/hbar/gamma)**2*k_B*M_average*p_mass*theta_a* \
+            np.power(natoms_prim/self.natoms, 1/3)*1.e-10/hbar
+        return fac0/fac1*fac2, gamma
+
+    def get_thermo_lattice_conductivity(self, beta, blat, vol, clat, theta_D):
+        reduced_structure = self.structure.get_reduced_structure(reduction_algo='niggli')
+        formula_pretty = self.structure.composition.reduced_formula
+        try:
+            formula2composition(formula_pretty)
+        except:
+            formula_pretty = reduced_formula(reduced_structure.composition.alphabetical_formula)
+        el, com = formula2composition(self.formula_pretty, normalize=True)
+        M_average = 0.0
+        for i, e in enumerate(el):
+            M_average += com[i]*MM_of_Elements[e]
+        natoms_prim = len(reduced_structure.sites)
+        gamma = beta*blat*vol/clat
+        fac0 = 0.849*3*4.**(1./3)
+        fac1 = 20*np.pi**2*(1-0.514/gamma+0.228/gamma/gamma)
+        k_B = physical_constants["Boltzmann constant"][0]
+        hbar = scipy_constants.hbar
+        p_mass = physical_constants["atomic mass constant"][0]
+        theta_a = natoms_prim**(-1./3)*theta_D
+        fac2 = (k_B*theta_a/hbar/gamma)**2*k_B*M_average*p_mass*theta_a* \
+            np.power(natoms_prim/self.natoms, 1/3)*1.e-10/hbar
+        return fac0/fac1*fac2, gamma
 
     def get_static_calculations(self):
         t0 = min(self.T)
@@ -2017,6 +2082,7 @@ class thelecMDB():
             self.TupLimit = self.T[-1]
             self.Cp = []
             self.Cv = []
+            k_ph_fac = 0
             for i in range(len(self.T)):
                 if self.hasSCF:
                     blat, beta = self.blat[i], self.beta[i]
@@ -2044,10 +2110,24 @@ class thelecMDB():
                 if prp_T[5] > 1.e-16: L = prp_T[2]/prp_T[5]*k_B #avoiding divided by zero
 
                 if self.hasSCF:
+                    debyeT = get_debye_T_from_phonon_Cv(self.T[i], clat, dlat, self.natoms)
+                    if self.T[i] == 0:
+                        k_ph_fac = 0
+                        T_div = 1
+                    elif self.k_ph_mode==1:
+                    #elif True:
+                        k_ph_fac, gamma = self.get_thermo_lattice_conductivity(beta, blat, self.volT[i], clat, debyeT)
+                        T_div = self.T[i]
+                    elif k_ph_fac==0:
+                        k_ph_fac, gamma = self.get_lattice_conductivity(i, self.T[i], self.volT[i])
+                        T_div = self.T[i]
+                    else:
+                        T_div = self.T[i]
+                    k_ph = k_ph_fac/T_div*np.power(self.volT[i],1./3)
+
                     self.Cp.append(cplat+prp_T[2])
                     self.Cv.append(clat+prp_T[2])
-                    debyeT = get_debye_T_from_phonon_Cv(self.T[i], clat, dlat, self.natoms)
-                    fvib.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.
+                    fvib.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.
                     format(self.T[i], self.volT[i]/self.natoms, self.GibT[i]/self.natoms, (slat+prp_T[1])*toJmol,
                     (self.GibT[i]+self.T[i]*(slat+prp_T[1]))*toJmol,
                     beta/3., (cplat+prp_T[2])*toJmol, (clat+prp_T[2])*toJmol,
@@ -2055,7 +2135,7 @@ class thelecMDB():
                     prp_T[0]/self.natoms, prp_T[1]*toJmol, prp_T[2]*toJmol,
                     prp_T[3], prp_T[4], L, prp_T[5]/self.natoms, prp_T[6]/self.natoms,
                     prp_T[7]/self.natoms, prp_T[8]*toJmol, prp_T[10]/self.natoms,
-                    prp_T[11]/self.natoms, prp_T[12]/self.natoms, prp_T[13]/self.natoms))
+                    prp_T[11]/self.natoms, prp_T[12]/self.natoms, prp_T[13]/self.natoms, k_ph, gamma))
                     #prp_T[7]/self.natoms, prp_T[8]*toJmol, _bsplev[i]/3.0, prp_T[10]/self.natoms,
                 else:
                     #(T[i], F_el_atom[i], S_el_atom[i], C_el_atom[i], M_el[i], seebeck_coefficients[i], L,
