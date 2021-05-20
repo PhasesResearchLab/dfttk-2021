@@ -70,9 +70,10 @@ def Customizing_Workflows(original_wf, user_settings={}):
     if 'set_execution_options' in powerups_options:
         execution_options = powerups_options['set_execution_options']
         original_wf = powerups.set_execution_options(original_wf, 
-            fworker_name=execution_options.get("fworker_name", None))
+            fworker_name=execution_options.get("fworker_name", None),
+            category=execution_options.get("category", None),
+            )
     if 'set_queue_options' in powerups_options:
         queue_options = powerups_options['set_queue_options']
-        #print(queue_options,"eeeeeeeeeeee")
         original_wf = set_queue_options(original_wf, pmem=queue_options.get("pmem", None))
     return original_wf
