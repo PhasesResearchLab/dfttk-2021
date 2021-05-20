@@ -1714,7 +1714,122 @@ class thelecMDB():
                 self.dos_objs.append(os.path.join(dir,'DOSCAR'))
 
 
-    def get_lattice_conductivity(self, _i, T, vol):   
+    def get_lattice_conductivity(self, beta, blat, vol, clat, theta_D=None):   
+        reduced_structure = self.structure.get_reduced_structure(reduction_algo='niggli')
+        formula_pretty = self.structure.composition.reduced_formula
+        try:
+            formula2composition(formula_pretty)
+        except:
+            formula_pretty = reduced_formula(reduced_structure.composition.alphabetical_formula)
+        gamma = beta*blat*vol/clat
+        el, com = formula2composition(self.formula_pretty, normalize=True)
+        M_average = 0.0
+        for i, e in enumerate(el):
+            M_average += com[i]*MM_of_Elements[e]
+        natoms_prim = len(reduced_structure.sites)
+        
+        if theta_D is None:
+            tmp = np.zeros(self.Clat.shape)
+            debyeT = np.zeros(len(self.volumes))
+            nT = len(self.T)
+            theta_D = 0
+            for j in range(nT):
+                if self.blat[j]<0: 
+                    nT = j
+                    break
+                for i, c in enumerate(self.Clat[:,j]):
+                    tmp[i,j] = get_debye_T_from_phonon_Cv(self.T[j], c, 400., self.natoms)
+                f1 = interp1d(self.volumes, tmp[:,j])    
+                _d0 = f1(self.volT[j])
+                if _d0 > self.T[j] :
+                    d0 = _d0 
+                    t0 = self.T[j]
+                elif theta_D==0: 
+                    t1 = self.T[j]
+                    d1 = _d0
+                    dt = t1-t0
+                    d00 = abs(d0-t0)
+                    d11 = abs(d1-t1)
+                    f1 = d00/(d00+d11)
+                    theta_D = (1-f1)*t0+f1*t1
+                    break
+
+        gamma = beta*blat*vol/clat
+        fac0 = 0.849*3*4.**(1./3)
+        fac1 = 20*np.pi**2*(1-0.514/gamma+0.228/gamma/gamma)
+        k_B = physical_constants["Boltzmann constant"][0]
+        hbar = scipy_constants.hbar
+        p_mass = physical_constants["atomic mass constant"][0]
+        theta_a = natoms_prim**(-1./3)*theta_D
+        fac2 = (k_B*theta_a/hbar/gamma)**2*k_B*M_average*p_mass*theta_a* \
+            (natoms_prim/self.natoms)**1./3*1.e-10/hbar
+        return fac0/fac1*fac2, gamma, theta_D
+
+
+    def get_lattice_conductivity_1(self):   
+        reduced_structure = self.structure.get_reduced_structure(reduction_algo='niggli')
+        formula_pretty = self.structure.composition.reduced_formula
+        try:
+            formula2composition(formula_pretty)
+        except:
+            formula_pretty = reduced_formula(reduced_structure.composition.alphabetical_formula)
+        el, com = formula2composition(self.formula_pretty, normalize=True)
+        M_average = 0.0
+        for i, e in enumerate(el):
+            M_average += com[i]*MM_of_Elements[e]
+        natoms_prim = len(reduced_structure.sites)
+        
+        tmp = np.zeros(self.Clat.shape)
+        debyeT = np.zeros(len(self.volumes))
+        nT = len(self.T)
+        theta_D = 0
+        for j in range(nT):
+            if self.blat[j]<0: 
+                nT = j
+                break
+            for i, c in enumerate(self.Clat[:,j]):
+                tmp[i,j] = get_debye_T_from_phonon_Cv(self.T[j], c, 400., self.natoms)
+            f1 = interp1d(self.volumes, tmp[:,j])    
+            _d0 = f1(self.volT[j])
+            if _d0 > self.T[j] :
+                d0 = _d0 
+                t0 = self.T[j]
+            elif theta_D==0: 
+                t1 = self.T[j]
+                d1 = _d0
+                dt = t1-t0
+                d00 = abs(d0-t0)
+                d11 = abs(d1-t1)
+                f1 = d00/(d00+d11)
+                theta_D = (1-f1)*t0+f1*t1
+                for i, d in enumerate(tmp[:,j]):
+                    d0 = tmp[i,j-1]
+                    d1 = d
+                    d00 = abs(theta_D-t0)
+                    d11 = abs(theta_D-t1)
+                    f1 = d00/(d00+d11)
+                    debyeT[i] = (1-f1)*d0+f1*d1
+                d00 = abs(theta_D-t0)
+                d11 = abs(theta_D-t1)
+                f1 = d00/(d00+d11)
+                vol = (1-f1)*self.volT[j-1]+f1*self.volT[j]
+                break
+
+        logvol = np.log(self.volumes)
+        logdeb = np.log(debyeT)
+        gamma = -CenDif(np.log(vol), logvol, logdeb, kind='linear')
+        fac0 = 0.849*3*4.**(1./3)
+        fac1 = 20*np.pi**2*(1-0.514/gamma+0.228/gamma/gamma)
+        k_B = physical_constants["Boltzmann constant"][0]
+        hbar = scipy_constants.hbar
+        p_mass = physical_constants["atomic mass constant"][0]
+        theta_a = natoms_prim**(-1./3)*theta_D
+        fac2 = (k_B*theta_a/hbar/gamma)**2*k_B*M_average*p_mass*theta_a* \
+            np.power(natoms_prim/self.natoms, 1/3)*1.e-10/hbar
+        return fac0/fac1*fac2, gamma
+
+
+    def get_lattice_conductivity_0(self, _i, T, vol):   
         reduced_structure = self.structure.get_reduced_structure(reduction_algo='niggli')
         formula_pretty = self.structure.composition.reduced_formula
         try:
@@ -1743,6 +1858,7 @@ class thelecMDB():
         fac2 = (k_B*theta_a/hbar/gamma)**2*k_B*M_average*p_mass*theta_a* \
             np.power(natoms_prim/self.natoms, 1/3)*1.e-10/hbar
         return fac0/fac1*fac2, gamma
+
 
     def get_thermo_lattice_conductivity(self, beta, blat, vol, clat, theta_D):
         reduced_structure = self.structure.get_reduced_structure(reduction_algo='niggli')
@@ -2083,6 +2199,7 @@ class thelecMDB():
             self.Cp = []
             self.Cv = []
             k_ph_fac = 0
+            theta_D = None
             for i in range(len(self.T)):
                 if self.hasSCF:
                     blat, beta = self.blat[i], self.beta[i]
@@ -2118,12 +2235,18 @@ class thelecMDB():
                     #elif True:
                         k_ph_fac, gamma = self.get_thermo_lattice_conductivity(beta, blat, self.volT[i], clat, debyeT)
                         T_div = self.T[i]
+                    elif self.k_ph_mode==2:
+                        k_ph_fac, gamma, theta_D = self.get_lattice_conductivity(beta, blat, self.volT[i], clat, theta_D=theta_D)
+                        T_div = self.T[i]
                     elif k_ph_fac==0:
-                        k_ph_fac, gamma = self.get_lattice_conductivity(i, self.T[i], self.volT[i])
+                        if self.k_ph_mode==0:
+                            k_ph_fac, gamma = self.get_lattice_conductivity_1()
+                        else:
+                            k_ph_fac, gamma = self.get_lattice_conductivity_0(i, self.T[i], self.volT[i])
                         T_div = self.T[i]
                     else:
                         T_div = self.T[i]
-                    k_ph = k_ph_fac/T_div*np.power(self.volT[i],1./3)
+                    k_ph = k_ph_fac/T_div*self.volT[i]**(1./3)
 
                     self.Cp.append(cplat+prp_T[2])
                     self.Cv.append(clat+prp_T[2])

@@ -177,7 +177,8 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     override_default_vasp_params = settings.get('override_default_vasp_params', {})
     #check if fworker_name is assigned
     powerups = settings.get('powerups', {})
-    override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
+    if len(powerups)>0:
+        override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
 
     #dict, dict of class ModifyIncar with keywords in Workflow name. e.g.
     """

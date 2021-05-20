@@ -63,7 +63,7 @@ def Customizing_Workflows(original_wf, user_settings={}):
         user_settings={}
     #ymal dict, see https://atomate.org/customizing_workflows.html
     """
-    powerups_options = user_settings.get('powerups', {})
+    powerups_options = user_settings.get('powerups', {}) 
     if len(powerups_options) == 0:
         if 'user_incar_settings' in user_settings:
             powerups_options = user_settings['user_incar_settings'].get('powerups', {})
