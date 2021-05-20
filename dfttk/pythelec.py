@@ -967,6 +967,7 @@ class thelecMDB():
         self.refresh=args.refresh
         self.fitF=fitF
         self.codename = ""
+        self.code_version = ""
         self.k_ph_mode = args.k_ph_mode
 
         if self.debug:
@@ -1037,7 +1038,8 @@ class thelecMDB():
                 out.write(self.dosgz[ii])
 
             if self.codename=="" and self.code_version=="":
-                self.codename, self.code_version = get_code_version(xml=os.path.join(voldir,'vasprun.xml.gz'))
+                if os.path.exists(os.path.join(voldir,'vasprun.xml.gz')):
+                    self.codename, self.code_version = get_code_version(xml=os.path.join(voldir,'vasprun.xml.gz'))
                 print ("\nDFT code: ", self.codename, "version:", self.code_version,"\n")
 
 
@@ -1068,11 +1070,9 @@ class thelecMDB():
                     for x in range(3):
                         for y in range(3):
                             hessian_matrix[ii*3+x, jj*3+y] = -force_constant_matrix[ii,jj,x,y]
-            try:
-                if self.code_version >="6.2.0":
-                    hessian_matrix *= 0.004091649655126895
-            except:
-                pass
+
+            if self.code_version >="6.2.0":
+                hessian_matrix *= 0.004091649655126895
 
             for xx in range(natoms*3):
                 for yy in range(natoms*3-1):
