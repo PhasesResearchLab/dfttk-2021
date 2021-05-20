@@ -1071,6 +1071,8 @@ class thelecMDB():
             try:
                 if self.code_version >="6.2.0":
                     hessian_matrix *= 0.004091649655126895
+            except:
+                pass
 
             for xx in range(natoms*3):
                 for yy in range(natoms*3-1):
