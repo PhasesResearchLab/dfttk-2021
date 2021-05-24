@@ -1732,29 +1732,20 @@ class thelecMDB():
         natoms_prim = len(reduced_structure.sites)
         
         if theta_D is None:
-            tmp = np.zeros(self.Clat.shape)
-            debyeT = np.zeros(len(self.volumes))
             nT = len(self.T)
-            theta_D = 0
             for j in range(nT):
-                if self.blat[j]<0: 
-                    nT = j
-                    break
-                for i, c in enumerate(self.Clat[:,j]):
-                    tmp[i,j] = get_debye_T_from_phonon_Cv(self.T[j], c, 400., self.natoms)
-                f1 = interp1d(self.volumes, tmp[:,j])    
-                _d0 = f1(self.volT[j])
-                if _d0 > self.T[j] :
-                    d0 = _d0 
+                clat = interp1d(self.volumes, self.Clat[:,j])(self.volT[j])
+                d1 = get_debye_T_from_phonon_Cv(self.T[j], clat, 400., self.natoms)
+                if d1 > self.T[j] :
+                    d0 = d1 
                     t0 = self.T[j]
-                elif theta_D==0: 
+                else: 
                     t1 = self.T[j]
-                    d1 = _d0
                     dt = t1-t0
                     d00 = abs(d0-t0)
                     d11 = abs(d1-t1)
                     f1 = d00/(d00+d11)
-                    theta_D = (1-f1)*t0+f1*t1
+                    theta_D = (1-f1)*d0+f1*d1
                     break
 
         gamma = beta*blat*vol/clat
@@ -1782,39 +1773,28 @@ class thelecMDB():
             M_average += com[i]*MM_of_Elements[e]
         natoms_prim = len(reduced_structure.sites)
         
-        tmp = np.zeros(self.Clat.shape)
         debyeT = np.zeros(len(self.volumes))
         nT = len(self.T)
-        theta_D = 0
         for j in range(nT):
-            if self.blat[j]<0: 
-                nT = j
-                break
-            for i, c in enumerate(self.Clat[:,j]):
-                tmp[i,j] = get_debye_T_from_phonon_Cv(self.T[j], c, 400., self.natoms)
-            f1 = interp1d(self.volumes, tmp[:,j])    
-            _d0 = f1(self.volT[j])
-            if _d0 > self.T[j] :
-                d0 = _d0 
+            tmp1 = np.array([get_debye_T_from_phonon_Cv(self.T[j], self.Clat[i,j], 400., self.natoms) \
+                for i in range(len(self.volumes))])
+            f1 = interp1d(self.volumes, tmp1)    
+            d1 = f1(self.volT[j])
+            if d1 > self.T[j] :
+                d0 = d1 
                 t0 = self.T[j]
-            elif theta_D==0: 
+                tmp0 = copy.deepcopy(tmp1)
+            else: 
                 t1 = self.T[j]
-                d1 = _d0
                 dt = t1-t0
                 d00 = abs(d0-t0)
                 d11 = abs(d1-t1)
                 f1 = d00/(d00+d11)
-                theta_D = (1-f1)*t0+f1*t1
-                for i, d in enumerate(tmp[:,j]):
-                    d0 = tmp[i,j-1]
-                    d1 = d
-                    d00 = abs(theta_D-t0)
-                    d11 = abs(theta_D-t1)
-                    f1 = d00/(d00+d11)
-                    debyeT[i] = (1-f1)*d0+f1*d1
+                theta_D = (1-f1)*d0+f1*d1
                 d00 = abs(theta_D-t0)
                 d11 = abs(theta_D-t1)
                 f1 = d00/(d00+d11)
+                debyeT = (1-f1)*tmp0+f1*tmp1
                 vol = (1-f1)*self.volT[j-1]+f1*self.volT[j]
                 break
 

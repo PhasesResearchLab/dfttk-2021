@@ -73,7 +73,10 @@ def Customizing_Workflows(original_wf, user_settings={}):
             fworker_name=execution_options.get("fworker_name", None),
             category=execution_options.get("category", None),
             )
+        original_wf = powerups.preserve_fworker(original_wf)
+
     if 'set_queue_options' in powerups_options:
         queue_options = powerups_options['set_queue_options']
         original_wf = set_queue_options(original_wf, pmem=queue_options.get("pmem", None))
+
     return original_wf
