@@ -54,6 +54,44 @@ def set_queue_options(
     return original_wf
 
 
+def set_execution_options(
+    original_wf,
+    fworker_name=None,
+    category=None,
+    fw_name_constraint=None,
+    task_name_constraint=None,
+):
+    """
+    set _fworker spec of Fireworker(s) of a Workflow. It can be used to specify
+    a queue; e.g. run large-memory jobs on a separate queue.
+
+    Args:
+        original_wf (Workflow):
+        fworker_name (str): user-defined tag to be added under fw.spec._fworker
+            e.g. "large memory", "big", etc
+        category (str): category of FWorker that should pul job
+        fw_name_constraint (str): name of the Fireworks to be tagged (all if
+            None is passed)
+        task_name_constraint (str): name of the Firetasks to be tagged (e.g.
+            None or 'RunVasp')
+
+    Returns:
+        Workflow: modified workflow with specified Fireworkers tagged
+    """
+    idx_list = get_fws_and_tasks(
+        original_wf,
+        fw_name_constraint=fw_name_constraint,
+        task_name_constraint=task_name_constraint,
+    )
+
+    for idx_fw, idx_t in idx_list:
+        if fworker_name:
+            original_wf.fws[idx_fw].spec["_fworker"] = fworker_name
+        if category:
+            original_wf.fws[idx_fw].spec["_category"] = category
+    return original_wf
+
+
 import atomate.vasp.powerups as powerups
 def Customizing_Workflows(original_wf, user_settings={}):
     """
@@ -69,11 +107,13 @@ def Customizing_Workflows(original_wf, user_settings={}):
             powerups_options = user_settings['user_incar_settings'].get('powerups', {})
     if 'set_execution_options' in powerups_options:
         execution_options = powerups_options['set_execution_options']
-        original_wf = powerups.set_execution_options(original_wf, 
+        #original_wf = powerups.set_execution_options(original_wf, 
+        original_wf = set_execution_options(original_wf, 
             fworker_name=execution_options.get("fworker_name", None),
             category=execution_options.get("category", None),
             )
-        original_wf = powerups.preserve_fworker(original_wf)
+        #original_wf = powerups.preserve_fworker(original_wf)
+        #print(original_wf)
 
     if 'set_queue_options' in powerups_options:
         queue_options = powerups_options['set_queue_options']
