@@ -2210,6 +2210,8 @@ class thelecMDB():
                 if prp_T[5] > 1.e-16: L = prp_T[2]/prp_T[5]*k_B #avoiding divided by zero
 
                 if self.hasSCF:
+                    if self.T[i]==0: gamma=0
+                    else: gamma = beta*blat*self.volT[i]/clat
                     debyeT = get_debye_T_from_phonon_Cv(self.T[i], clat, dlat, self.natoms)
                     if self.T[i] == 0:
                         k_ph_fac = 0
@@ -2649,6 +2651,7 @@ class thelecMDB():
         if self.local!="": self.find_static_calculations_local()
         elif self.vasp_db!=None: self.find_static_calculations()
         else: self.find_static_calculations_without_DB()
+        """
         if not self.fitF:
             if os.path.exists(self.phasename+'/fitF'):
                 print ("\nWARNING: phase skipped due to file 'fitF' seen in ", self.phasename, "\n")
@@ -2657,6 +2660,7 @@ class thelecMDB():
             if not os.path.exists(self.phasename+'/fitF'):
                 print ("\nWARNING: phase skipped due to file 'fitF' not seen in ", self.phasename, "\n")
                 return None, None, None, None
+        """
 
         if not self.renew:
             pdis298 = self.phasename+'/figures/vdis298.15.png'

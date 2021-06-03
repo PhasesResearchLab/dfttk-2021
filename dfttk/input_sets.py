@@ -99,7 +99,7 @@ class RelaxSet(DictSet):
 
     def __init__(self, structure, volume_relax=False, isif=None, **kwargs):
         """If volume relax is True, will do volume only, ISIF 7"""
-        self.kwargs = kwargs
+        self.kwargs = copy.deepcopy(kwargs)
         self.volume_relax = volume_relax
         self.isif = isif
         uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
@@ -141,9 +141,9 @@ class RelaxSet(DictSet):
         pot = kwargs.get('user_potcar_functional', None)
         if pot:
             RelaxSet.CONFIG['POTCAR_FUNCTIONAL'] = pot
-        kwargs.update({'user_potcar_functional':RelaxSet.CONFIG['POTCAR_FUNCTIONAL']})
-        kwargs.update({'user_incar_settings':RelaxSet.CONFIG['INCAR']})
-        super(RelaxSet, self).__init__(structure, RelaxSet.CONFIG, sort_structure=False, **kwargs)
+        self.kwargs.update({'user_potcar_functional':RelaxSet.CONFIG['POTCAR_FUNCTIONAL']})
+        self.kwargs.update({'user_incar_settings':RelaxSet.CONFIG['INCAR']})
+        super(RelaxSet, self).__init__(structure, RelaxSet.CONFIG, sort_structure=False, **self.kwargs)
 
 
 class PreStaticSet(DictSet):
