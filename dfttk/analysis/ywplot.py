@@ -585,7 +585,7 @@ class thermoplot:
         self.expt = expt
         self.CoT = CoT
         self.single = single
-        self.plottitle = plottitle
+        self.plottitle = plottitle.split('_')[0]
 
         self._xlabel = xlabel
         self.lp = lp

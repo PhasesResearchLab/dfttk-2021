@@ -149,7 +149,7 @@ def caclf(_freq, _pdos, T, dmu=0.0, energyunit='J'):
     fn = pdos*tf*(hmu-dmu)
     tmp = trapz(fn, freq)
     active_freq = tmp/h
-    lowT = active_freq/_freq.max() < 1.e-7
+    lowT = active_freq/_freq.max() < 1.e-7 
     if lowT:
         xfreq = freq[freq<1e-2*_freq.max()]
         yfreq = pdos[freq<1e-2*_freq.max()]
@@ -160,7 +160,14 @@ def caclf(_freq, _pdos, T, dmu=0.0, energyunit='J'):
     nn = trapz(fn, freq)
     if lowT:
         nn = cfreq*(kB/h*T)**3*2.4041138064
-    debye = nn/((kB/h*T)**3*2.4041138064)
+        debye = cfreq
+    else:
+        debye = nn/((kB/h*T)**3*2.4041138064)
+    """
+    if nn == 0.0:
+      print(T, nn, debye,Nmode)
+      sys.exit(1)
+    """
     debye = (Nmode*3/debye)**(1/3)*h/kB
     #print ("debye=", debye, Nmode)
 

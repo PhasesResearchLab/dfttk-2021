@@ -240,7 +240,6 @@ class thfindMDB ():
         for i,m in enumerate(hit):
             if self.skipby(phases[i], m['tag']): continue
             total += 1
-            """
             static_calculations = [f for f in all_static_calculations if f['metadata']['tag']==m['tag']]
             qha_calculations = [f for f in all_qha_calculations if f['metadata']['tag']==m['tag']]
             qha_phonon_calculations = [f for f in all_qha_phonon_calculations if f['metadata']['tag']==m['tag']]
@@ -248,6 +247,7 @@ class thfindMDB ():
             static_calculations = [f for f in all_static_calculations if f['metadata']==m]
             qha_calculations = [f for f in all_qha_calculations if f['metadata']==m]
             qha_phonon_calculations = [f for f in all_qha_phonon_calculations if f['metadata']==m]
+            """
             qha_phonon_success =True
             if len(qha_calculations) > 0:
                 total_qha_phonon += 1

@@ -1507,7 +1507,8 @@ class thelecMDB():
 
     # get the energies, volumes and DOS objects by searching for the tag
     def find_static_calculations(self):
-        static_condition = {'metadata': {'tag':self.tag}}
+        #static_condition = {'metadata': {'tag':self.tag}}
+        static_condition = {'metadata.tag': self.tag}
         static_calculations = self.vasp_db.collection.find({'$and':[static_condition , {'adopted': True} ]})
         energies = []
         volumes = []
@@ -1996,7 +1997,8 @@ class thelecMDB():
         Flat = []
         Dlat = []
         for i, vol in enumerate(_Vlat):
-            if vol in Vlat: continue
+            if vol_within(vol, Vlat): continue
+            #if vol in Vlat: continue
             if vol not in self.volumes: continue
             Vlat.append(vol)
             Slat.append(_Slat[i])
