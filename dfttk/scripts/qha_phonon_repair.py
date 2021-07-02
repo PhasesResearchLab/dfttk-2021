@@ -211,10 +211,12 @@ class QHAAnalysis_failure(FiretaskBase):
         print('Energies_fitting_false: %s' %energies_false)
         print('number of phonon calculations found : %s' %num_phonons)
 
+        """
         # write to JSON for debugging purposes
         import json
         with open('qha_summary.json', 'w') as fp:
             json.dump(qha_result, fp, indent=4)
+        """
 
         if self.get("test_failure", False) : return
         #if self['phonon']:
