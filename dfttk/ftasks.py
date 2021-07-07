@@ -323,7 +323,7 @@ class QHAAnalysis(FiretaskBase):
         qha_result['metadata'] = self.get('metadata', {})
 
         poisson = self.get('poisson', 0.363615)
-        bp2gru = self.get('bp2gru', 1)
+        bp2gru = self.get('bp2gru', 2./3.)
 
         # phonon properties
         # check if phonon calculations existed

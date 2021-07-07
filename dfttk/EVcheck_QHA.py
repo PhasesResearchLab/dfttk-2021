@@ -527,7 +527,7 @@ class EVcheck_QHA(FiretaskBase):
         vol_spacing = vol_spacing * 0.98
 
         qha = Quasiharmonic(energy, volume, structure, dos_objects=dos_objects, F_vib=None,
-                            t_min=t_min, t_max=t_max, t_step=t_step, poisson=0.363615, bp2gru=1)
+                            t_min=t_min, t_max=t_max, t_step=t_step, poisson=0.363615, bp2gru=2./3.)
         vol_max = np.nanmax(qha.optimum_volumes)
         vol_min = np.nanmin(qha.optimum_volumes)
         EVcheck_result['debye'] = qha.get_summary_dict()
@@ -543,7 +543,7 @@ class EVcheck_QHA(FiretaskBase):
             vol_f_vib = sort_x_by_y(vol_f_vib, vol_vol)
             f_vib = np.vstack(vol_f_vib)
             qha_phonon = Quasiharmonic(energy, volume, structure, dos_objects=dos_objects, F_vib=f_vib,
-                                t_min=t_min, t_max=t_max, t_step=t_step, poisson=0.363615, bp2gru=1)
+                                t_min=t_min, t_max=t_max, t_step=t_step, poisson=0.363615, bp2gru=2./3.)
             vol_max = max(np.nanmax(qha_phonon.optimum_volumes), vol_max)
             vol_min = min(np.nanmax(qha_phonon.optimum_volumes), vol_min)
             EVcheck_result['phonon'] = qha_phonon.get_summary_dict()

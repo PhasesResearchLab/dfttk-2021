@@ -13,6 +13,9 @@ from __future__ import unicode_literals, division, print_function
 import numpy as np
 
 from scipy.constants import physical_constants
+import math
+import scipy.constants as scipy_constants
+
 from scipy.integrate import quadrature
 from scipy.stats import gmean
 
@@ -65,7 +68,7 @@ class DebyeModel(object):
     """
     def __init__(self, energies, volumes, structure, t_min=5, t_step=5,
                  t_max=2000.0, eos="vinet", poisson=0.363615,
-                 gruneisen=True, bp2gru=1., mass_average_mode='arithmetic'):
+                 gruneisen=True, bp2gru=2./3., mass_average_mode='arithmetic'):
         self.energies = energies
         self.volumes = volumes
         self.structure = structure
@@ -97,9 +100,19 @@ class DebyeModel(object):
 
         """
         self.F_vib = np.zeros((len(self.volumes), self.temperatures.size ))
+        self.S_vib = np.zeros((len(self.volumes), self.temperatures.size ))
+        self.C_vib = np.zeros((len(self.volumes), self.temperatures.size ))
+        self.D_vib = np.zeros((len(self.volumes)))
         for v_idx, vol in enumerate(self.volumes):
+            #print ("DebyeT=", self.debye_temperature(vol))
+            self.D_vib[v_idx] = self.debye_temperature(vol)
             for t_idx, temp in enumerate(self.temperatures):
+                #print ("FT=", self.vibrational_free_energy(temp, vol))
+                #print ("ST=", self.vibrational_entropy(temp, vol))
+                #print ("CT=", self.vibrational_heat_capacity(temp, vol))
                 self.F_vib[v_idx, t_idx] = self.vibrational_free_energy(temp, vol)
+                self.S_vib[v_idx, t_idx] = self.vibrational_entropy(temp, vol)
+                self.C_vib[v_idx, t_idx] = self.vibrational_heat_capacity(temp, vol)
 
 
     def vibrational_free_energy(self, temperature, volume):
@@ -116,6 +129,44 @@ class DebyeModel(object):
         """
         y = self.debye_temperature(volume) / temperature
         return self.kb * self.natoms * temperature * (9./8. * y + 3 * np.log(1 - np.exp(-y)) - self.debye_integral(y))
+
+
+    def vibrational_entropy(self, temperature, volume):
+        """
+        Vibrational entropy, S_vib(V, T).
+        Eq(4) in doi.org/10.1016/j.comphy.2003.12.001
+
+        Args:
+            temperature (float): temperature in K
+            volume (float)
+
+        Returns:
+            float: vibrational entropy in eV
+        """
+        y = self.debye_temperature(volume) / temperature
+        return self.kb * self.natoms * ( -3 * np.log(1 - np.exp(-y)) + 4*self.debye_integral(y))
+
+
+    def vibrational_heat_capacity(self, temperature, volume):
+        """
+        Vibrational heat capacity, C_vib(V, T).
+        Eq(4) in doi.org/10.1016/j.comphy.2003.12.001
+
+        Args:
+            temperature (float): temperature in K
+            volume (float)
+
+        Returns:
+            float: vibrational heat capacity in eV
+        """
+        y = self.debye_temperature(volume) / temperature
+        factor = 3. / y ** 3
+        if y < 155:
+            integral = quadrature(lambda x: x ** 4 *np.exp(x)/ (np.exp(x) - 1.)**2, 0, y)
+            return 3*self.kb * self.natoms * list(integral)[0] * factor
+        else:
+            import math
+            return self.kb * self.natoms * 4./5.*math.pi**4 * factor
 
 
     def debye_temperature(self, volume):
@@ -143,10 +194,17 @@ class DebyeModel(object):
         [2] Chen and Sundman, Acta Materialia 49, 947--961 (2001) doi:10.1016/S1359-6454(01)00002-7
 
         """
+
+        hbar = scipy_constants.hbar #1.054571817e-34
+        kB = scipy_constants.Boltzmann #1.38064852e-23
+        pi=math.pi
+        A = (6*pi*pi)**(1/3)*hbar/kB #2.97721279650828e-11
+
         term1 = (2./3. * (1. + self.poisson) / (1. - 2. * self.poisson))**1.5
         term2 = (1./3. * (1. + self.poisson) / (1. - self.poisson))**1.5
-        f = (3. / (2. * term1 + term2))**(1. / 3.)
-        debye = 2.9772e-11 * (volume / self.natoms) ** (-1. / 6.) * f * np.sqrt(self.bulk_modulus/self.avg_mass)
+        s = (3. / (2. * term1 + term2))**(1. / 3.) #0.6170015756491913 by default 
+        debye = s*A * (volume*1.e-30/self.natoms) ** (1. / 6.) * np.sqrt(self.bulk_modulus*1e9/self.avg_mass)
+        #debye = 2.9772e-11 * (volume / self.natoms) ** (-1. / 6.) * s * np.sqrt(self.bulk_modulus/self.avg_mass)
         if self.gruneisen:
             # bp2gru should be the correction to the Gruneisen constant.
             # High temperature limit: 2/3

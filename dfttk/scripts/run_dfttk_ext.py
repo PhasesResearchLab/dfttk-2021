@@ -285,6 +285,9 @@ def shared_aguments(pthelec):
     pthelec.add_argument("-T0", "-t0", dest="t0", nargs="?", type=float, default=0.0,
                       help="Low temperature limit. \n"
                            "Default: 0")
+    pthelec.add_argument("-dgx", "--debye_gruneisen_x", dest="debye_gruneisen_x", nargs="?", type=float, default=None,
+                      help="Value of x for the Debye gruneisen model. \n"
+                           "Default: None")
     pthelec.add_argument("-T1", "-t1", dest="t1", nargs="?", type=float, default=4000,
                       help="High temperature limit. \n"
                            "Default: 4000")
@@ -444,9 +447,6 @@ def run_ext_thfind(subparsers):
     pthfind.add_argument("-get", "--get", dest="get", action='store_true', default=False,
                       help="call thelec module to get the thermodyamic data for all found entries. \n"
                            "Default: False")
-    pthfind.add_argument("-qpr", "--qha_phonon_repair", dest="qha_phonon_repair", action='store_true', default=False,
-                      help="repair previous qha_phonon collection. \n"
-                           "Default: False")
     pthfind.add_argument("-db", "--db_file", dest="db_file", nargs="?", type=str, default=None,
                       help="alternative database other than default\n"
                            "Default: None")
@@ -477,13 +477,51 @@ def ext_thfind(args, vasp_db=None):
         WORKFLOW = args.WORKFLOW
             workflow, current only get_wf_gibbs
     """
+
+    qha_renew = args.debye_gruneisen_x is not None
     if args.db_file is not None:
-        vasp_db = VaspCalcDb.from_db_file(args.db_file, admin=False)        
+        vasp_db = VaspCalcDb.from_db_file(args.db_file, admin=qha_renew)
+        db_file = args.db_file       
     elif vasp_db is None:
         db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
-        vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
+        vasp_db = VaspCalcDb.from_db_file(db_file, admin=qha_renew)
     proc=thfindMDB(args,vasp_db)
     tags = proc.run_console()
+
+
+    if qha_renew:
+        from dfttk.scripts.QHAAnalysis_renew import QHAAnalysis_renew
+        for t in tags:
+            if isinstance(t,dict):
+                tag = t['tag']
+
+                qha_phonon = list(vasp_db.db['qha_phonon'].find({'metadata.tag': tag})) 
+                if len(qha_phonon) : 
+                    vasp_db.db['qha_phonon'].remove({'metadata.tag': tag})
+                    print('The data with metadata.tag={} in {} collection is removed'.format(tag, 'qha_phonon'))
+                qha = list(vasp_db.db['qha'].find({'metadata.tag': tag})) 
+                if len(qha) : 
+                    vasp_db.db['qha'].remove({'metadata.tag': tag})
+                    print('The data with metadata.tag={} in {} collection is removed'.format(tag, 'qha'))
+                    
+                try:
+                    phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
+                    T = phonon_calculations[0]['temperatures']
+                    t_min = min(T)
+                    t_max = max(T)
+                    t_step = T[1]-T[0]
+                except:
+                    t_min = 5
+                    t_max = 2000
+                    t_step = 5
+                print("Renew calculation of Debye-gruneisen model for metadata tag:", t)
+  
+                proc = QHAAnalysis_renew(phonon=True, t_min=t_min, t_max=t_max,
+                t_step=t_step, db_file=db_file, test_failure=False, admin=True,
+                metadata={'tag':tag}, bp2gru = args.debye_gruneisen_x, 
+                tag=tag)
+                proc.run_task()
+
     if args.get:
         with open("runs.log", "a") as fp:
             fp.write ('\nPostprocessing run at {}\n\n'.format(datetime.now()))
@@ -497,27 +535,6 @@ def ext_thfind(args, vasp_db=None):
                 #args.phasename = None
             else:
                 ext_thelec(args,plotfiles=t, vasp_db=vasp_db)
-    elif args.qha_phonon_repair:
-        from dfttk.scripts.qha_phonon_repair import QHAAnalysis_failure
-        for t in tags:
-            if isinstance(t,dict):
-                tag = t['tag']
-                qha_phonon = list(vasp_db.db['qha_phonon'].find({'metadata.tag': tag})) 
-                if len(qha_phonon) : continue # already ok skip
-                phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
-                T = phonon_calculations[0]['temperatures']
-                t_min = min(T)
-                t_max = max(T)
-                t_step = T[1]-T[0]
-                print("Repairing data by metadata tag:", t)
-  
-                proc = QHAAnalysis_failure(phonon=True, t_min=t_min, t_max=t_max,
-                t_step=t_step, db_file=db_file, test_failure=False, admin=True,
-                metadata={'tag':tag},
-                tag=tag)
-                proc.run_task()
-
-      
 
 
 def run_ext_EVfind(subparsers):

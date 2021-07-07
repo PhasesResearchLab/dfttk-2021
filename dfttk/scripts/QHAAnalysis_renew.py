@@ -45,7 +45,7 @@ head,tail = os.path.split(__file__)
 db_file = os.path.join(head,"db.json")
 
 @explicit_serialize
-class QHAAnalysis_failure(FiretaskBase):
+class QHAAnalysis_renew(FiretaskBase):
     """
     Do the quasiharmonic calculation from either phonon or Debye.
 
@@ -119,7 +119,7 @@ class QHAAnalysis_failure(FiretaskBase):
         #qha_result['has_phonon'] = self['phonon']
 
         poisson = self.get('poisson', 0.363615)
-        bp2gru = self.get('bp2gru', 1)
+        bp2gru = self.get('bp2gru', 2./3.)
 
         # phonon properties
         # check if phonon calculations existed
@@ -222,6 +222,8 @@ class QHAAnalysis_failure(FiretaskBase):
         #if self['phonon']:
         if qha_result['has_phonon']:
             vasp_db.db['qha_phonon'].insert_one(qha_result)
+            qha_result.pop('phonon')
+            vasp_db.db['qha'].insert_one(qha_result)
         else:
             vasp_db.db['qha'].insert_one(qha_result)
 
