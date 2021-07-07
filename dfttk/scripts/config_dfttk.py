@@ -6,7 +6,7 @@ import warnings
 import subprocess
 from dfttk.scripts.run_dfttk import get_abspath, creat_folders
 from pymatgen.io.vasp.inputs import PotcarSingle, Potcar
-from pymatgen import MPRester
+from pymatgen.ext.matproj import MPRester
 from dfttk.utils import recursive_glob
 from monty.serialization import loadfn, dumpfn
 from monty.os.path import which
@@ -15,6 +15,68 @@ import shutil
 import math
 import os
 import re
+from pathlib import Path
+
+def get_machines(nodes=1, ppn=16, user_machines=None):
+    if user_machines is not None:
+        machines = loadfn(user_machines)
+    else:
+        machines = {"cori-hsw":{"constraint": "haswell", "queue": "regular",
+                "_fw_q_type": "SLURM",
+                "account": "m891",
+                "pre_rocket": "module load vasp/5.4.4-hsw",
+                "post_rocket": "",
+                "mem": "64gb",
+                "vasp_cmd": "srun -n "+str(int(nodes)*int(ppn))+" --cpu_bind=cores vasp_std"}
+          ,"cori-knl":{"constraint": "knl,quad,cache", "queue": "regular",
+                "_fw_q_type": "SLURM",
+                "account": "m891",
+                "pre_rocket": "module load vasp/5.4.4-knl",
+                "mem": "64gb",
+                "post_rocket": "",
+                "vasp_cmd": "srun -n "+str(int(nodes)*int(ppn))+" --cpu_bind=cores vasp_std"}
+          ,"bridges2":{"queue": "RM",
+                "_fw_q_type": "SLURM",
+                "account": "dmr170016p",
+                "pre_rocket": "module load intel cuda intelmpi/20.4-intel20.4",
+                "post_rocket": "",
+                "vasp_cmd": "mpirun -np "+str(nodes*ppn)+" /opt/packages/VASP/VASP5/INTEL/vasp_std"}
+          ,"stampede2":{"queue": "normal",
+                "_fw_q_type": "SLURM",
+                "account": "TG-DMR140063",
+                "pre_rocket": "module load vasp/5.4.4",
+                "post_rocket": "",
+                "vasp_cmd": "ibrun -np "+str(nodes*ppn)+" vasp_std"}
+          ,"aci-vasp5":{"queue": "open", #aci-b is obsolete, however, this could be a template  PBS
+                "_fw_q_type": "PBS",
+                "account": "open",
+                "pre_rocket": "module load intel/19.1.2\n"+\
+                              "module load impi/2019.8\n"+\
+                              "module use /gpfs/group/RISE/sw7/modules\n"+\
+                              "module load vasp\n"+\
+                              "export UCX_TLS=all",
+                "post_rocket": "",
+                "vasp_cmd": "mpirun vasp_std"}
+          ,"aci-vasp6":{"queue": "open", #aci-b is obsolete, however, this could be a template  PBS
+                "_fw_q_type": "PBS",
+                "account": "open",
+                "pre_rocket": "module load intel/19.1.2\n"+\
+                              "module load impi/2019.8\n"+\
+                              "module use /gpfs/group/RISE/sw7/modules\n"+\
+                              "module load vasp/vasp-6.2.0\n"+\
+                              "export UCX_TLS=all",
+                "post_rocket": "",
+                "vasp_cmd": "mpirun vasp_std"}
+          ,"aci-roar":{"queue": "open",
+                "_fw_q_type": "PBS",
+                "account": "open",
+                "pre_rocket": "#",
+                "post_rocket": "",
+                "_fw_template_file": os.path.join(".", "config", "PBS_template_custom.txt"),
+                "vasp_cmd": "mpirun vasp_std"}
+            }
+        dumpfn(machines, "machines.yaml", default_flow_style=False, indent=4)
+    return machines
 
 def replace_file(filename, old_str, new_str):
     """
@@ -45,8 +107,8 @@ def default_path():
 def add_path_var(force_override=True, **kwarg):
     """
     Add path var to ~/.bashrc
-    
-    If the key of kwarg exists in ~/.bashrc, it will update it, 
+
+    If the key of kwarg exists in ~/.bashrc, it will update it,
     if not exists, it will add "export key=kwarg[key]"
     Note: it will backup the original ~/.bashrc to ~/.bashrc.dfttk.bak
     """
@@ -56,12 +118,24 @@ def add_path_var(force_override=True, **kwarg):
             return False
         else:
             return True
-
-    homepath = os.environ["HOME"]
-    bashrc = homepath + "/.bashrc"
-    shutil.copyfile(bashrc, bashrc + ".dfttk.bak")  #backup the .bashrc file
+    #Path.home() is better that os.environ["HOME"]
+    #in fact, for Windows, no HOME env defined by default
+    homepath = str(Path.home()) #compatible for windows and Linux
+    bashrc = os.path.join(homepath,".bashrc")
+    if os.path.exists (bashrc):
+        shutil.copyfile(bashrc, os.path.join(homepath,".bashrc.dfttk.bak"))  #backup the .bashrc file
+    cshrc = os.path.join(homepath, ".cshrc")
+    if os.path.exists (cshrc):
+        shutil.copyfile(cshrc, os.path.join(homepath,".cshrc.dfttk.bak"))  #backup the .bashrc file
+    tcshrc = os.path.join(homepath, ".tcshrc")
+    if os.path.exists (tcshrc):
+        shutil.copyfile(tcshrc, os.path.join(homepath,".tcshrc.dfttk.bak"))  #backup the .bashrc file
+    zshrc = os.path.join(homepath, ".zshrc")
+    if os.path.exists (zshrc):
+        shutil.copyfile(tcshrc, os.path.join(homepath,".zshrc.dfttk.bak"))  #backup the .bashrc file
 
     line = "\n#######The following vars are generated by dfttk###########\n"
+    tline = "\n#######The following vars are generated by dfttk###########\n"
     for key in kwarg:
         try:
             key = str(key)
@@ -71,15 +145,42 @@ def add_path_var(force_override=True, **kwarg):
             key = key[1:]
         if force_override:
             line += "export {key}={value}\n".format(key=key, value=kwarg[key])
+            tline += "setenv {key} {value}\n".format(key=key, value=kwarg[key])
         else:
             if var_is_exist(key):
                 line += "export {key}=${key}:{value}\n".format(key=key, value=kwarg[key])
+                tline += "setenv {key} ${key}:{value}\n".format(key=key, value=kwarg[key])
             else:
                 line += "export {key}={value}\n".format(key=key, value=kwarg[key])
+                tline += "setenv {key} {value}\n".format(key=key, value=kwarg[key])
     line += "########Above vars are generated by dfttk################\n"
+    tline += "########Above vars are generated by dfttk################\n"
+    _line = line.split("\n")
+    _tline = tline.split("\n")
+    for fn in [bashrc, zshrc]:
+        if os.path.exists (fn):
+            with open(fn, "r") as fid:
+                lines = fid.readlines()
+                lines=[l.strip() for l in lines]
+            if not set(_line).issubset(lines):
+                with open(fn, "a+") as fid:
+                    fid.write(line)
+        else:
+            with open(fn, "w") as fid:
+                fid.write(line)
 
-    with open(bashrc, "a+") as fid:
-        fid.write(line)
+    for fn in [cshrc, tcshrc]:
+        if os.path.exists (fn):
+            with open(fn, "r") as fid:
+                lines = fid.readlines()
+                lines=[l.strip() for l in lines]
+            if not set(_tline).issubset(lines):
+                with open(fn, "a+") as fid:
+                    fid.write(tline)
+        else:
+            with open(fn, "w") as fid:
+                fid.write(line)
+
 
 def get_shortest_path(path_list):
     """
@@ -142,6 +243,7 @@ def parase_pbs_script(filename = "vaspjob.pbs", vasp_cmd_flag="vasp_std"):
          "-G": "group_name"}
     param_dict = {"post_rocket": [], "pre_rocket": []}
     flag_post = False
+
     with open(filename, "r") as fid:
         for eachline in fid:
             eachline = eachline.strip()
@@ -311,7 +413,7 @@ def find_psppath_in_cluster(vasp_cmd="vasp_std", psp_pathnames=None, template="v
         vasp_cmd: str
             The vasp command, default is 'vasp_std'
         psp_pathnames: str or list(str)
-            The possible folder name of the pseudopotential 
+            The possible folder name of the pseudopotential
         template: str (filename-like)
             The filename of the queue script. Default: vaspjob.pbs
         queue_type: str
@@ -325,12 +427,12 @@ def find_psppath_in_cluster(vasp_cmd="vasp_std", psp_pathnames=None, template="v
         psp_pathnames=["pp", "pps", "psp", "potential", "pseudopotential"]
     if isinstance(psp_pathnames, str):
         psp_pathnames = [psp_pathnames]
-    
+
     psp_path = []
 
     #Find vasp's location
     vasp_path = find_vasp_path(vasp_cmd=vasp_cmd, template=template, queue_type=queue_type)
-    
+
     #Search the vasp_path and its parent path(e.g. the exe file in bin/src folder)
     vasp_path = [vasp_path, os.path.dirname(vasp_path)]
     for vasp_pathi in vasp_path:
@@ -345,7 +447,7 @@ def find_psppath_in_cluster(vasp_cmd="vasp_std", psp_pathnames=None, template="v
     return psp_path
 
 
-def handle_potcar_gz(psp_dir=None, path_to_store_psp="psp_pymatgen", aci=True, 
+def handle_potcar_gz(psp_dir=None, path_to_store_psp="psp_pymatgen", aci=True,
     vasp_cmd="vasp_std", template="vaspjob.pbs", queue_type="pbs"):
     """
     Compress and move the pseudopotential to a specified path(path_to_store_psp)
@@ -451,7 +553,7 @@ def handle_potcar_gz(psp_dir=None, path_to_store_psp="psp_pymatgen", aci=True,
 def config_pymatgen(psp_dir=None, def_fun="PBE", mapi=None, path_to_store_psp="psp_pymatgen", aci=False,
     vasp_cmd="vasp_std", template="vaspjob.pbs", queue_type="pbs"):
     """
-    Config pymatgen. 
+    Config pymatgen.
     If the key is exists in ~/.pmgrc.yaml and not empty, skip
 
     Parameter
@@ -460,14 +562,17 @@ def config_pymatgen(psp_dir=None, def_fun="PBE", mapi=None, path_to_store_psp="p
         def_fun: str
             The default functional. Default: PBE
         mapi: str
-            The API of Materials Project. Default: None. Ref. https://materialsproject.org/open 
+            The API of Materials Project. Default: None. Ref. https://materialsproject.org/open
         path_to_store_psp: str (path-like)
             The destination to store the compressed psp. default: psp_pymatgen
     Return
     """
     keys_required = ["PMG_DEFAULT_FUNCTIONAL", "PMG_MAPI_KEY", "PMG_VASP_PSP_DIR"]
     keys_dict = {"PMG_DEFAULT_FUNCTIONAL": def_fun, "PMG_VASP_PSP_DIR": path_to_store_psp, "PMG_MAPI_KEY": mapi}
-    pmg_config_file = os.path.join(os.environ["HOME"], ".pmgrc.yaml")
+
+    homepath = str(Path.home())
+
+    pmg_config_file = os.path.join(homepath, ".pmgrc.yaml")
     keys_exist = []
     params = {}
     if os.path.exists(pmg_config_file):
@@ -497,19 +602,19 @@ def config_pymatgen(psp_dir=None, def_fun="PBE", mapi=None, path_to_store_psp="p
         params[key] = keys_dict[key]
     dumpfn(params, pmg_config_file, default_flow_style=False)
     if "PMG_MAPI_KEY" in keys_required and (not mapi):
-        warnings.warn("'PMG_MAPI_KEY' is empty, some function will not work. " + 
+        warnings.warn("'PMG_MAPI_KEY' is empty, some function will not work. " +
             "Please add your own Materials Project's API. " +
             "Ref. https://github.com/PhasesResearchLab/dfttk/tree/master/docs/Configuration.md")
     if "PMG_VASP_PSP_DIR" in keys_required:
         #No configuration for psp path
-        handle_potcar_gz(psp_dir=psp_dir, path_to_store_psp=path_to_store_psp, aci=aci, 
+        handle_potcar_gz(psp_dir=psp_dir, path_to_store_psp=path_to_store_psp, aci=aci,
             vasp_cmd=vasp_cmd, template=template, queue_type=queue_type)
 
 def update_configfile(filename, base_file):
     """
     Update the filename base on base_file.
     Update all except the path/file which exists in filename but not in base_file
-    
+
     Parameter
         filename: str (filename-like)
             The filename of config file
@@ -518,8 +623,10 @@ def update_configfile(filename, base_file):
     Return
         None
     """
+
     ori_file = loadfn(filename)
     base_file = loadfn(base_file)
+    """
     for item in base_file:
         flag_update = True
         if item in ori_file:
@@ -528,13 +635,15 @@ def update_configfile(filename, base_file):
                     flag_update = False
         if flag_update:
             ori_file[item] = base_file[item]
+    """
     if filename.endswith(".json"):
         dumpfn(ori_file, filename, indent=4)
     elif filename.endswith(".yaml"):
         dumpfn(ori_file, filename, default_flow_style=False, indent=4)
 
-def config_atomate(path_to_store_config=".", config_folder="config", queue_script="vaspjob.pbs", 
-    queue_type="pbs", vasp_cmd_flag="vasp_std"):
+def config_atomate(path_to_store_config=".", config_folder="config", queue_script="vaspjob.pbs",
+    queue_type="pbs", vasp_cmd_flag="vasp_std", machine="aci", machines=None,
+    nodes=1, ppn=16, pmem="8gb"):
     """
     Configuration for atomate
 
@@ -553,16 +662,25 @@ def config_atomate(path_to_store_config=".", config_folder="config", queue_scrip
         None
     """
     config_file = get_config_file(config_folder=config_folder, queue_script=queue_script)
-        
-    creat_folders(path_to_store_config + "/config")
-    creat_folders(path_to_store_config + "/logs")
-   
+
+    creat_folders(os.path.join(path_to_store_config,"config"))
+    creat_folders(os.path.join(path_to_store_config,"logs"))
+
+
     if config_file[queue_script]:
         #If the pbs file exists
-        param_dict = parse_queue_script(template=config_file[queue_script], 
+        param_dict = parse_queue_script(template=config_file[queue_script],
                                         queue_type=queue_type, vasp_cmd_flag=vasp_cmd_flag)
     else:
         param_dict = {}
+        param_dict["queue_type"] = queue_type
+        param_dict["vasp_cmd_flag"] = vasp_cmd_flag
+        param_dict["machine"] = machine
+        param_dict["nodes"] = nodes
+        param_dict["ppn"] = ppn
+        param_dict["machines"] = machines
+        param_dict["pmem"] = pmem
+
     param_dict["path_to_store_config"] = path_to_store_config
 
     required_file = ["db.json", "my_launchpad.yaml"]
@@ -571,13 +689,15 @@ def config_atomate(path_to_store_config=".", config_folder="config", queue_scrip
                   "db.json": "ConfigDb", "my_launchpad.yaml": "ConfigLaunchFile"}
     files = required_file + option_file
     for file in files:
+       #print("xxxxxxx", FileModule[file] + "(**param_dict).write_file()", param_dict)
         if file in option_file:
             eval(FileModule[file] + "(**param_dict).write_file()")
         if config_file[file]:
-            update_configfile(os.path.join(param_dict["path_to_store_config"], "config/" + file), config_file[file])
+            update_configfile(os.path.join(param_dict["path_to_store_config"], "config", file), config_file[file])
     #Add environment var
-    FW_CONFIG_FILE_VAL = os.path.join(path_to_store_config, "config/FW_config.yaml")
+    FW_CONFIG_FILE_VAL = os.path.join(path_to_store_config, "config","FW_config.yaml")
     add_path_var(force_override=True, FW_CONFIG_FILE=FW_CONFIG_FILE_VAL)
+
 
 class ConfigTemplate(object):
     """
@@ -585,21 +705,22 @@ class ConfigTemplate(object):
     """
     def __init__(self, **kwargs):
         super(ConfigTemplate, self).__init__()
-        #The input should be a dict
+       #The input should be a dict
         PATH_TO_STORE_CONFIG = kwargs.get("path_to_store_config", ".")
         PATH_TO_STORE_CONFIG = get_abspath(PATH_TO_STORE_CONFIG)
         self.PATH_TO_STORE_CONFIG = PATH_TO_STORE_CONFIG
         self.VASP_CMD = kwargs.get("vasp_cmd", "mpirun vasp_std")
         self.NNODES = kwargs.get("nodes", 1)
         self.PPNODE = kwargs.get("ppn", 24)
+        self.PMEM = kwargs.get("pmem", "8gb")
+        self.C = kwargs.get("constraint", "knl,quad,cache")
         self.WALLTIME = kwargs.get("walltime", "48:00:00")
         self.QUEUE = kwargs.get("queue", "open")
-        self.PMEM = kwargs.get("pmem", "8gb")
         self.PRE_ROCKET = kwargs.get("pre_rocket", "module load intel impi vasp")
         self.POST_ROCKET = kwargs.get("post_rocket", '')
 
     def write_file(self):
-        filename = os.path.join(self.PATH_TO_STORE_CONFIG, "config/" + self.FILENAME)
+        filename = os.path.join(self.PATH_TO_STORE_CONFIG, "config", self.FILENAME)
         with open(filename, 'w') as f:
             if filename.endswith(".json"):
                 from json import dump
@@ -620,6 +741,7 @@ class ConfigDb(ConfigTemplate):
             "port": 27017,
             "aliases": {}}
 
+
 class ConfigLaunchFile(ConfigTemplate):
     """docstring for MyLaunchFile"""
     def __init__(self, **kwargs):
@@ -639,9 +761,9 @@ class ConfigFW(ConfigTemplate):
         super(ConfigFW, self).__init__(**kwargs)
         self.FILENAME = "FW_config.yaml"
         self.DATA = {"CONFIG_FILE_DIR": os.path.join(self.PATH_TO_STORE_CONFIG, "config"),
-            "LAUNCHPAD_LOC": os.path.join(self.PATH_TO_STORE_CONFIG, "config/my_launchpad.yaml"),
-            "FWORKER_LOC": os.path.join(self.PATH_TO_STORE_CONFIG, "config/my_fworker.yaml"),
-            "QUEUEADAPTER_LOC": os.path.join(self.PATH_TO_STORE_CONFIG, "config/my_qadapter.yaml"),
+            "LAUNCHPAD_LOC": os.path.join(self.PATH_TO_STORE_CONFIG, "config","my_launchpad.yaml"),
+            "FWORKER_LOC": os.path.join(self.PATH_TO_STORE_CONFIG, "config","my_fworker.yaml"),
+            "QUEUEADAPTER_LOC": os.path.join(self.PATH_TO_STORE_CONFIG, "config","my_qadapter.yaml"),
             "QUEUE_JOBNAME_MAXLEN": 15,
             "ADD_USER_PACKAGES": ["atomate.vasp.firetasks", "atomate.feff.firetasks"]
         }
@@ -650,8 +772,12 @@ class ConfigQadapter(ConfigTemplate):
     """docstring for ConfigQadapter"""
     def __init__(self, **kwargs):
         super(ConfigQadapter, self).__init__(**kwargs)
+        queue_type = kwargs.get("queue_type", "pbs")
+        machine = kwargs.get("machine","aci")
+        user_machines = kwargs.get("machines",None)
+
         self.FILENAME = "my_qadapter.yaml"
-        self.DATA = {"_fw_name": "CommonAdapter",
+        pbs = {"_fw_name": "CommonAdapter",
             "_fw_q_type": "PBS",
             "rocket_launch": "rlaunch -c " + os.path.join(self.PATH_TO_STORE_CONFIG, "config") + " rapidfire",
             "nnodes": self.NNODES,
@@ -666,20 +792,67 @@ class ConfigQadapter(ConfigTemplate):
             "logdir": os.path.join(self.PATH_TO_STORE_CONFIG, "logs")
         }
 
+        slurm = {"_fw_name": "CommonAdapter",
+            "_fw_q_type": "SLURM",
+            "rocket_launch": "rlaunch -c " + os.path.join(self.PATH_TO_STORE_CONFIG, "config") + " rapidfire",
+            "nodes": self.NNODES,
+            "ntasks": self.PPNODE,
+            "walltime": self.WALLTIME,
+            "queue": self.QUEUE,
+            "account": "open",
+            "job_name": "dfttk",
+            "pre_rocket": self.PRE_ROCKET,
+            "post_rocket": self.POST_ROCKET,
+            "logdir": os.path.join(self.PATH_TO_STORE_CONFIG, "logs")
+        }
+
+        machines = get_machines(nodes=self.NNODES, ppn=self.PPNODE, user_machines=user_machines)
+        if machine in machines.keys():
+            m = machines[machine]
+            if "_fw_template_file" in m.keys():
+                head, tail = os.path.split(m["_fw_template_file"])
+                m["_fw_template_file"] = os.path.join(self.PATH_TO_STORE_CONFIG,"config",tail)
+            queue_type = m['_fw_q_type'].lower()
+            if queue_type=="slurm": self.DATA = slurm
+            else: self.DATA = pbs
+            self.DATA.update(m)
+        else:
+            self.DATA = pbs
+            self.DATA.update(machines["aci-roar"])
+            print ("machine", machine, "is not in the list",  machines.keys(), "Default to aci-roar")
+        #print(self.DATA)
+
+
 class ConfigFworker(ConfigTemplate):
     """docstring for ConfigFworker"""
     def __init__(self, **kwargs):
         super(ConfigFworker, self).__init__(**kwargs)
+        queue_type = kwargs.get("queue_type", "pbs")
+        machine = kwargs.get("machine","aci")
+        user_machines = kwargs.get("machines",None)
+
         self.FILENAME = "my_fworker.yaml"
         self.DATA = {"name": "ACI",
             "category": '',
             "query": '{}',
             "env":
                 {"db_file": os.path.join(self.PATH_TO_STORE_CONFIG, "config/db.json"),
+                #{"db_file": ">>db_file<<",
                  "vasp_cmd": self.VASP_CMD,
                  "scratch_dir": "null",
                  "incar_update": {}}
             }
+
+        machines = get_machines(nodes=self.NNODES, ppn=self.PPNODE, user_machines=user_machines)
+
+        self.DATA["name"] = machine
+        if machine in machines.keys():
+            self.DATA['env']["vasp_cmd"] = machines[machine]["vasp_cmd"]
+        else:
+            self.DATA['env']["vasp_cmd"] = machines['aci-roar']["vasp_cmd"]
+            print ("machine", machine, "is not in the list",  machines.keys(), "Default to ACI")
+
+
 
 def test_config(test_pymagen=True, test_atomate=True):
     if test_pymagen:
@@ -688,7 +861,8 @@ def test_config(test_pymagen=True, test_atomate=True):
         test_config_atomate()
 
 def test_config_pymatgen():
-    path_mp_config = os.path.join(os.environ["HOME"], ".pmgrc.yaml")
+    homepath = str(Path.home())
+    path_mp_config = os.path.join(homepath, ".pmgrc.yaml")
     if os.path.exists(path_mp_config):
         mp_config = loadfn(path_mp_config)
 

@@ -254,7 +254,7 @@ def calculate_thermal_electronic_contribution(dos, t0=0, t1=2000, td=5, xdn=-100
     beta = 1.0/(T*k_B)
     beta[0] = 1.0e30
     for i, t in enumerate(T):
-        chemical_potential[i] = brentq(gfind, gmu0-5.0, gmu0+5.0, args=(e, dos, n_electrons, beta[i]), maxiter=10000)
+        chemical_potential[i] = brentq(gfind, gmu0-10.0, gmu0+10.0, args=(e, dos, n_electrons, beta[i]), maxiter=10000)
     U_el = calculate_internal_energy(chemical_potential[:, np.newaxis], e[np.newaxis, :], dos[np.newaxis, :], beta[:, np.newaxis])
     S_el = calculate_entropy(chemical_potential[:, np.newaxis], e[np.newaxis, :], dos[np.newaxis, :], beta[:, np.newaxis])
     C_el = np.gradient(U_el, td, edge_order=2)

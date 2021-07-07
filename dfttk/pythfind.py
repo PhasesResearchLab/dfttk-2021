@@ -2,7 +2,7 @@
 # The template for batch run of DFTTK
 import argparse
 import datetime
-from pymatgen import MPRester, Structure
+from pymatgen.ext.matproj import MPRester, Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.inputs import Potcar
 #from dfttk.wflows import get_wf_gibbs, get_wf_EV_bjb, get_wf_gibbs_robust
@@ -21,6 +21,7 @@ import subprocess
 import shutil
 import numpy as np
 from fireworks.fw_config import config_to_dict
+from monty.serialization import loadfn
 from atomate.vasp.database import VaspCalcDb
 from dfttk.analysis.ywutils import formula2composition, reduced_formula
 
@@ -59,36 +60,29 @@ class thfindMDB ():
         WORKFLOW = args.WORKFLOW
             workflow, current only get_wf_gibbs
     """
-    def __init__(self, args):
+    def __init__(self, args, vasp_db):
         self.plotonly = args.plotonly
         if args.qhamode is not None:
             self.qhamode = args.qhamode
         else:
             self.qhamode = 'phonon'
         if args.qhamode == 'debye' : self.qhamode = 'qha'
-        from fireworks.fw_config import config_to_dict
-        from monty.serialization import loadfn
-        db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+
         if not self.plotonly:
             try:
-                self.vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)
+                self.vasp_db = vasp_db
                 self.items = (self.vasp_db).db[self.qhamode].find({})
                 if self.qhamode=='phonon':
                     self.items = list((self.vasp_db).db['phonon'].find({"S_vib": { "$exists": True } },\
                         {'metadata':1, 'unitcell':1, 'volume':1, 'supercell_matrix':1}))
-                else: 
+                else:
                     self.items = list((self.vasp_db).db['qha'].find({"debye": { "$exists": True } },\
                         {'metadata':1, 'structure':1}))
             except:
                 self.vasp_db = None
-                print("\n*********WARNING: CANNOT get MongoDB service, so I will proceed using local data")
-                print("*********WARNING: CANNOT get MongoDB service, so I will proceed using local data")
-                print("*********WARNING: CANNOT get MongoDB service, so I will proceed using local data\n")
+                warnings.warn("\n*********WARNING: CANNOT get MongoDB service, so I will proceed using local data")
 
-        #items = vasp_db.db['phonon'].find(properties=['metadata.tag','F_vib', 'CV_vib', 'S_vib'])
-        #items = vasp_db.db['phonon'].find({F_vib: {$gt: 0}})
-        #items = vasp_db.db['phonon'].find({'metadata.tag': "djdjd"})
-        #items = vasp_db.db['phonon'].find({})
+
         self.check = args.check
         self.remove = args.remove
 
@@ -144,11 +138,12 @@ class thfindMDB ():
 
     def find_plotfiles(self):
         if self.jobpath!=None:
-            jobpath = os.listdir(self.jobpath) 
+            jobpath = os.listdir(self.jobpath)
         else:
             self.jobpath='./'
             jobpath = os.listdir('./')
 
+        print("\nfound complete local calculations ...\n")
         for _dir in jobpath:
             dir = self.jobpath+_dir
             thermofile = dir+"/fvib_ele"
@@ -172,9 +167,10 @@ class thfindMDB ():
                         pass
             if self.skipby(formula, metatag): continue
             #print (self.metatag,metatag)
+            sys.stdout.write('{}, dir: {}, formula: {}\n'.format(metatag, dir, formula))
             self.tags.append([metatag, thermofile, volumes, energies, dir, formula])
 
-    
+
     def run_console(self):
         if self.plotonly: self.find_plotfiles()
         elif self.vasp_db==None: self.find_plotfiles()
@@ -198,7 +194,7 @@ class thfindMDB ():
                 mm = i['metadata']
             except:
                 continue
-            if ii <= 0: continue 
+            if ii <= 0: continue
             """
             mm = i['metadata']
             if mm in hit:
@@ -247,6 +243,11 @@ class thfindMDB ():
             static_calculations = [f for f in all_static_calculations if f['metadata']['tag']==m['tag']]
             qha_calculations = [f for f in all_qha_calculations if f['metadata']['tag']==m['tag']]
             qha_phonon_calculations = [f for f in all_qha_phonon_calculations if f['metadata']['tag']==m['tag']]
+            """
+            static_calculations = [f for f in all_static_calculations if f['metadata']==m]
+            qha_calculations = [f for f in all_qha_calculations if f['metadata']==m]
+            qha_phonon_calculations = [f for f in all_qha_phonon_calculations if f['metadata']==m]
+            """
             qha_phonon_success =True
             if len(qha_calculations) > 0:
                 total_qha_phonon += 1
@@ -257,10 +258,10 @@ class thfindMDB ():
 
             nS = 0
             gapfound = False
-            potsoc = ""
-            for calc in static_calculations:
+            potsoc = None
+            for ii, calc in enumerate(static_calculations):
                 vol = calc['output']['structure']['lattice']['volume']
-                if potsoc=="":
+                if potsoc is None:
                     pot = calc['input']['pseudo_potential']['functional'].upper()
                     if pot=="":
                         pot = calc['orig_inputs']['potcar']['functional'].upper()
@@ -282,15 +283,16 @@ class thfindMDB ():
                 nS += 1
                 bandgap = calc['output']['bandgap']
                 if not gapfound: gapfound = float(bandgap) > 0.0
-            #print("eeeeeeee", self.findbandgap)
             if self.findbandgap:
-                #if gapfound: print ("eeeeee", gapfound, bandgap, phases[i])
                 if gapfound: sys.stdout.write('{}, phonon: {:>2}, static: {:>2}, supercellsize: {:>3}, {}\n'.format(m, count[i], nS, self.supercellsize[i], phases[i]))
             else:
                 if count[i] < self.nV: continue
                 if self.supercellsize[i] < self.supercellN: continue
                 jobpath = findjobdir(self.jobpath, m['tag'])
-                if jobpath==None:
+                if self.remove:
+                    sys.stdout.write('dfttk db_remove --force -m all -tag {} phonon: {:>2}, static: {:>2}, SN: {:>3}, qha_phonon: {:<1.1s}, {}\n'\
+                        .format(m['tag'], count[i], nS, self.supercellsize[i], str(qha_phonon_success), phases[i]))
+                elif jobpath==None:
                     sys.stdout.write('{}, phonon: {:>2}, static: {:>2}, SN: {:>3}, qha_phonon: {:<1.1s}, {}\n'\
                         .format(m, count[i], nS, self.supercellsize[i], str(qha_phonon_success), phases[i]))
                 else:
@@ -393,17 +395,12 @@ class thfindMDB ():
         phases =  [""] * len(hit)
         supercellsize =  [0] * len(hit)
         phonon_count = [0] * len(hit)
-        #phonon_calc = (self.vasp_db).db['phonon'].find({},{'metadata':1})
         phonon_calc = list((self.vasp_db).db['phonon'].find({"S_vib": { "$exists": True } },\
             {'metadata':1, 'unitcell':1, 'supercell_matrix':1}))
 
         for i,mm in enumerate(hit):
-            #print ('eeeeeeeeee', mm)
-            #phonon_calc = (self.vasp_db).db['phonon'].\
-            #    find({'$and':[ {'metadata.tag': mm} ]})
             for calc in phonon_calc:
                 if calc['metadata']['tag']!=mm: continue
-                #print (calc['metadata']['tag'])
                 phonon_count[i] += 1
                 if phonon_count[i]==1:
                     structure = Structure.from_dict(calc['unitcell'])

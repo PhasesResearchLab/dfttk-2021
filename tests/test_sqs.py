@@ -9,7 +9,7 @@ sublattice models and symmetry from user-input.
 import numpy as np
 import pytest
 from dfttk.structure_builders.sqs_db import lat_in_to_sqs
-from pymatgen import Lattice, Structure
+from pymatgen.core import Lattice, Structure
 
 from dfttk.structure_builders.sqs import AbstractSQS, enumerate_sqs
 from dfttk import PRLStructure

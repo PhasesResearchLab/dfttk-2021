@@ -6,12 +6,14 @@ these are more verbose """
 import fnmatch
 import os
 
-from pymatgen import MPRester, Structure
+from pymatgen.ext.matproj import MPRester, Structure
 from pymatgen.io.vasp.inputs import Incar, Poscar, Potcar
 from pymatgen.io.vasp.outputs import Vasprun, Outcar
 from dfttk.analysis.relaxing import get_non_isotropic_strain, get_bond_distance_change
+from fireworks.fw_config import config_to_dict
 from fireworks import LaunchPad
 from ase.build import get_deviation_from_optimal_cell_shape
+from monty.serialization import loadfn, dumpfn
 import numpy as np
 import itertools
 import scipy
@@ -510,7 +512,11 @@ def get_mat_info(struct):
 
 def mark_adopted_TF(tag, db_file, adpoted, phonon=False):
     from atomate.vasp.database import VaspCalcDb
-    vasp_db = VaspCalcDb.from_db_file(db_file, admin = True)
+    if db_file!=">>db_file<<":
+        vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)       
+    else:
+        t_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+        vasp_db = VaspCalcDb.from_db_file(t_file, admin=True)
     if vasp_db:
         vasp_db.collection.update({'metadata.tag': tag}, {'$set': {'adopted': adpoted}}, upsert = True, multi = True)
         if phonon:
@@ -520,7 +526,11 @@ def mark_adopted_TF(tag, db_file, adpoted, phonon=False):
 def mark_adopted(tag, db_file, volumes, phonon=False):
     mark_adopted_TF(tag, db_file, False, phonon=phonon)             # Mark all as adpoted
     from atomate.vasp.database import VaspCalcDb
-    vasp_db = VaspCalcDb.from_db_file(db_file, admin = True)
+    if db_file!=">>db_file<<":
+        vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)       
+    else:
+        t_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+        vasp_db = VaspCalcDb.from_db_file(t_file, admin=True)
     for volume in volumes:
         vasp_db.collection.update({'$and':[ {'metadata.tag': tag}, {'output.structure.lattice.volume': volume} ]},
                                   {'$set': {'adopted': True}}, upsert = True, multi = False)            # Mark only one
@@ -536,7 +546,11 @@ def consistent_check_db(db_file, tag):
     "task" and "phonon" collections.
     '''
     from atomate.vasp.database import VaspCalcDb
-    vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)
+    if db_file!=">>db_file<<":
+        vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)       
+    else:
+        t_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+        vasp_db = VaspCalcDb.from_db_file(t_file, admin=True)
     num_task = vasp_db.collection.count_documents({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
     num_phonon = vasp_db.db['phonon'].count_documents({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
     if num_task == num_phonon:
@@ -549,7 +563,11 @@ def consistent_check_db(db_file, tag):
 
 def check_relax_path(relax_path, db_file, tag, run_isif2, pass_isif4):
     from atomate.vasp.database import VaspCalcDb
-    vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)
+    if db_file!=">>db_file<<":
+        vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)       
+    else:
+        t_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
+        vasp_db = VaspCalcDb.from_db_file(t_file, admin=True)
     if relax_path != '':
         if os.path.exists(relax_path):
             return(relax_path, run_isif2, pass_isif4)

@@ -2,6 +2,7 @@
 
 ## Content
 
+- [On batch job](#On-batch-job)
 - [Preparation](#Preparation)
 - [Configure all with one command](#Configure-all-with-one-command)
 - [Configure separately](#Configure-separately)
@@ -12,6 +13,13 @@
 - [Help for `dfttk config` command](#Help-for-dfttk-config-command)
 
 ---
+
+## On batch job
+
+  - [SLURM sbatch instruction](https://slurm.schedmd.com/sbatch.html)
+  - [SLURM sbatch example](https://help.rc.ufl.edu/doc/Sample_SLURM_Scripts)
+
+[TO TOP](#Content)
 
 ## Preparation
 
@@ -43,7 +51,7 @@ After prepared the above **required** file, simply run `dfttk config -all` to fi
 
     **Note:** **1.**  The split can recognize`.`,`-`,`_`,`+`,`=`,`*` and `space` .
 
-        **2.**  After split, the name will be a list. The condition e.g `contain 52` is the elements' level. It means `52` should be a elements of the list. But `US` is string level, which means `US` only need be a sub-string of the elements of the list. 
+        **2.**  After split, the name will be a list. The condition e.g `contain 52` is the elements' level. It means `52` should be a elements of the list. But `US` is string level, which means `US` only need be a sub-string of the elements of the list.
 
         **3.** For compressed file, it support `*.tar.gz` and `*.tar`
 
@@ -119,8 +127,8 @@ After prepared the above **required** file, simply run `dfttk config -all` to fi
 - `dfttk config -a`
 
   ```shell
-  usage: dfttk config -a [-p PATH_TO_STORE_CONFIG] [-c CONFIG_FOLDER] [-q QUEUE_SCRIPT] 
-                         [-qt QUEUE_TYPE] [-v VASP_CMD_FLAG] 
+  usage: dfttk config -a [-p PATH_TO_STORE_CONFIG] [-c CONFIG_FOLDER] [-q QUEUE_SCRIPT]
+                         [-qt QUEUE_TYPE] [-v VASP_CMD_FLAG]
   ```
 
   The meaning of the parameters, please ref [Help for `dfttk config` command](#Help-for-dfttk-config-command) or just run `dfttk config -h`
@@ -136,7 +144,7 @@ After prepared the above **required** file, simply run `dfttk config -all` to fi
 - `dfttk config -mp`
 
   ```shell
-  usage: dfttk config -mp [-aci] [-p PATH_TO_STORE_CONFIG] [-psp VASP_PSP_DIR] [-mapi MAPI_KEY] 
+  usage: dfttk config -mp [-aci] [-p PATH_TO_STORE_CONFIG] [-psp VASP_PSP_DIR] [-mapi MAPI_KEY]
                       [-df DEFAULT_FUNCTIONAL]
   ```
 
@@ -255,4 +263,3 @@ optional arguments:
                         Test for configurations. Note: currently only support
                         for pymatgen.
 ```
-

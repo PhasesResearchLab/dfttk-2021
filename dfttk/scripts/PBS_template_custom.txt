@@ -1,0 +1,24 @@
+#PBS -S /bin/bash
+#PBS -l nodes=$${nnodes}:ppn=$${ppnode}
+#PBS -l walltime=$${walltime}
+#PBS -l pmem=$${pmem}
+#PBS -q $${queue}
+#PBS -A $${account}
+#PBS -G $${group_name}
+#PBS -N $${job_name}
+#PBS -o FW_job.out
+#PBS -e FW_job.error
+
+#these are very special rquired versions for aci-roar 
+module load intel/19.1.2
+module load impi/2019.8
+module use /gpfs/group/RISE/sw7/modules
+
+module load vasp
+export UCX_TLS=all
+
+cd $${launch_dir}
+$${rocket_launch}
+$${post_rocket}
+
+# CommonAdapter (PBS) completed writing Template

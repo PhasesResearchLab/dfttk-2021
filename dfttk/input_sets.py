@@ -24,7 +24,8 @@ POTCAR_UPDATES = {
     }
 '''
 
-#Reset the POTCAR, suggested by Yi Wang, Aug. 24, 2020 
+
+#Reset the POTCAR
 POTCAR_UPDATES = {
         'Cu': 'Cu',  # 11 electrons, default was Cu_pv (17 electrons)
         'Mo': 'Mo_sv',  # 14 electrons, default was Mo_pv (12 electrons)
@@ -32,6 +33,7 @@ POTCAR_UPDATES = {
         'Ti': 'Ti_sv',  # 12 electrons, default Ti_pv (10 electrons)
         'V': 'V_sv',  # 13 electrons, default V_pv (11 electrons)
 }
+
 
 def magnetic_check(structure):
     '''
@@ -45,6 +47,7 @@ def magnetic_check(structure):
     magnetic_elements.extend(list(range(58, 72)))
     magnetic_elements.extend(list(range(91, 119)))
     return any(ele.Z in magnetic_elements for ele in structure.species)
+
 
 def metal_check(structure):
     '''
@@ -60,6 +63,7 @@ def metal_check(structure):
     metal_elements.extend(list(range(55, 86)))
     metal_elements.extend(list(range(87, 119)))
     return all(ele.Z in metal_elements for ele in structure.species)
+
 
 class RelaxSet(DictSet):
     """
@@ -95,7 +99,7 @@ class RelaxSet(DictSet):
 
     def __init__(self, structure, volume_relax=False, isif=None, **kwargs):
         """If volume relax is True, will do volume only, ISIF 7"""
-        self.kwargs = kwargs
+        self.kwargs = copy.deepcopy(kwargs)
         self.volume_relax = volume_relax
         self.isif = isif
         uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
@@ -112,8 +116,34 @@ class RelaxSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
+
+        if 'magmom' in uis:
+            if 'MAGMOM' in RelaxSet.CONFIG['INCAR']:
+                RelaxSet.CONFIG['INCAR'].pop('MAGMOM')
+        elif uis['ISPIN']==1:
+                if 'MAGMON' in uis.keys():
+                    uis.pop['MAGMOM']
+
+        if 'Relax_settings' in uis:
+            relax = uis['Relax_settings']
+            for ff in relax:
+                if ff.lower()=='prec':
+                    if 'ENCUT' in RelaxSet.CONFIG['INCAR']:
+                        RelaxSet.CONFIG['INCAR'].pop('ENCUT')
+                    RelaxSet.CONFIG['INCAR'].update({ff:relax.get(ff)})
+                elif ff=='KPAR':
+                    RelaxSet.CONFIG['INCAR'].update({ff:relax.get(ff)})
+                elif ff=='grid_density':
+                    RelaxSet.CONFIG['KPOINTS'].update({ff:relax.get(ff)})
+        #print (RelaxSet.CONFIG)
+
         RelaxSet.CONFIG['INCAR'].update(uis)
-        super(RelaxSet, self).__init__(structure, RelaxSet.CONFIG, sort_structure=False, **kwargs)
+        pot = kwargs.get('user_potcar_functional', None)
+        if pot:
+            RelaxSet.CONFIG['POTCAR_FUNCTIONAL'] = pot
+        self.kwargs.update({'user_potcar_functional':RelaxSet.CONFIG['POTCAR_FUNCTIONAL']})
+        self.kwargs.update({'user_incar_settings':RelaxSet.CONFIG['INCAR']})
+        super(RelaxSet, self).__init__(structure, RelaxSet.CONFIG, sort_structure=False, **self.kwargs)
 
 
 class PreStaticSet(DictSet):
@@ -162,10 +192,8 @@ class PreStaticSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
-
         PreStaticSet.CONFIG['INCAR'].update(uis)
         super(PreStaticSet, self).__init__(structure, PreStaticSet.CONFIG, sort_structure=False, **kwargs)
-
 
 
 class ForceConstantsSet(DictSet):
@@ -214,7 +242,23 @@ class ForceConstantsSet(DictSet):
             else:
                 uis.update({'ISPIN': 1})
         ForceConstantsSet.CONFIG['INCAR'].update(uis)
-
+        if 'magmom' in uis:
+            if 'MAGMOM' in ForceConstantsSet.CONFIG['INCAR']:
+                ForceConstantsSet.CONFIG['INCAR'].pop('MAGMOM')
+        elif uis['ISPIN']==1:
+            if 'MAGMON' in uis.keys():
+                uis.pop['MAGMOM']
+        ForceConstantsSet.CONFIG['INCAR'].update(uis)
+        from pymatgen.io.vasp.inputs import Kpoints
+        #kpoints = Kpoints.automatic_gamma_density(structure, 4000)
+        kpoints = Kpoints(kpts=[[3,3,3],])
+        ForceConstantsSet.CONFIG['KPOINTS'] = kpoints
+        pot = kwargs.get('user_potcar_functional', None)
+        if pot:
+            ForceConstantsSet.CONFIG['POTCAR_FUNCTIONAL'] = pot
+        kwargs.update({'user_potcar_functional':ForceConstantsSet.CONFIG['POTCAR_FUNCTIONAL']})
+        kwargs.update({'user_incar_settings':ForceConstantsSet.CONFIG['INCAR']})
+ 
         super(ForceConstantsSet, self).__init__(
             structure, ForceConstantsSet.CONFIG, sort_structure=False, **kwargs)
 
@@ -270,6 +314,18 @@ class StaticSet(DictSet):
             else:
                 uis.update({'ISPIN': 1})
         StaticSet.CONFIG['INCAR'].update(uis)
+        if 'magmom' in uis:
+            if 'MAGMOM' in StaticSet.CONFIG['INCAR']:
+                StaticSet.CONFIG['INCAR'].pop('MAGMOM')
+        elif uis['ISPIN']==1:
+                if 'MAGMON' in uis.keys():
+                    uis.pop['MAGMOM']
+        StaticSet.CONFIG['INCAR'].update(uis)
+        pot = kwargs.get('user_potcar_functional', None)
+        if pot:
+            StaticSet.CONFIG['POTCAR_FUNCTIONAL'] = pot
+        kwargs.update({'user_potcar_functional':StaticSet.CONFIG['POTCAR_FUNCTIONAL']})
+        kwargs.update({'user_incar_settings':StaticSet.CONFIG['INCAR']})
         super(StaticSet, self).__init__(structure, StaticSet.CONFIG, sort_structure=False, **kwargs)
 
 
@@ -390,16 +446,13 @@ class BornChargeSet(DictSet):
     def __init__(self, structure, isif=2, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
         self.isif = isif
-        uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
-        uis['ISIF'] = isif
-        old_uis = ['NPAR', 'NCORE', 'LEPSILON', 'LCALCEPS']
-        for k in old_uis:
-            try:
-                uis.pop(k)
-            except KeyError:
-                pass
 
-        old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', 'lrpa']
+        uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
+        """
+        old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', \
+            'user_potcar_functional', 'user_incar_settings']
+        """
+        old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol']
         for k in old_kwargs:
             try:
                 kwargs.pop(k)
@@ -412,17 +465,37 @@ class BornChargeSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
+        else:
+            if uis['ISPIN']==1:
+                if 'MAGMON' in uis.keys():
+                    uis.pop['MAGMOM']
 
-        BornChargeSet.CONFIG['INCAR'].update(uis)
+        for key in uis.keys():
+            if key not in BornChargeSet.CONFIG['INCAR']:
+                if key in {'NELM', 'EDIFF', 'NEDOS', 'KPOINT_BSE'} : continue
+                BornChargeSet.CONFIG['INCAR'][key] = uis[key]
+            elif key == 'ISPIN':
+                BornChargeSet.CONFIG['INCAR'][key] = uis[key]
+            elif key == 'ISMEAR':
+                BornChargeSet.CONFIG['INCAR'][key] = uis[key]
+            elif key == 'SIGMA':
+                BornChargeSet.CONFIG['INCAR'][key] = uis[key]
+               
+        if 'ISPIN' in BornChargeSet.CONFIG['INCAR']:
+            if BornChargeSet.CONFIG['INCAR']['ISPIN'] == 1:
+                if 'MAGMOM' in BornChargeSet.CONFIG['INCAR']:
+                    BornChargeSet.CONFIG['INCAR'].pop('MAGMOM')
 
+        if 'SIGMA' in BornChargeSet.CONFIG['INCAR'] and 'ISMEAR' in BornChargeSet.CONFIG['INCAR'] :
+            if BornChargeSet.CONFIG['INCAR']['ISMEAR'] == -5:
+                BornChargeSet.CONFIG['INCAR'].pop('SIGMA')
+        pot = kwargs.get('user_potcar_functional', None)
+        if pot:
+            BornChargeSet.CONFIG['POTCAR_FUNCTIONAL'] = pot
+        kwargs.update({'user_potcar_functional':BornChargeSet.CONFIG['POTCAR_FUNCTIONAL']})
+        kwargs.update({'user_incar_settings':BornChargeSet.CONFIG['INCAR']})
         super(BornChargeSet, self).__init__(structure, BornChargeSet.CONFIG, sort_structure=False, **kwargs)
-        """
-        print("eeeeeee", BornChargeSet.CONFIG)
-        uis.pop('NPAR')
-        print("eeeeeee", kwargs)
-        uis.update({'NCORE': 1})
-        uis.pop('NCORE')
-        """
+
 
 class ElasticSet(DictSet):
     """Set tuned for metal relaxations (correct smearing).
@@ -458,10 +531,6 @@ class ElasticSet(DictSet):
     def __init__(self, structure, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
         
-        uis_pot = copy.deepcopy(kwargs.get('user_potcar_functional', {}))
-        if uis_pot:
-            ElasticSet.CONFIG.update({'POTCAR_FUNCTIONAL':uis_pot})
-
         uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
         """
         old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', \
@@ -480,10 +549,9 @@ class ElasticSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
-        else:
-            if uis['ISPIN']==1:
-                if 'MAGMON' in uis.keys():
-                    uis.pop['MAGMOM']
+        if uis['ISPIN']==1:
+            if 'MAGMON' in uis.keys():
+                uis.pop['MAGMOM']
 
         for key in uis.keys():
             if key not in ElasticSet.CONFIG['INCAR']:
@@ -514,7 +582,9 @@ class ElasticSet(DictSet):
             grid_density = 8000
         kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
         ElasticSet.CONFIG['KPOINTS'] = kpoints
-
+        pot = kwargs.get('user_potcar_functional', None)
+        if pot:
+            ElasticSet.CONFIG['POTCAR_FUNCTIONAL'] = pot
         kwargs.update({'user_potcar_functional':ElasticSet.CONFIG['POTCAR_FUNCTIONAL']})
         kwargs.update({'user_incar_settings':ElasticSet.CONFIG['INCAR']})
         super(ElasticSet, self).__init__(structure, ElasticSet.CONFIG, sort_structure=False, **kwargs)

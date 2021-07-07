@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # The template for batch run of DFTTK
 import argparse
-from pymatgen import MPRester, Structure
+from pymatgen.ext.matproj import MPRester, Structure
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.inputs import Potcar
 #from dfttk.wflows import get_wf_gibbs, get_wf_EV_bjb, get_wf_gibbs_robust
@@ -38,9 +38,8 @@ class EVfindMDB ():
         WORKFLOW = args.WORKFLOW
             workflow, current only get_wf_gibbs
     """
-    def __init__(self, args):
-        db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
-        self.vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)
+    def __init__(self, args, vasp_db):
+        self.vasp_db = vasp_db
         self.items = (self.vasp_db).collection.find({'adopted': True})
         self.within = []
         self.containall = []
@@ -78,7 +77,7 @@ class EVfindMDB ():
                 if e in els: return False
             return True
         return False
-    
+
     def run_console(self):
         self.EV_find()
 
@@ -99,7 +98,6 @@ class EVfindMDB ():
                 if volume not in volumes[hit.index(mm)]:
                     volumes[hit.index(mm)].append(volume)
                     count[hit.index(mm)] += 1
-                #if mm=='5252ccc3-e8da-499f-bb9e-9cf7eb1c5370': print("eeeeeeeee",mm, pot)
             else:
                 ITEMS.append(i)
                 hit.append(mm)
@@ -107,7 +105,6 @@ class EVfindMDB ():
                 volumes.append([i['output']['structure']['lattice']['volume']])
 
                 pot = i['input']['pseudo_potential']['functional'].upper()
-                #if mm=='5252ccc3-e8da-499f-bb9e-9cf7eb1c5370': print("eeeeeeeee",mm, pot)
                 if pot=="":
                     pot = i['orig_inputs']['potcar']['functional'].upper()
                     if pot=='Perdew-Zunger81'.upper(): pot="LDA"
@@ -145,22 +142,21 @@ class EVfindMDB ():
         for i,m in enumerate(hit):
             if count[i]<self.nV: continue
             if self.skipby(phases[i]): continue
-            sys.stdout.write('{}, static: {:>2}, {}\n'.format(m, count[i], phases[i]))
+            metadata = {'tag':m}
+            sys.stdout.write('{}, static: {:>2}, {}\n'.format(metadata, count[i], phases[i]))
             EV, POSCAR, INCAR = get_rec_from_metatag(self.vasp_db, m)
- 
-            evdir = './E-V/'
+
+            evdir = 'E-V'
             if not os.path.exists(evdir): os.mkdir(evdir)
-            folder = evdir+phases[i]
+            folder = os.path.join(evdir,phases[i])
             if not os.path.exists(folder): os.mkdir(folder)
-            with open (folder+'/POSCAR', 'w') as fp:
+            with open (os.path.join(folder,'POSCAR'), 'w') as fp:
                 fp.write(POSCAR)
             readme = {}
             readme['E-V'] = EV
             readme['INCAR'] = INCAR
             readme['POSCAR'] = POSCAR
-            with open (folder+'/readme', 'w') as fp:
+            with open (os.path.join(folder,'readme'), 'w') as fp:
                 myjsonout(readme, fp, indent="", comma="")
 
             thermoplot(folder,"0 K total energies (eV/atom)",EV['volumes'], EV['energies'])
-
-

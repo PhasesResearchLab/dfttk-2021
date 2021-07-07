@@ -1,4 +1,4 @@
-from pymatgen import Structure
+from pymatgen.core import Structure
 import pymatgen
 from pymatgen.io.vasp.inputs import Incar
 from fireworks import FWorker, Workflow, LaunchPad

@@ -6,7 +6,9 @@ MODULE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 parser = argparse.ArgumentParser(description='Utilities for testing with DFTTK')
 parser.add_argument('-c', '--clean', action='store_true', help='Clean the temporary directories created in testing')
-args = parser.parse_args()
+
+#to avoid parser eating many other useful pytest options like -m, -s etc
+args, unknown = parser.parse_known_args()
 
 if args.clean:
     for f in os.listdir(MODULE_DIR):

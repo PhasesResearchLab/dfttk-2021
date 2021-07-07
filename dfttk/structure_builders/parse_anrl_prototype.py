@@ -13,7 +13,7 @@ import os
 import re
 import time
 import json
-from pymatgen import Structure
+from pymatgen.core import Structure
 from urllib.request import urlopen
 
 def gen_proto_dict(struct_dict, proto_info):

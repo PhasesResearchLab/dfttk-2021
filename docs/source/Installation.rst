@@ -1,17 +1,13 @@
 Installation
 ============
 
-It is recommended to install DFTTK under the `anaconda <https://docs.anaconda.com/anaconda/install/>`_ environment. Under the anaconda prompt, one can create a preferred directory and then run
+It is recommended to install DFTTK under the `anaconda <https://docs.anaconda.com/anaconda/install/>`_ environment. Under the linux command prompt (or anaconda powershell prompt for Windows), one can create a preferred directory and then run
 
 - Release version
 
 .. code-block:: bash
 
     pip install dfttk
-    cd dfttk
-    dfttk config -mp -aci 
-
-A folder named "config" will be created where running environmental info saved
 
 - Development version
 
@@ -20,17 +16,45 @@ A folder named "config" will be created where running environmental info saved
     git clone https://github.com/PhasesResearchLab/dfttk.git
     cd dfttk
     pip install -e .
-    dfttk config -mp -aci #a folder named "config" will be created where running environmental info saved
+
+- Alpha interanal daily test version
+
+.. code-block:: bash
+
+    git clone https://github.com/yiwang62/dfttk.git
+    cd dfttk
+    pip install -e .
+
+to get the laste updates for the Alpha version based on one's current version, run
+
+.. code-block:: bash
+
+    git fetch origin
+    git checkout 20210405 #20210405 is a branch name which may be change in a time maner
+
+mkdir a folder named ``config`` whereever you want to followed by copy the file ``db.json``, ``my_launchpad.yaml`` from your MongoDB manager into ``config/``. See the section :ref:`Config MongoDB`
+
+.. code-block:: bash
+
+    dfttk config -all --nodes 1 --ppn 16 --pmem 32gb -aci -M yourcomputer -qt yourbatch -mapi PMG_MAPI_KEY
+
+where
+
+    | vasp_psp is a place holding your vasp pseudopotentials    
+    | yourcomputer is your computer name, such as aci-rour, cori-knl, cori-ksw, bridges2, stampede2
+    | yourbactch can be pbs, slurm
+    | PMG_MAPI_KEY can be obtained by: Go to the materials project website, https://materialsproject.org/, under the API section, you will easily find you API Keys number.
+    | finally, you need to change the account number and queue/partition number in the ``config/my_qadapter.yaml`` file
+
 
 Config MongoDB
 --------------
 
-DFTTK needs MongoDB to manage DFT inputs/outputs settings including structure, force constants etc. The users of DFTTK can either buy the commercial MongoDB database management or set up their own MongoDB server. 
+DFTTK needs MongoDB to manage DFT calculations and outputs. The users of DFTTK can either buy the commercial MongoDB database service or set up their own MongoDB server. 
 
-  Ask the MongoDB system manager for a json file named ``db.json`` to get your DFTTK results
-  saved in MongoDB database.  The ``db.json`` file contains something similiar to the 
-  following lines which should saved under the "dfttk/config" folder 
-  that was created by "dfttk config -mp -aci" command mentioned above. 
+Ask the MongoDB system manager for two json files: one named ``db.json`` and another named ``my_launchpad.yaml`` and save them in a ``config`` folder wherever you choose.
+
+``db.json`` used by `FireWorks <https://materialsproject.github.io/fireworks/introduction.html>`_ through MongoDB to access the DFTTK output results, templated as follows. 
 
 .. _JSONLint: https://jsonlint.com
 
@@ -40,13 +64,27 @@ DFTTK needs MongoDB to manage DFT inputs/outputs settings including structure, f
         "database": "userid-results",
         "collection": "tasks",
         "admin_user": "userid",
-        "admin_password": "BeFihJ2mrKGm",
+        "admin_password": "pass1",
         "readonly_user": "userid-ro",
-        "readonly_password": "QIvaUT9ca6H8",
+        "readonly_password": "pass2",
         "host": "146.186.149.69",
         "port": 27018,
         "aliases": {}
     }
+
+``my_launchpad.yaml`` used by `FireWorks <https://materialsproject.github.io/fireworks/introduction.html>`_ through MongoDB for DFT job managements, templated as follows. 
+
+.. code-block:: YAML
+
+    host: 146.186.149.69
+    name: userid-fws
+    password: pass3
+    port: 27018
+    ssl_ca_file: null
+    strm_lvl: INFO
+    user_indices: []
+    username: userid
+    wf_user_indices: []
 
 Access MongoDB database from desktop
 ------------------------------------

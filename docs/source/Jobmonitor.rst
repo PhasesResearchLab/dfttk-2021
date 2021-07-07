@@ -41,3 +41,16 @@ For more details, see ref. FIZZLED.
 To get help for the subcommands, try ``lpad get_fws -h`` or ``lpad get_wflows -s FIZZLED -h``
 
 
+=========================
+Useful help from FireWork
+=========================
+
+`Controlling the Worker that executes a Firework <https://materialsproject.github.io/fireworks/controlworker.html#controlling-the-worker-that-executes-a-firework>`_
+
+`Querying FireWorks and Workflows/Generating Reports <https://materialsproject.github.io/fireworks/query_tutorial.html>`_
+
+`Dealing with Failures and Crashes <https://materialsproject.github.io/fireworks/failures_tutorial.html>`_
+
+`Writing Queue Adapters <https://materialsproject.github.io/fireworks/qadapter_programming.html>`_
+
+

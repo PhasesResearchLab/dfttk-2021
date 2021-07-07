@@ -3,7 +3,7 @@ import pytest
 
 import dfttk.utils as dfttkutils
 from dfttk.input_sets import RelaxSet
-from pymatgen import Structure, SETTINGS
+from pymatgen.core import Structure, SETTINGS
 
 POSCAR_STR_check_symbol = """FCC_Fe_WithDiffMagMom
 1.0
@@ -54,7 +54,10 @@ def test_mp_structures_from_system():
     formula = []
     for s in structs:
         formula.append(s.composition.reduced_formula)
-    assert(formula == ['CrFe3', 'Cr2Fe', 'CrFe3', 'Cr3Fe', 'CrFe4', 'CrFe', 'Cr3Fe', 'Cr3Fe'])
+    #assert(formula == ['CrFe3', 'Cr2Fe', 'CrFe3', 'Cr3Fe', 'CrFe4', 'CrFe', 'Cr3Fe', 'Cr3Fe'])
+    import unittest
+    case = unittest.TestCase()
+    case.assertCountEqual(formula,['CrFe3', 'Cr2Fe', 'CrFe3', 'Cr3Fe', 'CrFe4', 'CrFe', 'Cr3Fe', 'Cr3Fe'])
 
 @pytest.mark.skipif(API_KEY is None, reason="MAPI_KEY required")
 def test_mp_sorted_structures_from_system():
@@ -93,7 +96,7 @@ def test_update_pot_by_symbols():
     InputSet = RelaxSet(struc)
     potcar = dfttkutils.update_pot_by_symbols(InputSet, write_file=False)
     syms = potcar.symbols
-    assert(syms == ["Fe", "Fe"])
+    assert(syms == ["Fe_pv", "Fe_pv"])
 
 def test_supercell_scaling_by_atom_lat_vol():
     min_atoms = 60

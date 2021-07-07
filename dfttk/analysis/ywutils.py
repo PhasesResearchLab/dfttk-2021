@@ -6,7 +6,7 @@ from fractions import Fraction
 from dfttk.utils import sort_x_by_y
 import os
 import json
-from pymatgen import MPRester, Structure
+from pymatgen.ext.matproj import MPRester, Structure
 from atomate.vasp.database import VaspCalcDb
 
 MM_of_Elements = {'H': 1.00794, 'He': 4.002602, 'Li': 6.941, 'Be': 9.012182, 'B': 10.811, 'C': 12.0107, 'N': 14.0067,
@@ -82,7 +82,7 @@ def formula2composition(formula, normalize=True):
       com.append(1.0)
   com = np.array(list(map(float,com)))
   #print("eeeeee", formula, ele, com)
-  if normalize: 
+  if normalize:
       if sum(com)==0.0: raise ValueError("divided by zero")
       com = com/sum(com)
 
@@ -172,7 +172,7 @@ formula - chemical formula
 expt - a dict containing heat capacity data
 return:
 if found, the highest temperature from the heat capacity data
-otherwise, the up temperature limit defined in the argparse args 
+otherwise, the up temperature limit defined in the argparse args
 """
 def get_melting_temperature_from_JANAF(expt=None, formula=None):
 

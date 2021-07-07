@@ -16,11 +16,17 @@ Common troubleshooting
 
 2.      Make the latest `automate <https://atomate.org/>`_ installed;
 3.      In ``.bashrc`` or ``.cshrc``, make sure not messed up with your other `atomate` FW config;
-4.      Make sure the setup in the ``.bashrc`` file or (equivalently in the ``.cshrc`` file)
+4.      Make sure the setup in the ``.bashrc`` file 
 
 .. code-block:: bash
 
     export FW_CONFIG_FILE=~/dfttk/config/FW_config.yaml
+
+or equivalently in the ``.cshrc`` file
+
+.. code-block:: bash
+
+    setenv FW_CONFIG_FILE /storage/work/y/yuw3/dfttk/config/FW_config.yaml
 
 5.      git push issue for contributors, see https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account
 6.      for batch run of the postprocessing modules, make sure compatibilities of non-ascii character by:
@@ -31,7 +37,52 @@ Common troubleshooting
     setenv LC_ALL en_US.utf8 #for csh
 
 7.      For phonon calculations, due to certain reasons (such as temperature range too high), one may not see results in the ``qha_phonon`` or ``qha`` MongoDB collections. In this case, the subcommand ``dfttk thfind`` will try to find results from the ``phonon`` collection and process the data by calling ``Yphon``
+
 8.      When you are interesting in revising the code, if have job running in the system before your changes, the codes in the batch system might not be updated and the results might be not as you assumed. It takes me two days to figure out this problem. The solution is to kill all the dfttk running job and resubmit them.
+Following are the steps of adding API key number on DFTTK.
+
+9. How to solve the install warning of 'PMG_MAPI_KEY' is empty.
+
+  1. Go to the materials project website,
+  https://materialsproject.org/, under the API section, you will
+  easily find you API Keys number.
+
+  2. Go to the .pmgrc.yaml file
+
+  .. code-block:: bash
+
+      vi ~/.pmgrc.yaml
+
+  3. Add your API key number into your .pmgrc.yaml file. For example
+
+  .. code-block:: bash
+
+      PMG_MAPI_KEY: ######(your API key number)
+
+
+pymatgen 2021 issue
+===================
+
+You mag meet numpy version issues using pymatgen, reporting::
+
+    pymatgen 2021.2.16 requires numpy>=1.20.1, but you'll have numpy 1.19.2 which is incompatible.
+
+
+In such case, please upgrade numpy by::
+
+    pip install numpy --upgrade
+
+conda issues
+============
+
+In some cases, such as in the Windows environment, one may meet the error::
+
+    ModuleNotFoundError: No module named 'ruamel' #106
+
+This is due to ``conda`` bug on namespace of ruamel_yaml vs ruamel.yaml. 
+ One can resolve this by open the Annaconda Powershell Prompt as adminstrator and reinstall ruamel.yaml by::
+
+    conda install ruamel.yaml
 
 
 Troubleshooting Workflow
@@ -48,9 +99,9 @@ Troubleshooting Workflow
 
    *TIP:*: Searching works well when you pipe the output to ``less`` with ``lpad get_fws -i <ID> -d more | less`` and search using ``/``.
 
-   .. todo:: If you don't see a traceback, that means... (this is the first step, but does this actually happen?)
+   *todo:*: If you don't see a traceback, that means... (this is the first step, but does this actually happen?)
 
-   
+
 2. Check the traceback is not a common error.
 
    See the `Common Errors section <CommonErrors>`_

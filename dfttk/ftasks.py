@@ -11,7 +11,7 @@ import copy
 import six
 import shlex
 from phonopy.interface.vasp import Vasprun as PhonopyVasprun
-from pymatgen import Structure
+from pymatgen.core import Structure
 from pymatgen.io.vasp.inputs import Incar
 from pymatgen.io.vasp.outputs import Vasprun, Outcar
 from custodian.custodian import Custodian
@@ -31,7 +31,7 @@ from dfttk.utils import sort_x_by_y, update_pos_by_symbols, update_pot_by_symbol
 from dfttk.custodian_jobs import ATATWalltimeHandler, ATATInfDetJob
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
-from pymatgen import __version__ as pymatgen_ver
+from pymatgen.core import __version__ as pymatgen_ver
 
 
 def extend_calc_locs(name, fw_spec):
@@ -281,14 +281,18 @@ class QHAAnalysis(FiretaskBase):
 
     required_params = ["phonon", "db_file", "t_min", "t_max", "t_step", "tag"]
 
-    optional_params = ["poisson", "bp2gru", "metadata"]
+    optional_params = ["poisson", "bp2gru", "metadata", "test", "admin", "everyT"]
 
     def run_task(self, fw_spec):
         # handle arguments and database setup
-        db_file = env_chk(self.get("db_file"), fw_spec)
+        if self.get("test", False) :
+            db_file = self.get("db_file")
+            vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
+        else:
+            db_file = env_chk(self.get("db_file"), fw_spec)
+            vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)
+        everyT = self.get('everyT', 1)
         tag = self["tag"]
-
-        vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)
 
         # get the energies, volumes and DOS objects by searching for the tag
         static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
@@ -317,24 +321,58 @@ class QHAAnalysis(FiretaskBase):
         qha_result['formula_pretty'] = structure.composition.reduced_formula
         qha_result['elements'] = sorted([el.name for el in structure.composition.elements])
         qha_result['metadata'] = self.get('metadata', {})
-        qha_result['has_phonon'] = self['phonon']
 
         poisson = self.get('poisson', 0.363615)
         bp2gru = self.get('bp2gru', 1)
 
         # phonon properties
-        if self['phonon']:
+        # check if phonon calculations existed
+        #always perform phonon calculations when when enough phonon calculations found
+        #to perform a quasiharmonic phonon calculations, one needs at least phonon results five volumes
+        phonon_calculations= list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))     
+        num_phonon_finished = len(phonon_calculations)       
+        qha_result['has_phonon'] = num_phonon_finished >= 5
+        #if self['phonon']:
+        if qha_result['has_phonon']:
             # get the vibrational properties from the FW spec
-            phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
-            vol_vol = [calc['volume'] for calc in phonon_calculations]  # these are just used for sorting and will be thrown away
-            vol_f_vib = [calc['F_vib'] for calc in phonon_calculations]
+            # There could be some issues for the inconsistency bwtween static and phonon calculations
+            # Not all static volumes are calculated by phonons
+            # Repeated phonon calculations at the same volume happened
+            # The following codes tried to resovle these issues            phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
+            vol_vol = []
+            vol_f_vib = []
+            vol_s_vib = []
+            vol_c_vib = []
+            for calc in phonon_calculations:
+                if calc['volume'] in vol_vol: continue
+                vol_vol.append(calc['volume'])
+                vol_f_vib.append(calc['F_vib'][::everyT])
+                vol_s_vib.append(calc['S_vib'])
+                vol_c_vib.append(calc['CV_vib'])
             # sort them order of the unit cell volumes
             vol_f_vib = sort_x_by_y(vol_f_vib, vol_vol)
+            vol_s_vib = sort_x_by_y(vol_s_vib, vol_vol)
+            vol_c_vib = sort_x_by_y(vol_c_vib, vol_vol)
             f_vib = np.vstack(vol_f_vib)
+
+            _volumes = []
+            _energies = []
+            _dos_objs = []
+            for iv,vol in enumerate(volumes):
+                if vol not in vol_vol:  continue
+                _volumes.append(vol)
+                _energies.append(energies[iv])
+                _dos_objs.append(dos_objs[iv])
+            volumes = _volumes
+            energies = _energies
+            dos_objs = _dos_objs 
+
             qha = Quasiharmonic(energies, volumes, structure, dos_objects=dos_objs, F_vib=f_vib,
                                 t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'],
                                 poisson=poisson, bp2gru=bp2gru)
             qha_result['phonon'] = qha.get_summary_dict()
+            qha_result['phonon']['entropies'] = vol_s_vib
+            qha_result['phonon']['heat_capacities'] = vol_c_vib
             qha_result['phonon']['temperatures'] = qha_result['phonon']['temperatures'].tolist()
 
         # calculate the Debye model results no matter what
@@ -378,13 +416,18 @@ class QHAAnalysis(FiretaskBase):
         qha_result['Energies_fitting_false'] = energies_false
         print('Volumes_fitting_false : %s' %volumes_false)
         print('Energies_fitting_false: %s' %energies_false)
+        print('number of phonon calculations found : %s' %num_phonon_finished)
 
-        # write to JSON for debugging purposes
-        import json
-        with open('qha_summary.json', 'w') as fp:
-            json.dump(qha_result, fp, indent=4)
+        """
+        if not self.get("test", False) :
+            # write to JSON for debugging purposes
+            import json
+            with open('qha_summary.json', 'w') as fp:
+                json.dump(qha_result, fp, indent=4)
+        """
 
-        if self['phonon']:
+        if self.get("test", False) : return
+        if qha_result['has_phonon']:
             vasp_db.db['qha_phonon'].insert_one(qha_result)
         else:
             vasp_db.db['qha'].insert_one(qha_result)
@@ -1093,7 +1136,7 @@ class CheckSymmetryToDb(FiretaskBase):
         vasp_db = VaspCalcDb.from_db_file(self.db_file, admin=True)
         vasp_db.db['relaxations'].insert_one(symm_check_data)
         return FWAction(update_spec={'symmetry_checks_passed': symm_check_data['symmetry_checks_passed']})
- 
+
 
 @explicit_serialize
 class BornChargeToDb(FiretaskBase):

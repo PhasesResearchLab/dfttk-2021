@@ -1,7 +1,7 @@
 #!python
 # This script is used to query the mongodb
-# 
-from pymatgen import Structure
+#
+from pymatgen.core import Structure
 from atomate.vasp.database import VaspCalcDb
 from monty.serialization import loadfn
 from fireworks.fw_config import config_to_dict
@@ -27,7 +27,7 @@ def get_eq_structure_by_metadata(metadata, db_file=None):
     if (db_file is None) or (db_file == '>>db_file<<'):
         db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
     vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)
-    static_items = list(vasp_db.db['tasks'].find({'metadata': metadata}).sort('_id', 1))
+    static_items = list(vasp_db.db['tasks'].find({'metadata.tag': metadata['tag']}).sort('_id', 1))
     structure_list = [itemi['output']['structure'] for itemi in static_items]
     if structure_list:
         #not empty
@@ -85,7 +85,7 @@ def get_static_structure_by_metadata(metadata, db_file=None):
 def is_property_exist_in_db(metadata, db_file=None, collection='tasks'):
     '''
     Search the MongoDB collection by metadata
-    '''    
+    '''
     if (db_file is None) or (db_file == '>>db_file<<'):
         db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
     if collection == 'tasks':
@@ -120,7 +120,7 @@ def remove_data_by_metadata(tag, db_file=None, rem_mode='vol', forcedelete=False
         aeccar: remove all aeccar related
         chgcar: remove chgcar
         locpot: remove locpot
-        
+
     '''
     if (db_file is None) or (db_file == '>>db_file<<'):
         db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
@@ -131,7 +131,7 @@ def remove_data_by_metadata(tag, db_file=None, rem_mode='vol', forcedelete=False
     VOL2_COLLECTION = ['bandstructure', 'dos']
     VOL_COLLECTION = VOL1_COLLECTION + VOL2_COLLECTION
     OTHER_COLLECTION = ['borncharge', 'phonon', 'qha', 'qha_phonon', 'relax',
-                        'relax_scheme', 'relaxations', 'tasks']
+                        'relax_scheme', 'relaxations', 'tasks', 'xmlgz']
     if isinstance(rem_mode, str):
         rem_mode = rem_mode.lower()
         if rem_mode == 'all':
@@ -162,6 +162,7 @@ def remove_data_by_metadata(tag, db_file=None, rem_mode='vol', forcedelete=False
             #tag is None, which means remove the collection
             if input('Are you sure? This will remove the {} collections. (Y/N)'.format(collections))[0].upper() == 'Y':
                 flag_remove = True
+
     if flag_remove:
         for collectioni in collections:
             if collectioni in VOL_COLLECTION:
@@ -186,5 +187,6 @@ def remove_data_by_metadata(tag, db_file=None, rem_mode='vol', forcedelete=False
                     vasp_db.db[collectioni].remove({'metadata.tag': tag})
                     print('The data with metadata.tag={} in {} collection is removed'.format(tag, collectioni))
                 else:
-                    vasp_db.db[collectioni].remove()
-                    print('The data in {} collection is removed'.format(collectioni))
+                    if input('Are you really sure to remove all the {} collections. (Yes/N)'.format(collections))[0].upper() == 'Yes':
+                        vasp_db.db[collectioni].remove()
+                        print('The data in {} collection is removed'.format(collectioni))
