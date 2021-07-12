@@ -477,7 +477,6 @@ def ext_thfind(args, vasp_db=None):
         WORKFLOW = args.WORKFLOW
             workflow, current only get_wf_gibbs
     """
-
     qha_renew = args.debye_gruneisen_x is not None
     if args.db_file is not None:
         vasp_db = VaspCalcDb.from_db_file(args.db_file, admin=qha_renew)
@@ -535,7 +534,6 @@ def ext_thfind(args, vasp_db=None):
                 #args.phasename = None
             else:
                 ext_thelec(args,plotfiles=t, vasp_db=vasp_db)
-
 
 def run_ext_EVfind(subparsers):
     #SUB-PROCESS: EVfind
