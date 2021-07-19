@@ -295,7 +295,8 @@ class QHAAnalysis(FiretaskBase):
         tag = self["tag"]
 
         # get the energies, volumes and DOS objects by searching for the tag
-        static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
+        #static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
+        static_calculations = vasp_db.collection.find({'$and':[ {'metadata': {'tag':tag}}, {'adopted': True} ]})
 
         energies = []
         volumes = []
@@ -329,7 +330,8 @@ class QHAAnalysis(FiretaskBase):
         # check if phonon calculations existed
         #always perform phonon calculations when when enough phonon calculations found
         #to perform a quasiharmonic phonon calculations, one needs at least phonon results five volumes
-        phonon_calculations= list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))     
+        #phonon_calculations= list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))     
+        phonon_calculations= list(vasp_db.db['phonon'].find({'$and':[ {'metadata': {'tag':tag}}, {'adopted': True} ]}))     
         num_phonon_finished = len(phonon_calculations)       
         qha_result['has_phonon'] = num_phonon_finished >= 5
         #if self['phonon']:
@@ -345,6 +347,7 @@ class QHAAnalysis(FiretaskBase):
             vol_c_vib = []
             for calc in phonon_calculations:
                 if calc['volume'] in vol_vol: continue
+                if calc['volume'] not in volumes: continue
                 vol_vol.append(calc['volume'])
                 vol_f_vib.append(calc['F_vib'][::everyT])
                 vol_s_vib.append(calc['S_vib'])

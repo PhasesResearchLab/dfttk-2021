@@ -2202,7 +2202,7 @@ class thelecMDB():
                         self.TupLimit = self.T[i-1]
                         print ("\nPerhaps it has reached the upvolume limit at T =", self.T[i], "\n")
                         break
-
+                #print("xxxxxxxxxxxxxxx",self.T[i], blat, self.volT[i])
                 prp_T = np.zeros((self.theall.shape[0]))
                 for j in range(len(prp_T)):
                     prp_T[j] = interp1d(self.volumes, self.theall[j,i,:], kind='cubic')(self.volT[i])

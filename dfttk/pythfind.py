@@ -102,6 +102,7 @@ class thfindMDB ():
         self.td = args.td
         self.jobpath = args.jobpath
         self.findbandgap = args.findbandgap
+        self.db_repair = args.db_repair
         if args.within is not None: self.within, tmp = formula2composition(args.within)
         if args.containall is not None: self.containall, tmp = formula2composition(args.containall)
         if args.containany is not None: self.containany, tmp = formula2composition(args.containany)
@@ -287,6 +288,8 @@ class thfindMDB ():
                 if gapfound: sys.stdout.write('{}, phonon: {:>2}, static: {:>2}, supercellsize: {:>3}, {}\n'.format(m, count[i], nS, self.supercellsize[i], phases[i]))
             else:
                 if count[i] < self.nV: continue
+                if self.db_repair:
+                    if qha_phonon_success and not self.db_renew: continue
                 if self.supercellsize[i] < self.supercellN: continue
                 jobpath = findjobdir(self.jobpath, m['tag'])
                 if self.remove:

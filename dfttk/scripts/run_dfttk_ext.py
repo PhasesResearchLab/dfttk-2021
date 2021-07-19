@@ -285,9 +285,15 @@ def shared_aguments(pthelec):
     pthelec.add_argument("-T0", "-t0", dest="t0", nargs="?", type=float, default=0.0,
                       help="Low temperature limit. \n"
                            "Default: 0")
-    pthelec.add_argument("-dgx", "--debye_gruneisen_x", dest="debye_gruneisen_x", nargs="?", type=float, default=None,
+    pthelec.add_argument("-dgx", "--debye_gruneisen_x", dest="debye_gruneisen_x", nargs="?", type=float, default=2./3,
                       help="Value of x for the Debye gruneisen model. \n"
-                           "Default: None")
+                           "Default: 2/3")
+    pthelec.add_argument("-db_repair", "--db_repair", dest="db_repair", action='store_true', default=False,
+                      help="repair database for prebiously FIZZLED calculation. \n"
+                           "Default: False")
+    pthelec.add_argument("-db_renew", "--db_renew", dest="db_renew", action='store_true', default=False,
+                      help="renew the database. \n"
+                           "Default: False")
     pthelec.add_argument("-T1", "-t1", dest="t1", nargs="?", type=float, default=4000,
                       help="High temperature limit. \n"
                            "Default: 4000")
@@ -477,7 +483,7 @@ def ext_thfind(args, vasp_db=None):
         WORKFLOW = args.WORKFLOW
             workflow, current only get_wf_gibbs
     """
-    qha_renew = args.debye_gruneisen_x is not None
+    qha_renew = args.db_repair or args.db_renew
     if args.db_file is not None:
         vasp_db = VaspCalcDb.from_db_file(args.db_file, admin=qha_renew)
         db_file = args.db_file       
@@ -495,11 +501,11 @@ def ext_thfind(args, vasp_db=None):
                 tag = t['tag']
 
                 qha_phonon = list(vasp_db.db['qha_phonon'].find({'metadata.tag': tag})) 
-                if len(qha_phonon) : 
+                if len(qha_phonon) > 0 : 
                     vasp_db.db['qha_phonon'].remove({'metadata.tag': tag})
                     print('The data with metadata.tag={} in {} collection is removed'.format(tag, 'qha_phonon'))
                 qha = list(vasp_db.db['qha'].find({'metadata.tag': tag})) 
-                if len(qha) : 
+                if len(qha) > 0 : 
                     vasp_db.db['qha'].remove({'metadata.tag': tag})
                     print('The data with metadata.tag={} in {} collection is removed'.format(tag, 'qha'))
                     
@@ -520,6 +526,12 @@ def ext_thfind(args, vasp_db=None):
                 metadata={'tag':tag}, bp2gru = args.debye_gruneisen_x, 
                 tag=tag)
                 proc.run_task()
+                """
+                try: 
+                    proc.run_task()
+                except:
+                    continue
+                """
 
     if args.get:
         with open("runs.log", "a") as fp:

@@ -219,7 +219,8 @@ class EVcheck_QHA(FiretaskBase):
         '''
         # Get the parameters from the object
         max_run = 10
-        db_file = env_chk(self.get('db_file', DB_FILE), fw_spec)
+        #db_file = env_chk(self.get('db_file', DB_FILE), fw_spec)
+        db_file = ">>db_file<<"
         vasp_cmd = ">>vasp_cmd<<"
         deformations = self.get('deformations', [])
         run_num = self.get('run_num', 0)

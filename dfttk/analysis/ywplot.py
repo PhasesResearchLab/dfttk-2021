@@ -585,7 +585,10 @@ class thermoplot:
         self.expt = expt
         self.CoT = CoT
         self.single = single
-        self.plottitle = plottitle.split('_')[0]
+        if plottitle is not None:
+            self.plottitle = plottitle.split('_')[0]
+        else:
+            self.plottitle = "DFTTK"
 
         self._xlabel = xlabel
         self.lp = lp
