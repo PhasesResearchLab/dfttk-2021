@@ -889,6 +889,50 @@ def vol_closest(vol, volumes, thr=1.e-6):
     return -1
 
 
+def get_static_calculations(vasp_db, tag):
+
+    # get the energies, volumes and DOS objects by searching for the tag
+    static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
+    # static_calculations = vasp_db.collection.find({'$and':[ {'metadata': {'tag':tag}}, {'adopted': True} ]})
+
+    energies = []
+    volumes = []
+    dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
+    structure = None  # single Structure for QHA calculation
+    _energies = []
+    _volumes = []
+    _dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
+    emin = 1.e36
+    for calc in static_calculations:
+        ee = calc['output']['energy']
+        if ee < emin : _calc = calc
+        if len(calc['metadata'])==1:
+            energies.append(ee)
+            volumes.append(calc['output']['structure']['lattice']['volume'])
+            dos_objs.append(vasp_db.get_dos(calc['task_id']))
+        else:
+            _energies.append(ee)
+            _volumes.append(calc['output']['structure']['lattice']['volume'])
+            _dos_objs.append(vasp_db.get_dos(calc['task_id']))
+
+    #adding useful contraint calculations if not calculated statically
+    if len(_volumes)!=0:
+        for i, _vol in enumerate(_volumes):
+            if np.any(abs(np.array(volumes)-_vol)<_vol*1.e-5): continue
+            volumes.append(_vol)
+            energies.append(_energies[i])
+            dos_objs.append(_dos_objs[i])
+
+    # sort everything in volume order
+    # note that we are doing volume last because it is the thing we are sorting by!
+    energies = sort_x_by_y(energies, volumes)
+    dos_objs = sort_x_by_y(dos_objs, volumes)
+    volumes = sorted(volumes)
+    volumes = np.array(volumes)
+    energies = np.array(energies)
+    return volumes, energies, dos_objs, _calc
+
+
 class thelecMDB():
     """
     API to calculate the thermal electronic properties from the saved dos and volume dependence in MongDB database
@@ -1507,86 +1551,62 @@ class thelecMDB():
 
     # get the energies, volumes and DOS objects by searching for the tag
     def find_static_calculations(self):
-        #static_condition = {'metadata': {'tag':self.tag}}
-        static_condition = {'metadata.tag': self.tag}
-        static_calculations = self.vasp_db.collection.find({'$and':[static_condition , {'adopted': True} ]})
-        energies = []
-        volumes = []
-        dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
-        structure = None  # single Structure for QHA calculation
-        self.structure = None
-        for calc in static_calculations:
-            vol = calc['output']['structure']['lattice']['volume']
-            if vol in volumes:
-                print ("WARNING: skipped volume =", vol)
-                continue
-            volumes.append(vol)
-            energies.append(calc['output']['energy'])
-            dos_objs.append(self.vasp_db.get_dos(calc['task_id']))
-            # get a Structure. We only need one for the masses and number of atoms in the unit cell.
-            if structure is None:
-                structure = Structure.from_dict(calc['output']['structure'])
-                self.structure = structure
-                print(structure)
-                print ("\n")
-                reduced_structure = structure.get_reduced_structure(reduction_algo='niggli')
-                print ('niggli reduced structure', reduced_structure)
-                print ("\n")
-                self.formula_pretty = structure.composition.reduced_formula
-                try:
-                    formula2composition(formula_pretty)
-                except:
-                    self.formula_pretty = reduced_formula(reduced_structure.composition.alphabetical_formula)
+        self.volumes, self.energies, self.dos_objs, _calc \
+            = get_static_calculations(self.vasp_db, self.tag)
+        structure = Structure.from_dict(_calc['output']['structure'])
+        self.structure = structure
+        print(structure)
+        print ("\n")
+        reduced_structure = structure.get_reduced_structure(reduction_algo='niggli')
+        print ('niggli reduced structure', reduced_structure)
+        print ("\n")
+        self.formula_pretty = structure.composition.reduced_formula
+        try:
+            formula2composition(formula_pretty)
+        except:
+            self.formula_pretty = reduced_formula(reduced_structure.composition.alphabetical_formula)
 
-                self.natoms = len(structure.sites)
-                sa = SpacegroupAnalyzer(structure)
+        self.natoms = len(structure.sites)
+        sa = SpacegroupAnalyzer(structure)
 
-                pot = calc['input']['pseudo_potential']['functional'].upper()
-                if pot=="":
-                    pot = calc['orig_inputs']['potcar']['functional'].upper()
-                    if pot=='Perdew-Zunger81'.upper(): pot="LDA"
+        pot = _calc['input']['pseudo_potential']['functional'].upper()
+        if pot=="":
+            pot = _calc['orig_inputs']['potcar']['functional'].upper()
+            if pot=='Perdew-Zunger81'.upper(): pot="LDA"
 
-                try:
-                    pot += "+"+calc['input']['GGA']
-                except:
-                    pass
+        try:
+            pot += "+"+_calc['input']['GGA']
+        except:
+            pass
 
-                if calc['input']['is_hubbard']: pot+= '+U'
-                try:
-                    if calc['input']['incar']['LSORBIT']: potsoc = pot +"+SOC"
-                except:
-                    potsoc = pot
-                self.space_group_number = sa.get_space_group_number()
-                self.phase = sa.get_space_group_symbol().replace('/','.')+'_'+str(sa.get_space_group_number())+potsoc
+        if _calc['input']['is_hubbard']: pot+= '+U'
+        try:
+            if _calc['input']['incar']['LSORBIT']: potsoc = pot +"+SOC"
+        except:
+            potsoc = pot
+        self.space_group_number = sa.get_space_group_number()
+        self.phase = sa.get_space_group_symbol().replace('/','.')+'_'+str(sa.get_space_group_number())+potsoc
 
-                key_comments ={}
-                tmp = calc['input']['pseudo_potential']
-                tmp['functional'] = potsoc
-                key_comments['pseudo_potential'] = tmp
-                key_comments['ENCUT'] = calc['input']['incar']['ENCUT']
-                key_comments['NEDOS'] = calc['input']['incar']['NEDOS']
-                try:
-                    key_comments['LSORBIT'] = calc['input']['incar']['LSORBIT']
-                except:
-                    key_comments['LSORBIT'] = False
+        key_comments ={}
+        tmp = _calc['input']['pseudo_potential']
+        tmp['functional'] = potsoc
+        key_comments['pseudo_potential'] = tmp
+        key_comments['ENCUT'] = _calc['input']['incar']['ENCUT']
+        key_comments['NEDOS'] = _calc['input']['incar']['NEDOS']
+        try:
+            key_comments['LSORBIT'] = _calc['input']['incar']['LSORBIT']
+        except:
+            key_comments['LSORBIT'] = False
 
-                pot = calc['orig_inputs']['kpoints']
-                kpoints = {}
-                kpoints['generation_style'] = pot['generation_style']
-                kpoints['kpoints'] = pot['kpoints'][0]
-                key_comments['kpoints'] = kpoints
-                key_comments['bandgap'] = calc['output']['bandgap']
-                self.key_comments = key_comments
+        pot = _calc['orig_inputs']['kpoints']
+        kpoints = {}
+        kpoints['generation_style'] = pot['generation_style']
+        kpoints['kpoints'] = pot['kpoints'][0]
+        key_comments['kpoints'] = kpoints
+        key_comments['bandgap'] = _calc['output']['bandgap']
+        self.key_comments = key_comments
 
-        # sort everything in volume order
-        # note that we are doing volume last because it is the thing we are sorting by!
-
-        from dfttk.utils import sort_x_by_y
-        self.energies = sort_x_by_y(energies, volumes)
-        self.dos_objs = sort_x_by_y(dos_objs, volumes)
-        #self.volumes = sort_x_by_y(volumes,volumes)
-        self.volumes = np.array(list(map(float,sorted(volumes))))
-        print ("found volumes from static calculations:", volumes)
+        print ("found volumes from static calculations:", self.volumes)
 
         self.xmlvol = []
         self.xmlgz = []
@@ -1867,7 +1887,7 @@ class thelecMDB():
             np.power(natoms_prim/self.natoms, 1/3)*1.e-10/hbar
         return fac0/fac1*fac2, gamma
 
-    def get_static_calculations(self):
+    def calc_thermal_electron(self):
         t0 = min(self.T)
         t1 = max(self.T)
         td = (t1-t0)/(len(self.T)-1)
@@ -2694,7 +2714,7 @@ class thelecMDB():
         self.energies_orig = copy.deepcopy(self.energies)
 
         if self.noel : self.theall = np.zeros([14, len(self.T), len(self.volumes)])
-        else : self.get_static_calculations()
+        else : self.calc_thermal_electron()
         a,b,c = self.calc_thermodynamics()
         if self.add_comput_inf():
             self.calc_eij()
@@ -2762,7 +2782,7 @@ class thelecMDB():
         self.energies_orig = copy.deepcopy(self.energies)
 
         if self.noel : self.theall = np.zeros([14, len(self.T), len(self.volumes)])
-        else : self.get_static_calculations()
+        else : self.calc_thermal_electron()
         v,x,o,f = self.calc_free_energy_for_plot(readme)
         return v, x, self.T, o, f
 

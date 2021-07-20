@@ -40,9 +40,11 @@ from pymatgen.analysis.eos import EOS
 from fireworks import Firework
 from atomate.vasp.config import VASP_CMD, DB_FILE
 import os
+from dfttk.pythelec import get_static_calculations
 
 head,tail = os.path.split(__file__)
 db_file = os.path.join(head,"db.json")
+
 
 @explicit_serialize
 class QHAAnalysis_renew(FiretaskBase):
@@ -85,37 +87,9 @@ class QHAAnalysis_renew(FiretaskBase):
         tag = self["tag"]
         admin = self.get('admin', False)
         _db_file = self.get('db_file', db_file)
-
-
         vasp_db = VaspCalcDb.from_db_file(db_file=_db_file, admin=admin)
-
-        # get the energies, volumes and DOS objects by searching for the tag
-        # static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
-        static_calculations = vasp_db.collection.find({'$and':[ {'metadata': {'tag':tag}}, {'adopted': True} ]})
-
-        energies = []
-        volumes = []
-        dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
-        structure = None  # single Structure for QHA calculation
-        for calc in static_calculations:
-            energies.append(calc['output']['energy'])
-            volumes.append(calc['output']['structure']['lattice']['volume'])
-            dos_objs.append(vasp_db.get_dos(calc['task_id']))
-            # get a Structure. We only need one for the masses and number of atoms in the unit cell.
-            if structure is None:
-                structure = Structure.from_dict(calc['output']['structure'])
-
-        # sort everything in volume order
-        # note that we are doing volume last because it is the thing we are sorting by!
-
-        energies = sort_x_by_y(energies, volumes)
-        dos_objs = sort_x_by_y(dos_objs, volumes)
-        volumes = sorted(volumes)
-        """
-        print(energies)
-        print(volumes)
-        sys.exit()
-        """
+        volumes, energies, dos_objs, _calc = get_static_calculations(vasp_db, tag)
+        structure = Structure.from_dict(_calc['output']['structure'])
 
         qha_result = {}
         qha_result['structure'] = structure.as_dict()

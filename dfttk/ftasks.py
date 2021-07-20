@@ -32,7 +32,7 @@ from dfttk.custodian_jobs import ATATWalltimeHandler, ATATInfDetJob
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 from pymatgen.core import __version__ as pymatgen_ver
-
+from dfttk.pythelec import get_static_calculations
 
 def extend_calc_locs(name, fw_spec):
     """
@@ -294,6 +294,10 @@ class QHAAnalysis(FiretaskBase):
         everyT = self.get('everyT', 1)
         tag = self["tag"]
 
+        volumes, energies, dos_objs, _calc = get_static_calculations(vasp_db, tag)
+        structure = Structure.from_dict(_calc['output']['structure'])
+        
+        """
         # get the energies, volumes and DOS objects by searching for the tag
         #static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
         static_calculations = vasp_db.collection.find({'$and':[ {'metadata': {'tag':tag}}, {'adopted': True} ]})
@@ -316,6 +320,7 @@ class QHAAnalysis(FiretaskBase):
         energies = sort_x_by_y(energies, volumes)
         dos_objs = sort_x_by_y(dos_objs, volumes)
         volumes = sorted(volumes)
+        """
 
         qha_result = {}
         qha_result['structure'] = structure.as_dict()

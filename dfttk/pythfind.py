@@ -103,6 +103,7 @@ class thfindMDB ():
         self.jobpath = args.jobpath
         self.findbandgap = args.findbandgap
         self.db_repair = args.db_repair
+        self.db_renew = args.db_renew
         if args.within is not None: self.within, tmp = formula2composition(args.within)
         if args.containall is not None: self.containall, tmp = formula2composition(args.containall)
         if args.containany is not None: self.containany, tmp = formula2composition(args.containany)
@@ -177,7 +178,7 @@ class thfindMDB ():
         elif self.vasp_db==None: self.find_plotfiles()
         elif self.check: self.check_find()
         elif self.qhamode=='phonon': self.phonon_find()
-        else: self.debye_find()
+        elif self.qhamode=='qha': self.debye_find()
         return self.tags
 
 
@@ -345,6 +346,7 @@ class thfindMDB ():
         print("\nfound complete calculations in the collection:", self.qhamode, "\n")
         for i,m in enumerate(hit):
             if self.skipby(phases[i], m['tag']): continue
+            if self.qhamode == 'qha' : phases[i] += "_debye"
             print (m, ":", phases[i])
             self.tags.append({'tag':m['tag'],'phasename':phases[i]})
 
