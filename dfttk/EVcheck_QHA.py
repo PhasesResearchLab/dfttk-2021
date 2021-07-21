@@ -219,8 +219,8 @@ class EVcheck_QHA(FiretaskBase):
         '''
         # Get the parameters from the object
         max_run = 10
-        #db_file = env_chk(self.get('db_file', DB_FILE), fw_spec)
-        db_file = ">>db_file<<"
+        db_file = env_chk(self.get('db_file', DB_FILE), fw_spec)
+        #db_file = ">>db_file<<"
         vasp_cmd = ">>vasp_cmd<<"
         deformations = self.get('deformations', [])
         run_num = self.get('run_num', 0)
@@ -397,7 +397,7 @@ class EVcheck_QHA(FiretaskBase):
             json.dump(EVcheck_result, fp, indent=4)
 
     def get_orig_EV(self, db_file, tag):
-        vasp_db = VaspCalcDb.from_db_file(db_file, admin = True)
+        vasp_db = VaspCalcDb.from_db_file(db_file=db_file, admin = True)
         energies = []
         volumes = []
         dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
@@ -536,7 +536,7 @@ class EVcheck_QHA(FiretaskBase):
         if phonon:
             # get the vibrational properties from the FW spec
             # TODO: add a stable check in Quasiharmonic
-            vasp_db = VaspCalcDb.from_db_file(db_file, admin=True)
+            vasp_db = VaspCalcDb.from_db_file(db_file = db_file, admin=True)
             phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
             vol_vol = [calc['volume'] for calc in phonon_calculations]  # these are just used for sorting and will be thrown away
             vol_f_vib = [calc['F_vib'] for calc in phonon_calculations]
@@ -739,7 +739,7 @@ class PreEV_check(FiretaskBase):
             json.dump(EVcheck_result, fp)
 
     def get_orig_EV_structure(self, db_file, tag):
-        vasp_db = VaspCalcDb.from_db_file(db_file, admin = True)
+        vasp_db = VaspCalcDb.from_db_file(db_file = db_file, admin = True)
         energies = []
         volumes = []
         static_calculations = vasp_db.db["PreStatic"].find({'$and':[ {'metadata.tag': tag},
