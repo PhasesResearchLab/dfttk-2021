@@ -104,7 +104,7 @@ def Customizing_Workflows(original_wf, user_settings={}):
     if len(powerups_options) == 0:
         if 'user_incar_settings' in user_settings:
             powerups_options = user_settings['user_incar_settings'].get('powerups', {})
-
+            
     if 'set_execution_options' in powerups_options:
         execution_options = powerups_options['set_execution_options']
         original_wf = set_execution_options(original_wf, 

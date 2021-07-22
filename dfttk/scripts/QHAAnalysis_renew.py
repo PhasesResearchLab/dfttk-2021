@@ -167,8 +167,8 @@ class QHAAnalysis_renew(FiretaskBase):
         eos_res['b1'] = float(eos.b1)
         eos_res['eq_volume'] = float(eos.v0)
         eos_res['eq_energy'] = float(eos.e0)
-        eos_res['energies'] = energies
-        eos_res['volumes'] = volumes
+        eos_res['energies'] = list(energies)
+        eos_res['volumes'] = list(volumes)
         eos_res['name'] = 'Vinet'
         eos_res['error'] = {}
         eos_res['error']['difference'] = errors.tolist()  # volume by volume differences

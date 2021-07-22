@@ -381,7 +381,6 @@ def run(args):
 
                 if flag_run:
                     user_settings = get_user_settings(STR_FILENAME_WITH_EXT, STR_PATH=STR_PATH, NEW_SETTING=SETTINGS)
-
                     metadatai = metadatas.get(STR_FILE, None)
                     if metadatai:
                         user_settings.update({'metadata': metadatai})
