@@ -93,18 +93,44 @@ def set_execution_options(
 
 
 import atomate.vasp.powerups as powerups
-def Customizing_Workflows(original_wf, user_settings={}):
+def get_powerups(original_wf):
+    """
+    get user powerups setting.
+    """
+    idx_list = get_fws_and_tasks(original_wf)
+    _powerups = {}
+    for idx_fw, idx_t in idx_list:
+        f0 = original_wf.fws[idx_fw].tasks[idx_t]
+        for k0 in f0:
+            if k0 == 'override_default_vasp_params' :
+                #print(k0,"=",f0[k0])
+                f1 = f0[k0]
+                for k1 in f1:
+                    #print(k1,"=",f1[k1])
+                    if k1== 'user_incar_settings':
+                        f2 = f1[k1]
+                        for k2 in f2:
+                            #print(k2,"=",f2[k2])
+                            if k2 == 'powerups': 
+                                _powerups = f2[k2]
+    return _powerups
+
+
+def Customizing_Workflows(original_wf):
+    """
+    powerups_options = user_settings.get('powerups', {})
+    if len(powerups_options) == 0:
+        if 'user_incar_settings' in user_settings:
+            powerups_options = user_settings['user_incar_settings'].get('powerups', {})
+    """
+    powerups_options = get_powerups(original_wf)
     """
     set _preserve_fworker spec of Fireworker(s) of a Workflow. Can be used to
     pin a workflow to the first fworker it is run with. Very useful when running
     on multiple machines that can't share files.
     """
     original_wf = powerups.preserve_fworker(original_wf)
-    powerups_options = user_settings.get('powerups', {}) 
-    if len(powerups_options) == 0:
-        if 'user_incar_settings' in user_settings:
-            powerups_options = user_settings['user_incar_settings'].get('powerups', {})
-            
+
     if 'set_execution_options' in powerups_options:
         execution_options = powerups_options['set_execution_options']
         original_wf = set_execution_options(original_wf, 
