@@ -98,31 +98,31 @@ def get_powerups(original_wf):
     get user powerups setting.
     """
     idx_list = get_fws_and_tasks(original_wf)
-    _powerups = {}
     for idx_fw, idx_t in idx_list:
         f0 = original_wf.fws[idx_fw].tasks[idx_t]
+        if (not isinstance(f0, list)) and (not isinstance(f0, dict)) : continue
         for k0 in f0:
-            if k0 == 'override_default_vasp_params' :
-                #print(k0,"=",f0[k0])
-                f1 = f0[k0]
+            if k0=='powerups' : return f0[k0]
+            else:
+                try:
+                    f1 = f0[k0]
+                except:
+                    f1 = k0
+                if (not isinstance(f1, list)) and (not isinstance(f1, dict)) : continue
                 for k1 in f1:
-                    #print(k1,"=",f1[k1])
-                    if k1== 'user_incar_settings':
-                        f2 = f1[k1]
+                    if k1=='powerups' : return f1[k1]
+                    else:
+                        try:
+                            f2 = f1[k1]
+                        except:
+                            f2 = k1
+                        if  not isinstance(f2, dict) : continue
                         for k2 in f2:
-                            #print(k2,"=",f2[k2])
-                            if k2 == 'powerups': 
-                                _powerups = f2[k2]
-    return _powerups
+                            if k2=='powerups' : return f2[k2]
+    return {}
 
 
 def Customizing_Workflows(original_wf):
-    """
-    powerups_options = user_settings.get('powerups', {})
-    if len(powerups_options) == 0:
-        if 'user_incar_settings' in user_settings:
-            powerups_options = user_settings['user_incar_settings'].get('powerups', {})
-    """
     powerups_options = get_powerups(original_wf)
     """
     set _preserve_fworker spec of Fireworker(s) of a Workflow. Can be used to
