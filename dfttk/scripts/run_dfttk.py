@@ -175,10 +175,6 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     #override_default_vasp_params = {'user_incar_settings': {}, 'user_kpoints_settings': {}, 'user_potcar_functional': str}
     #If some value in 'user_incar_settings' is set to None, it will use vasp's default value
     override_default_vasp_params = settings.get('override_default_vasp_params', {})
-    #check if fworker_name is assigned
-    powerups = settings.get('powerups', {})
-    if len(powerups)>0:
-        override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
 
     #dict, dict of class ModifyIncar with keywords in Workflow name. e.g.
     """
@@ -188,6 +184,11 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
                             'static': {'incar_update': {"LAECHG":False,"LCHARG":False,"LWAVE":False}},
     """
     modify_incar_params = settings.get('modify_incar_params', {})
+    #check if fworker_name is assigned
+    powerups = settings.get('powerups', {})
+    if len(powerups)>0:
+        override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
+        modify_incar_params['powerups']=powerups
 
     #dict, dict of class ModifyKpoints with keywords in Workflow name, similar with modify_incar_params
     modify_kpoints_params = settings.get('modify_kpoints_params', {})

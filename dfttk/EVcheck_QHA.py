@@ -236,6 +236,10 @@ class EVcheck_QHA(FiretaskBase):
         phonon_supercell_matrix = self.get('phonon_supercell_matrix', None)
         verbose = self.get('verbose', False)
         modify_incar_params = self.get('modify_incar_params', {})
+        try:
+            powerups_options = modify_incar_params['powerups']
+        except:
+            powerups_options = None
         modify_kpoints_params = self.get('modify_kpoints_params', {})
         site_properties = self.get('site_properties', None)
         override_default_vasp_params = self.get('override_default_vasp_params', {})
@@ -363,8 +367,8 @@ class EVcheck_QHA(FiretaskBase):
                     if modify_kpoints_params != {}:
                         from dfttk.utils import add_modify_kpoints_by_FWname
                         add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
-                    wfs=Customizing_Workflows(wfs)
-                    lpad.add_wf(wfs)
+                    wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
+                    lpad.add_wf(wfs,powerups_options = powerups_options)
                 else:
                     too_many_run_error()
             else:  # No need to do more VASP calculation, QHA could be running
@@ -387,7 +391,7 @@ class EVcheck_QHA(FiretaskBase):
                 strname = "{}:{}".format(structure.composition.reduced_formula, 'QHA')
                 wfs = Workflow(fws, name = strname, metadata=metadata)
                 wfs=Customizing_Workflows(wfs)
-                lpad.add_wf(wfs)
+                lpad.add_wf(wfs,powerups_options = powerups_options)
         else:   # failure to meet the tolerance
             if len(volumes) == 0: #self.error == 1e10:   # Bad initial running set
                 pass_result_error()
@@ -635,6 +639,10 @@ class PreEV_check(FiretaskBase):
         verbose = self.get('verbose') or False
         modify_incar_params = self.get('modify_incar_params') or {}
         modify_kpoints_params = self.get('modify_kpoints_params') or {}
+        try:
+            powerups_options = modify_incar_params['powerups']
+        except:
+            powerups_options = None
         symmetry_tolerance = self.get('symmetry_tolerance') or None
         run_isif2 = self.get('run_isif2') or None
         pass_isif4 = self.get('pass_isif4') or False
@@ -696,7 +704,7 @@ class PreEV_check(FiretaskBase):
                         from dfttk.utils import add_modify_kpoints_by_FWname
                         add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
                     wfs=Customizing_Workflows(wfs)
-                    lpad.add_wf(wfs)
+                    lpad.add_wf(wfs,powerups_options = powerups_options)
                 else:
                     too_many_run_error()
             else:  # No need to do more VASP calculation, QHA could be running
@@ -730,7 +738,7 @@ class PreEV_check(FiretaskBase):
                     from dfttk.utils import add_modify_kpoints_by_FWname
                     add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
                 wfs=Customizing_Workflows(wfs)
-                lpad.add_wf(wfs)
+                lpad.add_wf(wfs,powerups_options = powerups_options)
         else:   # failure to meet the tolerance
             if len(volumes) == 0: #self.error == 1e10:   # Bad initial running set
                 pass_result_error()
