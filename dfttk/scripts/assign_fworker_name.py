@@ -122,7 +122,7 @@ def get_powerups_wf(original_wf):
         f0 = original_wf.fws[idx_fw].tasks[idx_t]
         if not isinstance(f0, Iterable) or isinstance(f0, str) : continue
         for k0 in f0:
-            #if debug: print("level 0", k0, type(f0))
+            if debug: print("level 0", k0, type(f0))
             if k0=='powerups' : 
                 if debug: print("level 0", f0[k0])
                 return f0[k0]
@@ -133,7 +133,7 @@ def get_powerups_wf(original_wf):
                     f1 = k0
                 if not isinstance(f1, Iterable) or isinstance(f1, str) : continue
                 for k1 in f1:
-                    #if debug: print("level 1", k1, type(f1))
+                    if debug: print("level 1", k1, type(f1))
                     if str(k1)=='powerups' : 
                         if debug: print("level 1", f1[k1])
                         return f1[k1]
@@ -144,7 +144,7 @@ def get_powerups_wf(original_wf):
                             f2 = k1
                         if not isinstance(f2, Iterable) or isinstance(f2, str) : continue
                         for k2 in f2:
-                            #if debug: print("level 2", k2, type(f2))
+                            if debug: print("level 2", k2, type(f2))
                             if str(k2)=='powerups' : 
                                 if debug: print("level 2", f2[k2])
                                 return f2[k2]
@@ -155,7 +155,7 @@ def get_powerups_wf(original_wf):
                                     f3=k2
                                 if not isinstance(f3, Iterable) or isinstance(f3, str) : continue
                                 for k3 in f3:
-                                    #if debug: print("level 3", k3, type(f3))
+                                    if debug: print("level 3", k3, type(f3))
                                     if str(k3)=='powerups' : 
                                         print(type(f0),type(f1),type(f2),type(f3))
                                         if debug: print("level 3", f3[k3])
@@ -167,7 +167,7 @@ def get_powerups_wf(original_wf):
                                             f4=k3
                                         if not isinstance(f4, Iterable) or isinstance(f4, str) : continue
                                         for k4 in f4:
-                                            #if debug: print("level 4", k4, type(f4))
+                                            if debug: print("level 4", k4, type(f4))
                                             if str(k4)=='powerups' : 
                                                 if debug: print("level 4", f4[k4])
                                                 return f4[k4]                                        
@@ -244,6 +244,7 @@ def get_powerups_wf(original_wf):
 
 
 def Customizing_Workflows(wfs, powerups_options=None):
+    print("xxxxxxxxxxxx", wfs)
     if not powerups_options: powerups_options = get_powerups(wfs)
     if isinstance(wfs, list) :
         _wfs = []
