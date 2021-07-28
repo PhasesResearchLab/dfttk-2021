@@ -147,6 +147,7 @@ def Customizing_Workflows(wfs, powerups_options=None):
     elif isinstance(wfs, dict) :
         revised_wflow = Customizing_Workflows_wf(wfs,powerups_options=powerups_options)
         return revised_wflow
+    else: return wfs
 
 
 def Customizing_Workflows_wf(original_wf, powerups_options=None):
