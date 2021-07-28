@@ -16,6 +16,7 @@ from dfttk.fworks import OptimizeFW, StaticFW, PhononFW, RobustOptimizeFW, BornC
 from dfttk.ftasks import CheckRelaxScheme
 from dfttk.input_sets import PreStaticSet, RelaxSet, ForceConstantsSet, ElasticSet
 from dfttk.EVcheck_QHA import EVcheck_QHA, PreEV_check
+from dfttk.scripts.assign_fworker_name import Customizing_Workflows
 from dfttk.utils import check_relax_path, add_modify_incar_by_FWname, add_modify_kpoints_by_FWname, supercell_scaling_by_atom_lat_vol
 from dfttk.scripts.querydb import is_property_exist_in_db, get_eq_structure_by_metadata
 #from atomate.vasp.workflows.base.elastic import get_wf_elastic_constant
@@ -73,7 +74,7 @@ def get_wf_EV_bjb(structure, deformation_fraction=(-0.08, 0.12), store_volumetri
     else:
         wfname = f"unknown:{structure.composition.reduced_formula}:unknown"
     wf = Workflow(fws, name=wfname, metadata=metadata)
-    return wf
+    return Customizing_Workflows(wf)
 
 
 
@@ -439,7 +440,7 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
     add_modify_incar_by_FWname(wf, modify_incar_params = modify_incar_params)
     add_modify_kpoints_by_FWname(wf, modify_kpoints_params = modify_kpoints_params)
 
-    return wf
+    return Customizing_Workflows(wf)
 
 
 def get_wf_gibbs(structure, num_deformations=7, deformation_fraction=(-0.1, 0.1), run_isif2=False,
@@ -559,7 +560,7 @@ def get_wf_gibbs(structure, num_deformations=7, deformation_fraction=(-0.1, 0.1)
     add_modify_incar_by_FWname(wf, modify_incar_params = modify_incar_params)
     add_modify_kpoints_by_FWname(wf, modify_kpoints_params = modify_kpoints_params)
 
-    return wf
+    return Customizing_Workflows(wf)
 
 
 def get_wf_gibbs_SQS(structure, num_deformations=7, deformation_fraction=(-0.1, 0.1),
@@ -665,4 +666,4 @@ def get_wf_gibbs_SQS(structure, num_deformations=7, deformation_fraction=(-0.1, 
     add_modify_incar_by_FWname(wf, modify_incar_params = modify_incar_params)
     add_modify_kpoints_by_FWname(wf, modify_kpoints_params = modify_kpoints_params)
 
-    return wf
+    return Customizing_Workflows(wf)

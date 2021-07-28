@@ -7,7 +7,7 @@ from dfttk.wflows import get_wf_gibbs, get_wf_EV_bjb, get_wf_gibbs_robust, get_w
 from dfttk.utils import recursive_glob
 from dfttk.structure_builders.parse_anrl_prototype import multi_replace
 from dfttk.scripts.querydb import get_eq_structure_by_metadata
-from dfttk.scripts.assign_fworker_name import Customizing_Workflows, get_powerups
+from dfttk.scripts.assign_fworker_name import Customizing_Workflows
 import dfttk.scripts.querydb as querydb
 from fireworks.fw_config import config_to_dict
 from monty.serialization import loadfn, dumpfn
@@ -348,7 +348,7 @@ def run(args):
             else:
                 wfs.append(wf)
             wfs = Customizing_Workflows(wfs)
-            
+
             if WRITE_OUT_WF:
                 dfttk_wf_filename = os.path.join(STR_PATH, "dfttk_wf-" + STR_FILENAME_WITH_EXT + ".yaml")
                 #dumpfn(wf.to_dict(), dfttk_wf_filename)
