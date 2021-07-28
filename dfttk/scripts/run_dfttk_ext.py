@@ -92,22 +92,16 @@ def ext_thelec(args, plotfiles=None, vasp_db=None):
             return
 
         print("\nFull thermodynamic properties have outputed into:", thermofile)
-        #print(args.plot, "eeeeeeeee", volumes, energies, thermofile, comments)
         if args.plot==None: print("\nSupply '-plot phasename' for plot\n")
         else:
             from dfttk.analysis.ywplot import plotAPI
-            #print("xxxxxxx",proc.get_formula())
             if plotAPI(readme, thermofile, volumes, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp,
                 formula = proc.get_formula(), debug=args.debug,
                 plotlabel=args.plot, local=args.local):
-                #print ("xxxxxxx",proc.get_formula())
                 vtof = proc.get_free_energy_for_plot(readme)
                 if vtof is not None:
                     plotAPI(readme, thermofile, volumes, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp,
                     formula = proc.get_formula(), vtof=vtof, plotlabel=args.plot)
-            """
-            """
-        #print("xxxxxxxxxxxx",readme)
         record_cmd_print(thermofile, readme)
     elif no_MongoDB:
             print("\n*********WARNING: CANNOT get MongoDB service, so I will proceed using local data")
@@ -145,7 +139,6 @@ def ext_thelec(args, plotfiles=None, vasp_db=None):
     elif vasp_db==None and plotfiles!=None:
         metatag, thermofile, volumes, energies, dir, formula = plotfiles
         sys.stdout.write('Processing {}, dir: {}, formula: {}\n'.format(metatag, dir, formula))
-        #print("xxxxxxxxxx", plotfiles)
         if expt!=None:
             _t1 = get_melting_temperature(expt, formula)
             if _t1!=None: t1 = _t1
@@ -157,7 +150,6 @@ def ext_thelec(args, plotfiles=None, vasp_db=None):
             smooth=smooth, debug=args.debug,
             phasename=dir, pyphon=args.pyphon, renew=args.renew, fitF=args.fitF, args=args)
         volumes, energies, thermofile, comments = proc.run_console()
-        #print ("xxxxxxx", comments)
         if comments!=None: readme.update(comments)
         else: return
         if "ERROR" in readme.keys():

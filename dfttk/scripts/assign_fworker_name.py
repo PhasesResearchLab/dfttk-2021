@@ -244,7 +244,6 @@ def get_powerups_wf(original_wf):
 
 
 def Customizing_Workflows(wfs, powerups_options=None):
-    print("xxxxxxxxxxxx", wfs)
     if not powerups_options: powerups_options = get_powerups(wfs)
     if isinstance(wfs, list) :
         _wfs = []
