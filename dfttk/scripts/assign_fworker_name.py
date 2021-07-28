@@ -1,4 +1,4 @@
-from fireworks import Workflow
+from fireworks import Workflow, Firework
 from atomate.utils.utils import get_meta_from_structure, get_fws_and_tasks
 def set_queue_options(
     original_wf,
@@ -120,6 +120,7 @@ def get_powerups_wf(original_wf):
         f0 = original_wf.fws[idx_fw].tasks[idx_t]
         if (not isinstance(f0, list)) \
             and (not isinstance(f0, dict)) \
+            and (not isinstance(f0, Firework)) \
             and (not isinstance(f0, Workflow)) : continue
         for k0 in f0:
             if k0=='powerups' : 
@@ -132,6 +133,7 @@ def get_powerups_wf(original_wf):
                     f1 = k0
                 if (not isinstance(f1, list)) \
                     and (not isinstance(f1, dict)) \
+                    and (not isinstance(f1, Firework)) \
                     and (not isinstance(f1, Workflow)) : continue
                 for k1 in f1:
                     if k1=='powerups' : 
@@ -144,6 +146,7 @@ def get_powerups_wf(original_wf):
                             f2 = k1
                         if (not isinstance(f2, list)) \
                             and (not isinstance(f2, dict)) \
+                            and (not isinstance(f2, Firework)) \
                             and (not isinstance(f2, Workflow)) : continue
                         for k2 in f2:
                             if k2=='powerups' : 
@@ -156,6 +159,7 @@ def get_powerups_wf(original_wf):
                                     f3=k2
                                 if (not isinstance(f3, list)) \
                                     and (not isinstance(f3, dict)) \
+                                    and (not isinstance(f3, Firework)) \
                                     and (not isinstance(f3, Workflow)) : continue
                                 for k3 in f3:
                                     if k3=='powerups' : 
@@ -168,6 +172,7 @@ def get_powerups_wf(original_wf):
                                             f4=k3
                                         if (not isinstance(f4, list)) \
                                             and (not isinstance(f4, dict)) \
+                                            and (not isinstance(f4, Firework)) \
                                             and (not isinstance(f4, Workflow)) : continue
                                         for k4 in f4:
                                             if k4=='powerups' : 
