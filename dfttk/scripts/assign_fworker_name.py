@@ -93,7 +93,21 @@ def set_execution_options(
 
 
 import atomate.vasp.powerups as powerups
-def get_powerups(original_wf):
+def get_powerups(wfs):
+    """
+    get user powerups setting.
+    """
+    powerups_options = None
+    if isinstance(wfs, list) :
+        for wflow in wfs:
+            powerups_options = get_powerups_wf(wflow)
+            if powerups_options: break
+    elif isinstance(wfs, dict) :
+        powerups_options = get_powerups_wf(wfs)
+    return powerups_options
+
+
+def get_powerups_wf(original_wf):
     """
     get user powerups setting.
     """
@@ -119,11 +133,25 @@ def get_powerups(original_wf):
                         if  not isinstance(f2, dict) : continue
                         for k2 in f2:
                             if k2=='powerups' : return f2[k2]
-    return {}
+    return None
 
 
-def Customizing_Workflows(original_wf):
-    powerups_options = get_powerups(original_wf)
+def Customizing_Workflows(wfs, powerups_options=None):
+    if not powerups_options: powerups_options = get_powerups(wfs)
+    if isinstance(wfs, list) :
+        _wfs = []
+        for wflow in wfs:
+            revised_wflow = Customizing_Workflows_wf(wflow,powerups_options=powerups_options)
+            print ("xxxxxxxxxx", powerups_options)
+            _wfs.append(revised_wflow)
+        return _wfs
+    elif isinstance(wfs, dict) :
+        revised_wflow = Customizing_Workflows_wf(wfs,powerups_options=powerups_options)
+        return revised_wflow
+
+
+def Customizing_Workflows_wf(original_wf, powerups_options=None):
+    if powerups_options is None: powerups_options = get_powerups(original_wf)
     """
     set _preserve_fworker spec of Fireworker(s) of a Workflow. Can be used to
     pin a workflow to the first fworker it is run with. Very useful when running
