@@ -1,5 +1,4 @@
-
-
+from fireworks import Workflow
 from atomate.utils.utils import get_meta_from_structure, get_fws_and_tasks
 def set_queue_options(
     original_wf,
@@ -111,6 +110,7 @@ def get_powerups(wfs):
     return powerups_options
 
 
+debug = True
 def get_powerups_wf(original_wf):
     """
     get user powerups setting.
@@ -118,25 +118,61 @@ def get_powerups_wf(original_wf):
     idx_list = get_fws_and_tasks(original_wf)
     for idx_fw, idx_t in idx_list:
         f0 = original_wf.fws[idx_fw].tasks[idx_t]
-        if (not isinstance(f0, list)) and (not isinstance(f0, dict)) : continue
+        if (not isinstance(f0, list)) \
+            and (not isinstance(f0, dict)) \
+            and (not isinstance(f0, Workflow)) : continue
         for k0 in f0:
-            if k0=='powerups' : return f0[k0]
+            if k0=='powerups' : 
+                if debug: print("level 0", f0[k0])
+                return f0[k0]
             else:
                 try:
                     f1 = f0[k0]
                 except:
                     f1 = k0
-                if (not isinstance(f1, list)) and (not isinstance(f1, dict)) : continue
+                if (not isinstance(f1, list)) \
+                    and (not isinstance(f1, dict)) \
+                    and (not isinstance(f1, Workflow)) : continue
                 for k1 in f1:
-                    if k1=='powerups' : return f1[k1]
+                    if k1=='powerups' : 
+                        if debug: print("level 1", f1[k1])
+                        return f1[k1]
                     else:
                         try:
                             f2 = f1[k1]
                         except:
                             f2 = k1
-                        if  not isinstance(f2, dict) : continue
+                        if (not isinstance(f2, list)) \
+                            and (not isinstance(f2, dict)) \
+                            and (not isinstance(f2, Workflow)) : continue
                         for k2 in f2:
-                            if k2=='powerups' : return f2[k2]
+                            if k2=='powerups' : 
+                                if debug: print("level 2", f2[k2])
+                                return f2[k2]
+                            else:
+                                try:
+                                    f3 = f2[k2]
+                                except:
+                                    f3=k2
+                                if (not isinstance(f3, list)) \
+                                    and (not isinstance(f3, dict)) \
+                                    and (not isinstance(f3, Workflow)) : continue
+                                for k3 in f3:
+                                    if k3=='powerups' : 
+                                        if debug: print("level 3", f3[k3])
+                                        return f3[k3]
+                                    else:
+                                        try:
+                                            f4 = f3[k3]
+                                        except:
+                                            f4=k3
+                                        if (not isinstance(f4, list)) \
+                                            and (not isinstance(f4, dict)) \
+                                            and (not isinstance(f4, Workflow)) : continue
+                                        for k4 in f4:
+                                            if k4=='powerups' : 
+                                                if debug: print("level 4", f4[k4])
+                                                return f4[k4]                                        
     return None
 
 
