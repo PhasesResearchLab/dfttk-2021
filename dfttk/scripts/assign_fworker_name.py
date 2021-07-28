@@ -97,13 +97,17 @@ def get_powerups(wfs):
     """
     get user powerups setting.
     """
-    powerups_options = None
     if isinstance(wfs, list) :
         for wflow in wfs:
             powerups_options = get_powerups_wf(wflow)
             if powerups_options: break
     elif isinstance(wfs, dict) :
         powerups_options = get_powerups_wf(wfs)
+    else:
+        try:
+            powerups_options = get_powerups_wf(wfs)
+        except:
+            powerups_options = None
     return powerups_options
 
 
@@ -147,7 +151,14 @@ def Customizing_Workflows(wfs, powerups_options=None):
     elif isinstance(wfs, dict) :
         revised_wflow = Customizing_Workflows_wf(wfs,powerups_options=powerups_options)
         return revised_wflow
-    else: return wfs
+    else:
+        try:
+            revised_wflow = Customizing_Workflows_wf(wfs,powerups_options=powerups_options)
+            return revised_wflow
+        except:
+            print("***************WARNING! not a workflow",wfs)
+            return wfs
+
 
 
 def Customizing_Workflows_wf(original_wf, powerups_options=None):
