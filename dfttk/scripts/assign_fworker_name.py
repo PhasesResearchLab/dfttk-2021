@@ -142,7 +142,6 @@ def Customizing_Workflows(wfs, powerups_options=None):
         _wfs = []
         for wflow in wfs:
             revised_wflow = Customizing_Workflows_wf(wflow,powerups_options=powerups_options)
-            print ("xxxxxxxxxx", powerups_options)
             _wfs.append(revised_wflow)
         return _wfs
     elif isinstance(wfs, dict) :
