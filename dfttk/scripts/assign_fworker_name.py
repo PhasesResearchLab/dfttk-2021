@@ -101,8 +101,6 @@ def get_powerups(wfs):
         for wflow in wfs:
             powerups_options = get_powerups_wf(wflow)
             if powerups_options: break
-    elif isinstance(wfs, dict) :
-        powerups_options = get_powerups_wf(wfs)
     else:
         try:
             powerups_options = get_powerups_wf(wfs)
@@ -144,7 +142,7 @@ def get_powerups_wf(original_wf):
                             f2 = k1
                         if not isinstance(f2, Iterable) or isinstance(f2, str) : continue
                         for k2 in f2:
-                            if debug: print("level 2", k2, type(f2))
+                            if debug: if debug: print("level 2", k2, type(f2))
                             if str(k2)=='powerups' : 
                                 if debug: print("level 2", f2[k2])
                                 return f2[k2]
@@ -157,7 +155,7 @@ def get_powerups_wf(original_wf):
                                 for k3 in f3:
                                     if debug: print("level 3", k3, type(f3))
                                     if str(k3)=='powerups' : 
-                                        print(type(f0),type(f1),type(f2),type(f3))
+                                        if debug: print(type(f0),type(f1),type(f2),type(f3))
                                         if debug: print("level 3", f3[k3])
                                         return f3[k3]
                                     else:
@@ -173,87 +171,14 @@ def get_powerups_wf(original_wf):
                                                 return f4[k4]                                        
     return None
 
-    """     
-        if (not isinstance(f0, list)) \
-            and (not isinstance(f0, dict)) \
-            and (not isinstance(f0, Firework)) \
-            and (not isinstance(f0, Workflow)) : continue
-        for k0 in f0:
-            if debug: print("level 0", k0, type(f0))
-            if k0=='powerups' : 
-                if debug: print("level 0", f0[k0])
-                return f0[k0]
-            else:
-                try:
-                    f1 = f0[k0]
-                except:
-                    f1 = k0
-                if (not isinstance(f1, list)) \
-                    and (not isinstance(f1, dict)) \
-                    and (not isinstance(f1, Firework)) \
-                    and (not isinstance(f1, Workflow)) : continue
-                for k1 in f1:
-                    if debug: print("level 1", k1, type(f1))
-                    if k1=='powerups' : 
-                        if debug: print("level 1", f1[k1])
-                        return f1[k1]
-                    else:
-                        try:
-                            f2 = f1[k1]
-                        except:
-                            f2 = k1
-                        if (not isinstance(f2, list)) \
-                            and (not isinstance(f2, dict)) \
-                            and (not isinstance(f2, Firework)) \
-                            and (not isinstance(f2, Workflow)) : continue
-                        for k2 in f2:
-                            if debug: print("level 2", k2, type(f2))
-                            if k2=='powerups' : 
-                                if debug: print("level 2", f2[k2])
-                                return f2[k2]
-                            else:
-                                try:
-                                    f3 = f2[k2]
-                                except:
-                                    f3=k2
-                                if (not isinstance(f3, list)) \
-                                    and (not isinstance(f3, dict)) \
-                                    and (not isinstance(f3, Firework)) \
-                                    and (not isinstance(f3, Workflow)) : continue
-                                for k3 in f3:
-                                    if debug: print("level 3", k3, type(f3))
-                                    if k3=='powerups' : 
-                                        if debug: print("level 3", f3[k3])
-                                        return f3[k3]
-                                    else:
-                                        try:
-                                            f4 = f3[k3]
-                                        except:
-                                            f4=k3
-                                        if (not isinstance(f4, list)) \
-                                            and (not isinstance(f4, dict)) \
-                                            and (not isinstance(f4, Firework)) \
-                                            and (not isinstance(f4, Workflow)) : continue
-                                        for k4 in f4:
-                                            if debug: print("level 4", k4, type(f4))
-                                            if k4=='powerups' : 
-                                                if debug: print("level 4", f4[k4])
-                                                return f4[k4]                                        
-    return None
-    """
-
 
 def Customizing_Workflows(wfs, powerups_options=None):
-    if not powerups_options: powerups_options = get_powerups(wfs)
     if isinstance(wfs, list) :
         _wfs = []
         for wflow in wfs:
             revised_wflow = Customizing_Workflows_wf(wflow,powerups_options=powerups_options)
             _wfs.append(revised_wflow)
         return _wfs
-    elif isinstance(wfs, dict) :
-        revised_wflow = Customizing_Workflows_wf(wfs,powerups_options=powerups_options)
-        return revised_wflow
     else:
         try:
             revised_wflow = Customizing_Workflows_wf(wfs,powerups_options=powerups_options)
@@ -263,7 +188,6 @@ def Customizing_Workflows(wfs, powerups_options=None):
             return wfs
 
 
-
 def Customizing_Workflows_wf(original_wf, powerups_options=None):
     if powerups_options is None: powerups_options = get_powerups(original_wf)
     """
@@ -271,7 +195,9 @@ def Customizing_Workflows_wf(original_wf, powerups_options=None):
     pin a workflow to the first fworker it is run with. Very useful when running
     on multiple machines that can't share files.
     """
-    original_wf = powerups.preserve_fworker(original_wf)
+    if 'preserve_fworker' in powerups_options:
+        if powerups_options['preserve_fworker']:
+            original_wf = powerups.preserve_fworker(original_wf)
 
     if 'set_execution_options' in powerups_options:
         execution_options = powerups_options['set_execution_options']

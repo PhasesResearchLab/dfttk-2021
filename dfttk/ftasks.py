@@ -33,6 +33,7 @@ from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 from pymatgen.core import __version__ as pymatgen_ver
 from dfttk.pythelec import get_static_calculations
+from dfttk.scripts.assign_fworker_name import Customizing_Workflows
 
 def extend_calc_locs(name, fw_spec):
     """
@@ -951,7 +952,7 @@ class CheckRelaxation(FiretaskBase):
                                 override_symmetry_tolerances=symmetry_options, store_volumetric_data=self.store_volumetric_data, **self["common_kwargs"]))
             else:
                 raise ValueError(f"Unknown job_type {job_type} for step {step}.")
-        return detour_fws
+        return Customizing_Workflows(detour_fws)
 
 
 @explicit_serialize
