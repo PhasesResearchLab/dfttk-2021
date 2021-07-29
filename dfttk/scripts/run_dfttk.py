@@ -175,6 +175,10 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     #override_default_vasp_params = {'user_incar_settings': {}, 'user_kpoints_settings': {}, 'user_potcar_functional': str}
     #If some value in 'user_incar_settings' is set to None, it will use vasp's default value
     override_default_vasp_params = settings.get('override_default_vasp_params', {})
+    #check if fworker_name is assigned
+    powerups = settings.get('powerups', {})
+    if len(powerups)>0:
+        override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
 
     #dict, dict of class ModifyIncar with keywords in Workflow name. e.g.
     """
@@ -184,11 +188,6 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
                             'static': {'incar_update': {"LAECHG":False,"LCHARG":False,"LWAVE":False}},
     """
     modify_incar_params = settings.get('modify_incar_params', {})
-    #check if fworker_name is assigned
-    powerups = settings.get('powerups', {})
-    if len(powerups)>0:
-        override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
-        modify_incar_params['powerups']=powerups
 
     #dict, dict of class ModifyKpoints with keywords in Workflow name, similar with modify_incar_params
     modify_kpoints_params = settings.get('modify_kpoints_params', {})
@@ -344,11 +343,11 @@ def run(args):
                 user_settings.update({"phonon_supercell_matrix": "atoms"})
 
             wf = get_wf_single(structure, WORKFLOW=WORKFLOW, settings=user_settings)
+            wf = Customizing_Workflows(wf)
             if isinstance(wf, list):
                 wfs = wfs + wf
             else:
                 wfs.append(wf)
-            wfs = Customizing_Workflows(wfs)
 
             if WRITE_OUT_WF:
                 dfttk_wf_filename = os.path.join(STR_PATH, "dfttk_wf-" + STR_FILENAME_WITH_EXT + ".yaml")
@@ -392,9 +391,9 @@ def run(args):
                         user_settings.update({"phonon_supercell_matrix": "atoms"})
 
                     wf = get_wf_single(structure, WORKFLOW=WORKFLOW, settings=user_settings)
+                    wf = Customizing_Workflows(wf)
                     metadatas[STR_FILE] = wf.as_dict()["metadata"]
                     wfs.append(wf)
-                    wfs = Customizing_Workflows(wfs)
 
                     if WRITE_OUT_WF:
                         dfttk_wf_filename = os.path.join(STR_PATH, "dfttk_wf-" + STR_FILENAME_WITH_EXT + ".yaml")
@@ -403,8 +402,14 @@ def run(args):
         #Write Out the metadata for POST and continue purpose
         dumpfn(metadatas, "METADATAS.yaml")
 
+    """
+    _fws = []
+    for wflow in wfs:
+        revised_wflow = Customizing_Workflows(wflow,user_settings={})
+        _fws.append(revised_wflow)
+    fws = _fws
+    """
 
-    
     if LAUNCH:
         from fireworks import LaunchPad
         lpad = LaunchPad.auto_load()
