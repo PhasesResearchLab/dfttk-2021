@@ -185,7 +185,8 @@ def get_powerups_spec(original_wf):
         """
         get user powerups setting.
         """
-        f0 = original_wf
+        if debug: print("level -2", type(original_wf), original_wf)
+        f0 = original_wf['spec']
         if debug: print("level -1", f0, type(f0))
         for k0 in f0:
             if debug: print("level 0", k0, type(f0))
