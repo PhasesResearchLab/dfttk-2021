@@ -246,6 +246,7 @@ def Customizing_Workflows(wfs, powerups_options=None):
             revised_wflow = Customizing_Workflows_wf(wfs,powerups_options=powerups_options)
             return revised_wflow
         except:
+            print ("xxxxxxxxxx", powerups_options,wfs)
             print("***************WARNING! not a workflow",wfs)
             return wfs
 
@@ -253,10 +254,9 @@ def Customizing_Workflows(wfs, powerups_options=None):
 def Customizing_Workflows_wf(original_wf, powerups_options=None):
     if powerups_options is None: 
         try:
-            powerups_options = get_powerups_wf(wflow)
+            powerups_options = get_powerups_wf(original_wf)
         except:
-            powerups_options = get_powerups_spec(wflow)
-    print(powerups_options)
+            powerups_options = get_powerups_spec(original_wf)
     """
     set _preserve_fworker spec of Fireworker(s) of a Workflow. Can be used to
     pin a workflow to the first fworker it is run with. Very useful when running
@@ -264,14 +264,20 @@ def Customizing_Workflows_wf(original_wf, powerups_options=None):
     """
 
     if 'set_execution_options' in powerups_options:
-        if 'preserve_fworker' in powerups_options['set_execution_options']:
-            if powerups_options['set_execution_options']['preserve_fworker']:
-                original_wf = powerups.preserve_fworker(original_wf)
+
         execution_options = powerups_options['set_execution_options']
-        original_wf = set_execution_options(original_wf, 
-            fworker_name=execution_options.get("fworker_name", None),
-            category=execution_options.get("category", None),
-            )
+        try:
+            if 'preserve_fworker' in powerups_options['set_execution_options']:
+                if powerups_options['set_execution_options']['preserve_fworker']:
+                    original_wf = powerups.preserve_fworker(original_wf)
+                    original_wf = set_execution_options(original_wf, 
+                    fworker_name=execution_options.get("fworker_name", None),
+                    category=execution_options.get("category", None),
+                    )
+        except:
+            original_wf.spec["_fworker"] = execution_options.get("fworker_name", None)
+            original_wf.spec["_category"] = execution_options.get("category", None)
+            original_wf.spec["_preserve_fworker"] = execution_options.get("preserve_fworker", None)
 
     if 'set_queue_options' in powerups_options:
         queue_options = powerups_options['set_queue_options']
