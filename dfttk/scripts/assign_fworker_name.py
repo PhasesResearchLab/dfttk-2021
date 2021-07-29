@@ -186,6 +186,7 @@ def get_powerups_spec(original_wf):
     get user powerups setting.
     """
     for f0 in original_wf:
+        if debug: print("level -1", f0, type(f0))
         if not isinstance(f0, Iterable) or isinstance(f0, str) : continue
         for k0 in f0:
             if debug: print("level 0", k0, type(f0))
@@ -266,6 +267,8 @@ def Customizing_Workflows_wf(original_wf, powerups_options=None):
                 powerups_options = get_powerups_wf(original_wf)
             except:
                 powerups_options = {}
+    print ("xxxxxxxxxx Customizing_Workflows_wf", powerups_options)
+
     """
     set _preserve_fworker spec of Fireworker(s) of a Workflow. Can be used to
     pin a workflow to the first fworker it is run with. Very useful when running
