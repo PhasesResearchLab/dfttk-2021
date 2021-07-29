@@ -105,7 +105,7 @@ def get_powerups(wfs):
         try:
             powerups_options = get_powerups_wf(wfs)
         except:
-            powerups_options = None
+            powerups_options = {}
     return powerups_options
 
 
@@ -189,7 +189,7 @@ def Customizing_Workflows(wfs, powerups_options=None):
 
 
 def Customizing_Workflows_wf(original_wf, powerups_options=None):
-    if powerups_options is None: powerups_options = get_powerups(original_wf)
+    if powerups_options is None: powerups_options = get_powerups_wf(original_wf)
     """
     set _preserve_fworker spec of Fireworker(s) of a Workflow. Can be used to
     pin a workflow to the first fworker it is run with. Very useful when running
