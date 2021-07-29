@@ -952,6 +952,8 @@ class CheckRelaxation(FiretaskBase):
                                 override_symmetry_tolerances=symmetry_options, store_volumetric_data=self.store_volumetric_data, **self["common_kwargs"]))
             else:
                 raise ValueError(f"Unknown job_type {job_type} for step {step}.")
+        print('**self["common_kwargs"]',**self["common_kwargs"])
+        FWAction(update_spec={'_category': '_cate'})
         print("xxxxxxxx detour_fws", detour_fws)
         return Customizing_Workflows(detour_fws)
 
