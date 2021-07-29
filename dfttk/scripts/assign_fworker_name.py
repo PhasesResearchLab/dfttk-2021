@@ -182,12 +182,11 @@ def get_powerups_wf(original_wf):
 
 
 def get_powerups_spec(original_wf):
-    """
-    get user powerups setting.
-    """
-    for f0 in original_wf:
+        """
+        get user powerups setting.
+        """
+        f0 = original_wf
         if debug: print("level -1", f0, type(f0))
-        if not isinstance(f0, Iterable) or isinstance(f0, str) : continue
         for k0 in f0:
             if debug: print("level 0", k0, type(f0))
             if k0=='powerups' : 
@@ -238,7 +237,7 @@ def get_powerups_spec(original_wf):
                                             if str(k4)=='powerups' : 
                                                 if debug: print("level 4", f4[k4])
                                                 return f4[k4]                                        
-    return {}
+        return {}
 
 
 def Customizing_Workflows(wfs, powerups_options=None):
