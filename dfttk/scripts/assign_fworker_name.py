@@ -261,13 +261,17 @@ def Customizing_Workflows(wfs, powerups_options=None):
 def Customizing_Workflows_wf(original_wf, powerups_options=None):
     if powerups_options is None: 
         try:
+            print ("xxxxxxxxxx 0 get_powerups_spec", powerups_options)
             powerups_options = get_powerups_spec(original_wf)
+            print ("xxxxxxxxxx 1 get_powerups_spec", powerups_options)
         except:
             try:
+                print ("xxxxxxxxxx 2 get_powerups_spec", powerups_options)
                 powerups_options = get_powerups_wf(original_wf)
+                print ("xxxxxxxxxx 3 get_powerups_spec", powerups_options)
             except:
                 powerups_options = {}
-    print ("xxxxxxxxxx Customizing_Workflows_wf", powerups_options)
+    print ("xxxxxxxxxx 4 Customizing_Workflows_wf", powerups_options)
 
     """
     set _preserve_fworker spec of Fireworker(s) of a Workflow. Can be used to
