@@ -142,7 +142,7 @@ def get_powerups_wf(original_wf):
                             f2 = k1
                         if not isinstance(f2, Iterable) or isinstance(f2, str) : continue
                         for k2 in f2:
-                            if debug: if debug: print("level 2", k2, type(f2))
+                            if debug: print("level 2", k2, type(f2))
                             if str(k2)=='powerups' : 
                                 if debug: print("level 2", f2[k2])
                                 return f2[k2]
@@ -195,11 +195,11 @@ def Customizing_Workflows_wf(original_wf, powerups_options=None):
     pin a workflow to the first fworker it is run with. Very useful when running
     on multiple machines that can't share files.
     """
-    if 'preserve_fworker' in powerups_options:
-        if powerups_options['preserve_fworker']:
-            original_wf = powerups.preserve_fworker(original_wf)
 
     if 'set_execution_options' in powerups_options:
+        if 'preserve_fworker' in powerups_options['set_execution_options']:
+            if powerups_options['set_execution_options']['preserve_fworker']:
+                original_wf = powerups.preserve_fworker(original_wf)
         execution_options = powerups_options['set_execution_options']
         original_wf = set_execution_options(original_wf, 
             fworker_name=execution_options.get("fworker_name", None),

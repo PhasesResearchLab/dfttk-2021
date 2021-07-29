@@ -351,7 +351,7 @@ def run(args):
 
             if WRITE_OUT_WF:
                 dfttk_wf_filename = os.path.join(STR_PATH, "dfttk_wf-" + STR_FILENAME_WITH_EXT + ".yaml")
-               dumpfn(wf, dfttk_wf_filename)
+                dumpfn(wf, dfttk_wf_filename)
     else:
         if os.path.exists('METADATAS.yaml'):
             metadatas = loadfn('METADATAS.yaml')
