@@ -952,11 +952,11 @@ class CheckRelaxation(FiretaskBase):
                                 override_symmetry_tolerances=symmetry_options, store_volumetric_data=self.store_volumetric_data, **self["common_kwargs"]))
             else:
                 raise ValueError(f"Unknown job_type {job_type} for step {step}.")
-        common_kwargs = self.get('common_kwargs')
-        #override_default_vasp_params = common_kwargs.get('override_default_vasp_params',{})
-        #powerups_options = get_powerups_options(override_default_vasp_params)
-        modify_incar_params = common_kwargs.get('modify_incar_params',{})
-        return Customizing_Workflows(detour_fws, powerups_options=modify_incar_params.get('powerups', None))
+        common_kwargs = self.get('common_kwargs',{})
+        override_default_vasp_params = common_kwargs.get('override_default_vasp_params',{})
+        user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
+        #user_incar_settings = common_kwargs.get('modify_incar_params',{})
+        return Customizing_Workflows(detour_fws, powerups_options=user_incar_settings.get.get('powerups', None))
 
 
 @explicit_serialize

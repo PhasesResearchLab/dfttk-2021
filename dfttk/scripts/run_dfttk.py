@@ -184,14 +184,15 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
                             'static': {'incar_update': {"LAECHG":False,"LCHARG":False,"LWAVE":False}},
     """
     modify_incar_params = settings.get('modify_incar_params', {})
-    override_default_vasp_params['user_incar_settings'].update(modify_incar_params)
+
     #check if fworker_name is assigned
     powerups = settings.get('powerups', {})
     if len(powerups)>0:
         #override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
         modify_incar_params.update({'powerups':powerups})
-
-        
+    wf_override_default_vasp_params = copy.deepcopy(override_default_vasp_params)
+    wf_override_default_vasp_params['user_incar_settings'].update(modify_incar_params)
+    
     #dict, dict of class ModifyKpoints with keywords in Workflow name, similar with modify_incar_params
     modify_kpoints_params = settings.get('modify_kpoints_params', {})
     #bool, print(True) or not(False) some informations, used for debug
@@ -214,7 +215,6 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     #conventional = settings.get('conventional', True)
     """
 
-    uis = override_default_vasp_params.get('user_incar_settings', {})
     #Set the default value for phonon_supercell_matrix_min/max
     if isinstance(phonon_supercell_matrix, str) and (phonon_supercell_matrix_min is None):
         if phonon_supercell_matrix.lower().startswith('a'):
@@ -229,6 +229,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
         else:
             raise ValueError("Unknown parameters for phonon_supercell_matrix({}), support 'atoms', 'lattice' or 'volume' or 3x3 list.".format(phonon_supercell_matrix))
 
+    uis = wf_override_default_vasp_params.get('user_incar_settings', {})
     if magmom:
         structure.add_site_property('magmom', magmom)
     elif 'MAGMOM' in uis:
@@ -255,23 +256,23 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     """
     if WORKFLOW == "eos":
         wf = get_wf_EV_bjb(structure, deformation_fraction=deformation_fraction, store_volumetric_data=store_volumetric_data,
-                  num_deformations=num_deformations, override_symmetry_tolerances=override_default_vasp_params, metadata=metadata)
+                  num_deformations=num_deformations, override_symmetry_tolerances=wf_override_default_vasp_params, metadata=metadata)
     elif WORKFLOW == "robust" or WORKFLOW == "get_wf_gibbs":
         wf = get_wf_gibbs_robust(structure, num_deformations=num_deformations, deformation_fraction=deformation_fraction,
                  phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, t_min=t_min, t_max=t_max, t_step=t_step,
                  eos_tolerance=eos_tolerance, volume_spacing_min=volume_spacing_min, vasp_cmd=">>vasp_cmd<<", db_file=">>db_file<<",
                  isif4=isif4, metadata=metadata, name='EV_QHA', override_symmetry_tolerances=override_symmetry_tolerances,
-                 override_default_vasp_params=override_default_vasp_params, modify_incar_params=modify_incar_params,
+                 override_default_vasp_params=wf_override_default_vasp_params, modify_incar_params=modify_incar_params,
                  modify_kpoints_params=modify_kpoints_params, verbose=verbose, phonon_supercell_matrix_min=phonon_supercell_matrix_min,
                  phonon_supercell_matrix_max=phonon_supercell_matrix_max, optimize_sc=optimize_sc, level=level,
                  force_phonon=force_phonon, stable_tor=stable_tor, store_volumetric_data=store_volumetric_data)
     elif WORKFLOW == "born":
         wf = get_wf_borncharge(structure=structure, metadata=metadata, db_file=">>db_file<<", isif=2, name="born charge",
-                      vasp_cmd=">>vasp_cmd<<", override_default_vasp_params=override_default_vasp_params,
+                      vasp_cmd=">>vasp_cmd<<", override_default_vasp_params=wf_override_default_vasp_params,
                       modify_incar=modify_incar_params)
     elif WORKFLOW == 'elastic':
             wf = get_wf_elastic(structure=structure, metadata=metadata, vasp_cmd=">>vasp_cmd<<", db_file=">>db_file<<", name="elastic",
-                       override_default_vasp_params=override_default_vasp_params, strain_states=strain_states,
+                       override_default_vasp_params=wf_override_default_vasp_params, strain_states=strain_states,
                        stencils=stencils, analysis=analysis, sym_reduce=sym_reduce, order=order, conventional=conventional)
     else:
         raise ValueError("Currently, only the gibbs energy workflow is supported.")

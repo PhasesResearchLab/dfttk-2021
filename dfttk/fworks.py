@@ -166,8 +166,7 @@ class RobustOptimizeFW(Firework):
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, site_properties=site_properties))
 
         common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': ">>db_file<<", "metadata": metadata, "tag": tag,
-                         'override_default_vasp_params': override_default_vasp_params, 
-                         'modify_incar_params': modify_incar_params}
+                         'override_default_vasp_params': override_default_vasp_params}
         static_kwargs = {}
         relax_kwargs = {}
         t.append(CheckRelaxation(db_file=">>db_file<<", metadata=metadata, tag=tag, isif4=isif4, level=level, energy_with_isif=energy_with_isif,
