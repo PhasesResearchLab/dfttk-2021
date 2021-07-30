@@ -952,10 +952,8 @@ class CheckRelaxation(FiretaskBase):
                 detour_fws.append(StaticFW(inp_structure, isif=step['isif'], store_volumetric_data=self.store_volumetric_data,
                                            **static_kwargs, **common_copy))
             elif job_type == "relax":
-                _fws = RobustOptimizeFW(inp_structure, isif=step["isif"], energy_with_isif=energy_with_isif,
-                                override_symmetry_tolerances=symmetry_options, store_volumetric_data=self.store_volumetric_data, **self["common_kwargs"])
-                _fws['spec']['powerups_options'] = powerups_options
-                detour_fws.append(_fws)
+                detour_fws.append(RobustOptimizeFW(inp_structure, isif=step["isif"], energy_with_isif=energy_with_isif,
+                                override_symmetry_tolerances=symmetry_options, store_volumetric_data=self.store_volumetric_data, **self["common_kwargs"]))
             else:
                 raise ValueError(f"Unknown job_type {job_type} for step {step}.")
         print("xxxxxxxx detour_fws", detour_fws)
