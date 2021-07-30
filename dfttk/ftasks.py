@@ -935,7 +935,9 @@ class CheckRelaxation(FiretaskBase):
             # Get the structure of "type" from the "isif" step.
             relax_data = db.find_one({'$and': [{'tag': self["tag"]}, {'isif': step["structure"]["isif"]}]})
             return Structure.from_dict(relax_data[step["structure"]["type"]])
-
+        override_default_vasp_params = self.get(' override_default_vasp_params',{})
+        print('*self["common_kwargs"]', override_default_vasp_params)
+        FWAction(update_spec={'_category': '_cate'})
         detour_fws = []
         for step in next_steps:
             job_type = step["job_type"]
@@ -952,8 +954,6 @@ class CheckRelaxation(FiretaskBase):
                                 override_symmetry_tolerances=symmetry_options, store_volumetric_data=self.store_volumetric_data, **self["common_kwargs"]))
             else:
                 raise ValueError(f"Unknown job_type {job_type} for step {step}.")
-        print('*self["common_kwargs"]',*self["common_kwargs"])
-        FWAction(update_spec={'_category': '_cate'})
         print("xxxxxxxx detour_fws", detour_fws)
         return Customizing_Workflows(detour_fws)
 
