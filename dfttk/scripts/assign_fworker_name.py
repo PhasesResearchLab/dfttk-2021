@@ -188,9 +188,10 @@ def get_powerups_spec(original_wf):
         if debug: print("level -2", type(original_wf), original_wf)
         print ("Here 0")
         f0 = original_wf.spec
-        print ("Here 1")
+        print ("Here 1", f0)
         if debug: print("level -1", f0, type(f0))
         for k0 in f0:
+            print ("Here 2", k0)
             if debug: print("level 0", k0, type(f0))
             if k0=='powerups' : 
                 if debug: print("level 0", f0[k0])
