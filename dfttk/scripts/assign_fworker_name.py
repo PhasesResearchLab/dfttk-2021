@@ -118,7 +118,7 @@ def get_powerups(wfs):
     return powerups_options
 
 
-debug = True
+debug = False
 from collections.abc import Iterable
 def get_powerups_wf(original_wf):
     """
@@ -246,13 +246,12 @@ def get_powerups_options(override_default_vasp_params):
         if 'powerups' in override_default_vasp_params['user_incar_settings']:
             return override_default_vasp_params['user_incar_settings']['powerups']
     return None
-    
+
 
 def Customizing_Workflows(wfs, powerups_options=None):
     if isinstance(wfs, list) :
         _wfs = []
         for wflow in wfs:
-            print("yyyyyyyyy 0", wflow)
             revised_wflow = Customizing_Workflows_wf(wflow,powerups_options=powerups_options)
             _wfs.append(revised_wflow)
         return _wfs
@@ -261,7 +260,7 @@ def Customizing_Workflows(wfs, powerups_options=None):
             revised_wflow = Customizing_Workflows_wf(wfs,powerups_options=powerups_options)
             return revised_wflow
         except:
-            print ("xxxxxxxxxx", powerups_options,wfs)
+            print ("powerups_options = ", powerups_options)
             print("***************WARNING! not a workflow",wfs)
             return wfs
 
@@ -269,18 +268,12 @@ def Customizing_Workflows(wfs, powerups_options=None):
 def Customizing_Workflows_wf(original_wf, powerups_options=None):
     if powerups_options is None: 
         try:
-            print ("xxxxxxxxxx 0 get_powerups_spec", powerups_options)
             powerups_options = get_powerups_spec(original_wf)
-            print ("xxxxxxxxxx 1 get_powerups_spec", powerups_options)
         except:
             try:
-                print ("xxxxxxxxxx 2 get_powerups_spec", powerups_options)
                 powerups_options = get_powerups_wf(original_wf)
-                print ("xxxxxxxxxx 3 get_powerups_spec", powerups_options)
             except:
                 powerups_options = {}
-    print ("xxxxxxxxxx 4 Customizing_Workflows_wf", powerups_options)
-
     """
     set _preserve_fworker spec of Fireworker(s) of a Workflow. Can be used to
     pin a workflow to the first fworker it is run with. Very useful when running
@@ -288,7 +281,6 @@ def Customizing_Workflows_wf(original_wf, powerups_options=None):
     """
 
     if 'set_execution_options' in powerups_options:
-
         execution_options = powerups_options['set_execution_options']
         try:
             if 'preserve_fworker' in powerups_options['set_execution_options']:
@@ -299,9 +291,12 @@ def Customizing_Workflows_wf(original_wf, powerups_options=None):
                     category=execution_options.get("category", None),
                     )
         except:
-            original_wf.spec["_fworker"] = execution_options.get("fworker_name", None)
-            original_wf.spec["_category"] = execution_options.get("category", None)
-            original_wf.spec["_preserve_fworker"] = execution_options.get("preserve_fworker", None)
+            if execution_options.get("fworker_name", None):
+                original_wf.spec["_fworker"] = execution_options.get("fworker_name", None)
+            if execution_options.get("category", None):
+                original_wf.spec["_category"] = execution_options.get("category", None)
+            if execution_options.get("preserve_fworker", None):
+                original_wf.spec["_preserve_fworker"] = execution_options.get("preserve_fworker", None)
 
     if 'set_queue_options' in powerups_options:
         queue_options = powerups_options['set_queue_options']
