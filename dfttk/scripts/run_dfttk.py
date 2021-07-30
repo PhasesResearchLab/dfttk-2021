@@ -184,12 +184,13 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
                             'static': {'incar_update': {"LAECHG":False,"LCHARG":False,"LWAVE":False}},
     """
     modify_incar_params = settings.get('modify_incar_params', {})
+    override_default_vasp_params['user_incar_settings'].update(modify_incar_params)
     #check if fworker_name is assigned
     powerups = settings.get('powerups', {})
     if len(powerups)>0:
         #override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
         modify_incar_params.update({'powerups':powerups})
-    override_default_vasp_params['user_incar_settings'].update(modify_incar_params)
+
         
     #dict, dict of class ModifyKpoints with keywords in Workflow name, similar with modify_incar_params
     modify_kpoints_params = settings.get('modify_kpoints_params', {})

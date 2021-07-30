@@ -956,8 +956,7 @@ class CheckRelaxation(FiretaskBase):
         #override_default_vasp_params = common_kwargs.get('override_default_vasp_params',{})
         #powerups_options = get_powerups_options(override_default_vasp_params)
         modify_incar_params = common_kwargs.get('modify_incar_params',{})
-        powerups_options = get_powerups_options(modify_incar_params)
-        return Customizing_Workflows(detour_fws, powerups_options=powerups_options)
+        return Customizing_Workflows(detour_fws, powerups_options=modify_incar_params.get('powerups', None))
 
 
 @explicit_serialize
