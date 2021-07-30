@@ -33,7 +33,7 @@ from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 from pymatgen.core import __version__ as pymatgen_ver
 from dfttk.pythelec import get_static_calculations
-from dfttk.scripts.assign_fworker_name import Customizing_Workflows
+from dfttk.scripts.assign_fworker_name import Customizing_Workflows, get_powerups_options
 
 def extend_calc_locs(name, fw_spec):
     """
@@ -935,8 +935,9 @@ class CheckRelaxation(FiretaskBase):
             # Get the structure of "type" from the "isif" step.
             relax_data = db.find_one({'$and': [{'tag': self["tag"]}, {'isif': step["structure"]["isif"]}]})
             return Structure.from_dict(relax_data[step["structure"]["type"]])
-        override_default_vasp_params = self.get(' override_default_vasp_params',{})
-        print('*self["common_kwargs"]', override_default_vasp_params)
+        override_default_vasp_params = common_kwargs.get('override_default_vasp_params',{})
+        powerups_options = get_powerups_options(override_default_vasp_params)
+        print('*self["common_kwargs"]', powerups_options)
         FWAction(update_spec={'_category': '_cate'})
         detour_fws = []
         for step in next_steps:

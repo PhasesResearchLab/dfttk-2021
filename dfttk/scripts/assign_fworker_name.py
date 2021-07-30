@@ -241,6 +241,13 @@ def get_powerups_spec(original_wf):
         return {}
 
 
+def get_powerups_options(override_default_vasp_params):
+    if 'user_incar_settings' in override_default_vasp_params:
+        if 'powerups' in override_default_vasp_params['user_incar_settings']:
+            return override_default_vasp_params['user_incar_settings']['powerups']
+    return None
+    
+
 def Customizing_Workflows(wfs, powerups_options=None):
     if isinstance(wfs, list) :
         _wfs = []
