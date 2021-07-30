@@ -939,7 +939,7 @@ class CheckRelaxation(FiretaskBase):
         override_default_vasp_params = common_kwargs.get('override_default_vasp_params',{})
         powerups_options = get_powerups_options(override_default_vasp_params)
         print('*self["common_kwargs"]', powerups_options)
-        FWAction(update_spec={'_category': '_cate'})
+        FWAction(update_spec=powerups_options)
         detour_fws = []
         for step in next_steps:
             job_type = step["job_type"]
