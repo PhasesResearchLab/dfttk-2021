@@ -935,6 +935,7 @@ class CheckRelaxation(FiretaskBase):
             # Get the structure of "type" from the "isif" step.
             relax_data = db.find_one({'$and': [{'tag': self["tag"]}, {'isif': step["structure"]["isif"]}]})
             return Structure.from_dict(relax_data[step["structure"]["type"]])
+        common_kwargs = self.get('common_kwargs')
         override_default_vasp_params = common_kwargs.get('override_default_vasp_params',{})
         powerups_options = get_powerups_options(override_default_vasp_params)
         print('*self["common_kwargs"]', powerups_options)
