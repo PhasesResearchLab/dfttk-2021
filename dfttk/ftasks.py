@@ -955,8 +955,8 @@ class CheckRelaxation(FiretaskBase):
         common_kwargs = self.get('common_kwargs')
         override_default_vasp_params = common_kwargs.get('override_default_vasp_params',{})
         powerups_options = get_powerups_options(override_default_vasp_params)
-        return Customizing_Workflows(detour_fws)
-        #return Customizing_Workflows(detour_fws, powerups_options=powerups_options)
+        return Customizing_Workflows(detour_fws, powerups_options=powerups_options)
+
 
 @explicit_serialize
 class CheckRelaxScheme(FiretaskBase):
