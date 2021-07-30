@@ -186,7 +186,9 @@ def get_powerups_spec(original_wf):
         get user powerups setting.
         """
         if debug: print("level -2", type(original_wf), original_wf)
-        f0 = list(original_wf)
+        print ("Here 0")
+        f0 = original_wf.spec
+        print ("Here 1")
         if debug: print("level -1", f0, type(f0))
         for k0 in f0:
             if debug: print("level 0", k0, type(f0))
@@ -249,6 +251,9 @@ def get_powerups_options(override_default_vasp_params):
 
 
 def Customizing_Workflows(wfs, powerups_options=None):
+    if powerups_options is None: 
+        powerups_options = get_powerups(wfs)
+
     if isinstance(wfs, list) :
         _wfs = []
         for wflow in wfs:
