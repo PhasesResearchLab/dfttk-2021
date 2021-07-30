@@ -935,11 +935,7 @@ class CheckRelaxation(FiretaskBase):
             # Get the structure of "type" from the "isif" step.
             relax_data = db.find_one({'$and': [{'tag': self["tag"]}, {'isif': step["structure"]["isif"]}]})
             return Structure.from_dict(relax_data[step["structure"]["type"]])
-        common_kwargs = self.get('common_kwargs')
-        override_default_vasp_params = common_kwargs.get('override_default_vasp_params',{})
-        powerups_options = get_powerups_options(override_default_vasp_params)
-        print('*self["common_kwargs"]', powerups_options)
-        FWAction(update_spec=powerups_options)
+
         detour_fws = []
         for step in next_steps:
             job_type = step["job_type"]
@@ -957,7 +953,11 @@ class CheckRelaxation(FiretaskBase):
             else:
                 raise ValueError(f"Unknown job_type {job_type} for step {step}.")
         print("xxxxxxxx detour_fws", detour_fws)
-        return Customizing_Workflows(detour_fws)
+        common_kwargs = self.get('common_kwargs')
+        override_default_vasp_params = common_kwargs.get('override_default_vasp_params',{})
+        powerups_options = get_powerups_options(override_default_vasp_params)
+        print('*self["common_kwargs"]', powerups_options)
+        return Customizing_Workflows(detour_fws, powerups_options=powerups_options)
 
 
 @explicit_serialize
