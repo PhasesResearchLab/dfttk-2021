@@ -368,7 +368,7 @@ class EVcheck_QHA(FiretaskBase):
                         from dfttk.utils import add_modify_kpoints_by_FWname
                         add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
                     wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
-                    lpad.add_wf(wfs,powerups_options = powerups_options)
+                    lpad.add_wf(wfs)
                 else:
                     too_many_run_error()
             else:  # No need to do more VASP calculation, QHA could be running
@@ -390,8 +390,8 @@ class EVcheck_QHA(FiretaskBase):
                 '''
                 strname = "{}:{}".format(structure.composition.reduced_formula, 'QHA')
                 wfs = Workflow(fws, name = strname, metadata=metadata)
-                wfs=Customizing_Workflows(wfs)
-                lpad.add_wf(wfs,powerups_options = powerups_options)
+                wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
+                lpad.add_wf(wfs)
         else:   # failure to meet the tolerance
             if len(volumes) == 0: #self.error == 1e10:   # Bad initial running set
                 pass_result_error()
@@ -703,8 +703,8 @@ class PreEV_check(FiretaskBase):
                     if modify_kpoints_params != {}:
                         from dfttk.utils import add_modify_kpoints_by_FWname
                         add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
-                    wfs=Customizing_Workflows(wfs)
-                    lpad.add_wf(wfs,powerups_options = powerups_options)
+                    wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
+                    lpad.add_wf(wfs)
                 else:
                     too_many_run_error()
             else:  # No need to do more VASP calculation, QHA could be running
@@ -737,8 +737,8 @@ class PreEV_check(FiretaskBase):
                 if modify_kpoints_params != {}:
                     from dfttk.utils import add_modify_kpoints_by_FWname
                     add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
-                wfs=Customizing_Workflows(wfs)
-                lpad.add_wf(wfs,powerups_options = powerups_options)
+                wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
+                lpad.add_wf(wfs)
         else:   # failure to meet the tolerance
             if len(volumes) == 0: #self.error == 1e10:   # Bad initial running set
                 pass_result_error()
