@@ -292,7 +292,7 @@ class EVcheck_QHA(FiretaskBase):
         vol_adds = check_deformations_in_volumes(deformations, volumes, structure.volume)
         if (len(vol_adds)) == 0:
             self.check_points(db_file, metadata, eos_tolerance, threshold, del_limited, volumes, energies, verbose)
-        elif len(volumes)>10:
+        elif len(volumes)>11:
             self.correct = False
         else:
             self.correct = True
