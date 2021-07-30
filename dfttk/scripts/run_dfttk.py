@@ -189,6 +189,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     if len(powerups)>0:
         #override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
         modify_incar_params.update({'powerups':powerups})
+    override_default_vasp_params['user_incar_settings'].update(modify_incar_params)
         
     #dict, dict of class ModifyKpoints with keywords in Workflow name, similar with modify_incar_params
     modify_kpoints_params = settings.get('modify_kpoints_params', {})
