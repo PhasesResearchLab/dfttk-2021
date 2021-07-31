@@ -547,7 +547,7 @@ class EVcheck_QHA(FiretaskBase):
             phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
             #vol_vol = [calc['volume'] for calc in phonon_calculations]  # these are just used for sorting and will be thrown away
             #vol_f_vib = [calc['F_vib'] for calc in phonon_calculations]
-            vol_vol = []]
+            vol_vol = []
             vol_f_vib = []
             for calc in phonon_calculations:
                 if calc['volume'] in vol_vol: continue
