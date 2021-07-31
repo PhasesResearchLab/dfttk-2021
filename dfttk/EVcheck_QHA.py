@@ -545,8 +545,15 @@ class EVcheck_QHA(FiretaskBase):
             # TODO: add a stable check in Quasiharmonic
             vasp_db = VaspCalcDb.from_db_file(db_file = db_file, admin=True)
             phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
-            vol_vol = [calc['volume'] for calc in phonon_calculations]  # these are just used for sorting and will be thrown away
-            vol_f_vib = [calc['F_vib'] for calc in phonon_calculations]
+            #vol_vol = [calc['volume'] for calc in phonon_calculations]  # these are just used for sorting and will be thrown away
+            #vol_f_vib = [calc['F_vib'] for calc in phonon_calculations]
+            vol_vol = []]
+            vol_f_vib = []
+            for calc in phonon_calculations:
+                if calc['volume'] in vol_vol: continue
+                if calc['volume'] not in volume: continue
+                vol_vol.append(calc['volume'])
+                vol_f_vib.append(calc['F_vib'])
             # sort them order of the unit cell volumes
             vol_f_vib = sort_x_by_y(vol_f_vib, vol_vol)
             f_vib = np.vstack(vol_f_vib)
