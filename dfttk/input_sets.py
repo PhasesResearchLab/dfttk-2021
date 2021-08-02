@@ -73,14 +73,14 @@ class RelaxSet(DictSet):
     The default is tuned for metal relaxations.
     Kpoints have a 8000 kpoints per reciprocal atom default.
     """
-    CONFIG = _load_yaml_config("MPRelaxSet")
+    defaul_CONFIG = _load_yaml_config("MPRelaxSet")
     # we never are comparing relaxations, only using them for optimizing structures.
-    CONFIG['INCAR'].pop('ENCUT')  # use the ENCUT set by PREC
-    CONFIG['KPOINTS'].update({
+    defaul_CONFIG['INCAR'].pop('ENCUT')  # use the ENCUT set by PREC
+    defaul_CONFIG['KPOINTS'].update({
         'grid_density': 8000,
     })
-    CONFIG['KPOINTS'].pop('reciprocal_density') # to be explicit
-    CONFIG['INCAR'].update({
+    defaul_CONFIG['KPOINTS'].pop('reciprocal_density') # to be explicit
+    defaul_CONFIG['INCAR'].update({
         'EDIFF_PER_ATOM': 1e-5,
         'ISMEAR': 1,
         'SIGMA': 0.2,
@@ -94,8 +94,10 @@ class RelaxSet(DictSet):
         'ENCUT': 520,
     })
     # now we reset the potentials
-    CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
-    CONFIG['POTCAR'].update(POTCAR_UPDATES)
+    defaul_CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
+    defaul_CONFIG['POTCAR'].update(POTCAR_UPDATES)
+
+    CONFIG = copy.deepcopy(defaul_CONFIG)
 
     def __init__(self, structure, volume_relax=False, isif=None, **kwargs):
         """If volume relax is True, will do volume only, ISIF 7"""
@@ -103,7 +105,7 @@ class RelaxSet(DictSet):
         self.volume_relax = volume_relax
         self.isif = isif
         uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
-        _tmp = copy.deepcopy(RelaxSet.CONFIG)
+        _tmp = copy.deepcopy(RelaxSet.default_CONFIG)
         if self.volume_relax and self.isif is not None:
             raise ValueError("isif cannot have a value while volume_relax is True.")
         if self.volume_relax:
