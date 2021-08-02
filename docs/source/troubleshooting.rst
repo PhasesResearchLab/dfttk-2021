@@ -64,6 +64,13 @@ Following are the steps of adding API key number on DFTTK.
   .. code-block:: bash
       lpad get_fws -i fw_id -d more
 
+11. VasprunXMLValidator found from the command "lpad get_fws -i fw_id -d more"
+
+    If you get an error from the VasprunXMLValidator, that means that the vasprun.xml failed 
+    to be parsed and/or validated. Usually that means the VASP job did not run or failed for 
+    a reason that was not caught and handled by Custodian. Check the output files in the 
+    launch directory and see if there are any errors in the VASP output or stdout/stderr.
+
 pymatgen 2021 issue
 ===================
 
