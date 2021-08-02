@@ -146,7 +146,7 @@ class RelaxSet(DictSet):
             new_config['POTCAR_FUNCTIONAL'] = pot
         self.kwargs.update({'user_potcar_functional':new_config['POTCAR_FUNCTIONAL']})
         self.kwargs.update({'user_incar_settings':new_config['INCAR']})
-        RelaxSet.CONFIG = copy.deepcopy(default_CONFIG)
+        RelaxSet.CONFIG = copy.deepcopy(RelaxSet.default_CONFIG)
         super(RelaxSet, self).__init__(structure, RelaxSet.CONFIG, sort_structure=False, **self.kwargs)
 
 
@@ -204,7 +204,7 @@ class PreStaticSet(DictSet):
             new_config['POTCAR_FUNCTIONAL'] = pot
         self.kwargs.update({'user_potcar_functional':new_config['POTCAR_FUNCTIONAL']})
         self.kwargs.update({'user_incar_settings':new_config['INCAR']})
-        PreStaticSet.CONFIG = copy.deepcopy(default_CONFIG)
+        PreStaticSet.CONFIG = copy.deepcopy(PreStaticSet.default_CONFIG)
         super(PreStaticSet, self).__init__(structure, PreStaticSet.CONFIG, sort_structure=False, **self.kwargs)
 
 
@@ -272,7 +272,7 @@ class ForceConstantsSet(DictSet):
             new_config['POTCAR_FUNCTIONAL'] = pot
         self.kwargs.update({'user_potcar_functional':new_config['POTCAR_FUNCTIONAL']})
         self.kwargs.update({'user_incar_settings':new_config['INCAR']})
-        ForceConstantsSet.CONFIG = copy.deepcopy(default_CONFIG)
+        ForceConstantsSet.CONFIG = copy.deepcopy(ForceConstantsSet.default_CONFIG)
         super(ForceConstantsSet, self).__init__(
             structure, ForceConstantsSet.CONFIG, sort_structure=False, **self.kwargs)
 
@@ -342,7 +342,7 @@ class StaticSet(DictSet):
             new_config['POTCAR_FUNCTIONAL'] = pot
         self.kwargs.update({'user_potcar_functional':new_config['POTCAR_FUNCTIONAL']})
         self.kwargs.update({'user_incar_settings':new_config['INCAR']})
-        StaticSet.CONFIG = copy.deepcopy(default_CONFIG)
+        StaticSet.CONFIG = copy.deepcopy(StaticSet.default_CONFIG)
         super(StaticSet, self).__init__(structure, StaticSet.CONFIG, sort_structure=False, **self.kwargs)
 
 
@@ -513,7 +513,7 @@ class BornChargeSet(DictSet):
             new_config['POTCAR_FUNCTIONAL'] = pot
         self.kwargs.update({'user_potcar_functional':new_config['POTCAR_FUNCTIONAL']})
         self.kwargs.update({'user_incar_settings':new_config['INCAR']})
-        BornChargeSet.CONFIG = copy.deepcopy(default_CONFIG)
+        BornChargeSet.CONFIG = copy.deepcopy(BornChargeSet.default_CONFIG)
         super(BornChargeSet, self).__init__(structure, BornChargeSet.CONFIG, sort_structure=False, **self.kwargs)
 
 
@@ -609,6 +609,6 @@ class ElasticSet(DictSet):
             new_config['POTCAR_FUNCTIONAL'] = pot
         self.kwargs.update({'user_potcar_functional':new_config['POTCAR_FUNCTIONAL']})
         self.kwargs.update({'user_incar_settings':new_config['INCAR']})
-        ElasticSet.CONFIG = copy.deepcopy(default_CONFIG)
+        ElasticSet.CONFIG = copy.deepcopy(ElasticSet.default_CONFIG)
         super(ElasticSet, self).__init__(structure, ElasticSet.CONFIG, sort_structure=False, **self.kwargs)
 
