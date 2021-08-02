@@ -73,14 +73,14 @@ class RelaxSet(DictSet):
     The default is tuned for metal relaxations.
     Kpoints have a 8000 kpoints per reciprocal atom default.
     """
-    defaul_CONFIG = _load_yaml_config("MPRelaxSet")
+    default_CONFIG = _load_yaml_config("MPRelaxSet")
     # we never are comparing relaxations, only using them for optimizing structures.
-    defaul_CONFIG['INCAR'].pop('ENCUT')  # use the ENCUT set by PREC
-    defaul_CONFIG['KPOINTS'].update({
+    default_CONFIG['INCAR'].pop('ENCUT')  # use the ENCUT set by PREC
+    default_CONFIG['KPOINTS'].update({
         'grid_density': 8000,
     })
-    defaul_CONFIG['KPOINTS'].pop('reciprocal_density') # to be explicit
-    defaul_CONFIG['INCAR'].update({
+    default_CONFIG['KPOINTS'].pop('reciprocal_density') # to be explicit
+    default_CONFIG['INCAR'].update({
         'EDIFF_PER_ATOM': 1e-5,
         'ISMEAR': 1,
         'SIGMA': 0.2,
@@ -94,10 +94,10 @@ class RelaxSet(DictSet):
         'ENCUT': 520,
     })
     # now we reset the potentials
-    defaul_CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
-    defaul_CONFIG['POTCAR'].update(POTCAR_UPDATES)
+    default_CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
+    default_CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
-    CONFIG = copy.deepcopy(defaul_CONFIG)
+    CONFIG = copy.deepcopy(default_CONFIG)
 
     def __init__(self, structure, volume_relax=False, isif=None, **kwargs):
         """If volume relax is True, will do volume only, ISIF 7"""
