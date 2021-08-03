@@ -18,6 +18,7 @@ from dfttk.fworks import OptimizeFW, StaticFW, PhononFW
 from dfttk.ftasks import QHAAnalysis
 from dfttk.analysis.quasiharmonic import Quasiharmonic
 from dfttk.scripts.assign_fworker_name import Customizing_Workflows
+from dfttk.pythelec import get_static_calculations
 
 from atomate.vasp.config import VASP_CMD, DB_FILE
 
@@ -405,6 +406,9 @@ class EVcheck_QHA(FiretaskBase):
 
     def get_orig_EV(self, db_file, tag):
         vasp_db = VaspCalcDb.from_db_file(db_file=db_file, admin = True)
+        volumes, energies, dos_objs, _ \
+            = get_static_calculations(vasp_db, tag)
+        """
         energies = []
         volumes = []
         dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
@@ -438,6 +442,7 @@ class EVcheck_QHA(FiretaskBase):
                 energies.pop(n)
                 dos_objs.pop(n)
             n -= 1
+        """
         print('%s Volumes  = %s' %(len(volumes), volumes))
         print('%s Energies = %s' %(len(energies), energies))
         return(volumes, energies, dos_objs)
@@ -760,6 +765,9 @@ class PreEV_check(FiretaskBase):
 
     def get_orig_EV_structure(self, db_file, tag):
         vasp_db = VaspCalcDb.from_db_file(db_file = db_file, admin = True)
+        volumes, energies, dos_objs, _ \
+            = get_static_calculations(vasp_db, tag)
+        """
         energies = []
         volumes = []
         static_calculations = vasp_db.db["PreStatic"].find({'$and':[ {'metadata.tag': tag},
@@ -784,6 +792,7 @@ class PreEV_check(FiretaskBase):
                 volumes.pop(n)
                 energies.pop(n)
             n -= 1
+        """
         print('%s Volumes  = %s' %(len(volumes), volumes))
         print('%s Energies = %s' %(len(energies), energies))
         return(volumes, energies) #, structure)
