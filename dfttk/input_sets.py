@@ -192,7 +192,7 @@ class PreStaticSet(DictSet):
                 pass
         self.kwargs = copy.deepcopy(kwargs)
         uis = copy.deepcopy(self.kwargs.get('user_incar_settings', {}))
-        new_config = copy.deepcopy(ForceConstantsSet.default_CONFIG)
+        new_config = copy.deepcopy(PreStaticSet.default_CONFIG)
         if 'ISPIN' not in uis:
             if magnetic_check(structure):
                 uis.update({'ISPIN': 2})
