@@ -221,10 +221,10 @@ return: E-V, strain, stresses, bandgap etc
 """
 def get_rec_from_metatag(vasp_db,m):
     static_calculations = vasp_db.collection.\
-        find({'$and':[ {'metadata.tag': m}, {'adopted': True} ]})
+        find({'$and':[ {'metadata': {'tag':m}}, {'adopted': True} ]})
     gapfound = False
     energies = []
-    volumes = []
+    volumes = []  
     stresses = []
     lattices = []
     bandgaps = []
@@ -256,6 +256,36 @@ def get_rec_from_metatag(vasp_db,m):
         if sts!=None: pressures.append((sts[0][0]+sts[1][1]+sts[2][2])/3.)
         else: pressures.append(None)
         if not gapfound: gapfound = float(gap) > 0.0
+
+    constrained_calculations = vasp_db.collection.\
+        find({'$and':[ {'metadata.tag': m}, {'adopted': True} ]})
+    for calc in constrained_calculations:
+        vol = calc['output']['structure']['lattice']['volume']
+        if len(calc['output'])<=1:continue
+        if vol_within(vol, volumes): continue
+        natoms = len(calc['output']['structure']['sites'])
+        try:
+            sites = calc['output']['structure']['sites']
+            magmoms.append([{s['label']:s['properties']['magmom']} for s in sites])
+        except:
+            pass
+        lat = calc['output']['structure']['lattice']['matrix']
+        sts = calc['output']['stress']
+        ene = calc['output']['energy']
+        if ene < emin:
+            structure = Structure.from_dict(calc['input']['structure'])
+            POSCAR = structure.to(fmt="poscar")
+            INCAR = calc['input']['incar']
+        gap = calc['output']['bandgap']
+        volumes.append(vol)
+        energies.append(ene)
+        stresses.append(sts)
+        lattices.append(lat)
+        bandgaps.append(gap)
+        if sts!=None: pressures.append((sts[0][0]+sts[1][1]+sts[2][2])/3.)
+        else: pressures.append(None)
+        if not gapfound: gapfound = float(gap) > 0.0
+
     energies = sort_x_by_y(energies, volumes)
     pressures = sort_x_by_y(pressures, volumes)
     stresses = sort_x_by_y(stresses, volumes)
