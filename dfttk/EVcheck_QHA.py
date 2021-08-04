@@ -445,7 +445,7 @@ class EVcheck_QHA(FiretaskBase):
         """
         print('%s Volumes  = %s' %(len(volumes), volumes))
         print('%s Energies = %s' %(len(energies), energies))
-        return(volumes, energies, dos_objs)
+        return(list(volumes), list(energies), dos_objs)
 
     def check_points(self, db_file, metadata, eos_tolerance, threshold, del_limited, volumes, energies, verbose = False):
         """
@@ -795,7 +795,7 @@ class PreEV_check(FiretaskBase):
         """
         print('%s Volumes  = %s' %(len(volumes), volumes))
         print('%s Energies = %s' %(len(energies), energies))
-        return(volumes, energies) #, structure)
+        return(list(volumes), list(energies)) #, structure)
 
     def check_points(self, db_file, metadata, tolerance, threshold, del_limited, volumes, energies, verbose = False):
         self.correct = False
