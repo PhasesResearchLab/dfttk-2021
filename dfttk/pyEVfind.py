@@ -22,7 +22,7 @@ from atomate.vasp.database import VaspCalcDb
 from dfttk.analysis.ywutils import formula2composition, reduced_formula
 from dfttk.analysis.ywplot import myjsonout, thermoplot
 from dfttk.utils import sort_x_by_y
-from dfttk.analysis.ywutils import get_rec_from_metatag
+from dfttk.analysis.ywutils import get_rec_from_metatag, get_used_pot
 
 class EVfindMDB ():
     """
@@ -40,7 +40,34 @@ class EVfindMDB ():
     """
     def __init__(self, args, vasp_db):
         self.vasp_db = vasp_db
+        self.qhamode = args.qhamode
         self.items = (self.vasp_db).collection.find({'adopted': True})
+        if self.qhamode=='phonon':
+            hit_condition = list((self.vasp_db).db['phonon'].find({'$and':[{'adopted': True}, {"S_vib": { "$exists": True } }]},\
+                {'metadata':1, 'volume':1}))
+        elif self.qhamode=='debye':
+            hit_condition = list((self.vasp_db).db['qha'].find({"debye": { "$exists": True } },\
+                        {'metadata':1}))
+        else:
+            hit_condition = None
+        if hit_condition is not None:
+            self.hit_condition = []
+            self.hit_count = []
+            volumes = []
+            for i in hit_condition:
+                mm = i['metadata']['tag']
+                if mm in self.hit_condition:
+                    if self.qhamode == "phonon":
+                        if i['volume'] not in volumes[self.hit_condition.index(mm)]:
+                            volumes[self.hit_condition.index(mm)].append(i['volume'])
+                            self.hit_count[self.hit_condition.index(mm)] += 1
+                    else: self.hit_count[self.hit_condition.index(mm)] += 1
+                else:
+                    if self.qhamode == "phonon": volumes.append([i['volume']])
+                    self.hit_condition.append(mm)
+                    self.hit_count.append(1)
+        else: self.hit_condition = None
+        #print(self.hit_condition)
         self.within = []
         self.containall = []
         self.containany = []
@@ -88,11 +115,14 @@ class EVfindMDB ():
         phases = []
         volumes = []
         ITEMS = []
+        potname = []
         for i in self.items:
             try:
                 mm = i['metadata']['tag']
             except:
                 continue
+            if self.hit_condition is not None:
+                if mm not in self.hit_condition: continue
             if mm in hit:
                 volume = i['output']['structure']['lattice']['volume']
                 if volume not in volumes[hit.index(mm)]:
@@ -104,21 +134,7 @@ class EVfindMDB ():
                 count.append(1)
                 volumes.append([i['output']['structure']['lattice']['volume']])
 
-                pot = i['input']['pseudo_potential']['functional'].upper()
-                if pot=="":
-                    pot = i['orig_inputs']['potcar']['functional'].upper()
-                    if pot=='Perdew-Zunger81'.upper(): pot="LDA"
-
-                try:
-                    pot += "+"+i['input']['GGA']
-                except:
-                    pass
-
-                if i['input']['is_hubbard']: pot+= '+U'
-                try:
-                    if i['input']['incar']['LSORBIT']: potsoc = pot +"SOC"
-                except:
-                    potsoc = pot
+                potsoc = get_used_pot(i)
 
                 structure = Structure.from_dict(i['output']['structure'])
                 natoms = len(structure.sites)
@@ -129,7 +145,8 @@ class EVfindMDB ():
                     formula_pretty = reduced_formula(structure.composition.alphabetical_formula)
                 sa = SpacegroupAnalyzer(structure)
                 phasename = formula_pretty+'_'\
-                    + sa.get_space_group_symbol().replace('/','.')+'_'+str(sa.get_space_group_number())+potsoc
+                    + sa.get_space_group_symbol().replace('/','.')+'_'+str(sa.get_space_group_number())
+                potname.append(potsoc)
 
                 if phasename in phases:
                     for jj in range (10000):
@@ -139,12 +156,21 @@ class EVfindMDB ():
                         break
                 phases.append(phasename)
 
-        for i,m in enumerate(hit):
+        for i,mm in enumerate(hit):
+            if self.hit_condition is not None:
+                if mm not in self.hit_condition: continue
+                if self.qhamode == 'phonon':
+                    if self.hit_count[self.hit_condition.index(mm)] < self.nV: continue
             if count[i]<self.nV: continue
             if self.skipby(phases[i]): continue
-            metadata = {'tag':m}
+            if self.qhamode == 'phonon':
+                if self.hit_count[self.hit_condition.index(mm)] < self.nV: continue
+            metadata = {'tag':mm}
+            pname = phases[i].split('#')
+            if len(pname)>1: phases[i] = pname[0]+potname[i]+'#'+pname[1]
+            else: phases[i] = pname[0]+potname[i]
             sys.stdout.write('{}, static: {:>2}, {}\n'.format(metadata, count[i], phases[i]))
-            EV, POSCAR, INCAR = get_rec_from_metatag(self.vasp_db, m)
+            EV, POSCAR, INCAR = get_rec_from_metatag(self.vasp_db, mm)
 
             evdir = 'E-V'
             if not os.path.exists(evdir): os.mkdir(evdir)

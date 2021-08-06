@@ -517,13 +517,17 @@ def ext_thfind(args, vasp_db=None):
                 t_step=t_step, db_file=db_file, test_failure=False, admin=True,
                 metadata={'tag':tag}, bp2gru = args.debye_gruneisen_x, 
                 tag=tag)
-                proc.run_task()
-                """
+                #proc.run_task()
+
                 try: 
                     proc.run_task()
                 except:
+                    volumes, energies = proc.get_vol_ene()
+                    print ("\n********E-V data might in error for tag=", tag, )
+                    print ("        volumes=", volumes)
+                    print ("        energies=", energies)
                     continue
-                """
+
 
     if args.get:
         with open("runs.log", "a") as fp:
@@ -557,9 +561,9 @@ def run_ext_EVfind(subparsers):
     pEVfind.add_argument("-any", "--containany", dest="containany", nargs="?", type=str, default=None,
                       help="find calculations contain any elements in the list\n"
                            "Default: None")
-    pEVfind.add_argument("-v", "--nV", dest="nV", nargs="?", type=int, default=5,
+    pEVfind.add_argument("-v", "--nV", dest="nV", nargs="?", type=int, default=6,
                       help="Return phonon calculations finished for number of volumes larger or equals to. \n"
-                           "Default: 5")
+                           "Default: 6")
     pEVfind.add_argument("-fg", "--findbandgap", dest="findbandgap", action='store_true', default=False,
                       help="report the entries with band gap. \n"
                            "Default: False")
@@ -569,6 +573,9 @@ def run_ext_EVfind(subparsers):
     pEVfind.add_argument("-plot", "-plot", dest="plot", action='store_true', default=False,
                       help="plot the EV. \n"
                            "Default: False")
+    pEVfind.add_argument("-qhamode", "-qhamode", dest="qhamode", nargs="?", type=str, default=None,
+                      help="quasiharmonic mode: debye, phonon, or yphon. \n"
+                           "Default: None")
     pEVfind.set_defaults(func=ext_EVfind)
 
 

@@ -83,6 +83,9 @@ class QHAAnalysis_renew(FiretaskBase):
 
     optional_params = ["poisson", "bp2gru", "metadata", "test_failure", "admin"]
 
+    def get_vol_ene(self):
+        return self.volumes, self.energies
+        
     def run_task(self):
         tag = self["tag"]
         admin = self.get('admin', False)
@@ -141,7 +144,9 @@ class QHAAnalysis_renew(FiretaskBase):
                 _dos_objs.append(dos_objs[iv])
             volumes = _volumes
             energies = _energies
-            dos_objs = _dos_objs      
+            dos_objs = _dos_objs
+            self.volumes = volumes
+            self.energies = energies      
                
             qha = Quasiharmonic(energies, volumes, structure, dos_objects=dos_objs, F_vib=f_vib,
                                 t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'],

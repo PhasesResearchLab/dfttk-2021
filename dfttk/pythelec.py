@@ -25,7 +25,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import dfttk.pyphon as ywpyphon
 from dfttk.utils import sort_x_by_y
 from dfttk.analysis.ywplot import myjsonout
-from dfttk.analysis.ywutils import get_rec_from_metatag
+from dfttk.analysis.ywutils import get_rec_from_metatag, get_used_pot
 from dfttk.analysis.ywutils import formula2composition, reduced_formula, MM_of_Elements
 import warnings
 
@@ -907,6 +907,8 @@ def get_static_calculations(vasp_db, tag):
         ee = calc['output']['energy']
         if ee < emin : _calc = calc
         if len(calc['metadata'])==1:
+            _vol = calc['output']['structure']['lattice']['volume']
+            if np.any(abs(np.array(volumes)-_vol)<_vol*1.e-5): continue
             energies.append(ee)
             volumes.append(calc['output']['structure']['lattice']['volume'])
             dos_objs.append(vasp_db.get_dos(calc['task_id']))
@@ -1569,21 +1571,7 @@ class thelecMDB():
         self.natoms = len(structure.sites)
         sa = SpacegroupAnalyzer(structure)
 
-        pot = _calc['input']['pseudo_potential']['functional'].upper()
-        if pot=="":
-            pot = _calc['orig_inputs']['potcar']['functional'].upper()
-            if pot=='Perdew-Zunger81'.upper(): pot="LDA"
-
-        try:
-            pot += "+"+_calc['input']['GGA']
-        except:
-            pass
-
-        if _calc['input']['is_hubbard']: pot+= '+U'
-        try:
-            if _calc['input']['incar']['LSORBIT']: potsoc = pot +"+SOC"
-        except:
-            potsoc = pot
+        potsoc = get_used_pot(_calc)
         self.space_group_number = sa.get_space_group_number()
         self.phase = sa.get_space_group_symbol().replace('/','.')+'_'+str(sa.get_space_group_number())+potsoc
 
@@ -1799,8 +1787,11 @@ class thelecMDB():
         for j in range(nT):
             tmp1 = np.array([get_debye_T_from_phonon_Cv(self.T[j], self.Clat[i,j], 400., self.natoms) \
                 for i in range(len(self.volumes))])
-            f1 = interp1d(self.volumes, tmp1)    
-            d1 = f1(self.volT[j])
+            f1 = interp1d(self.volumes, tmp1)
+            try:
+                d1 = f1(self.volT[j])
+            except:
+                print("********WARNING: volume=", self.volT[j], "at T=", self.T[i], "is out of range of", self.volumes)
             if d1 > self.T[j] :
                 d0 = d1 
                 t0 = self.T[j]

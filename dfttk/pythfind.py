@@ -23,7 +23,7 @@ import numpy as np
 from fireworks.fw_config import config_to_dict
 from monty.serialization import loadfn
 from atomate.vasp.database import VaspCalcDb
-from dfttk.analysis.ywutils import formula2composition, reduced_formula
+from dfttk.analysis.ywutils import formula2composition, reduced_formula, get_used_pot
 
 def findjobdir(jobpath, metatag):
     try:
@@ -71,7 +71,7 @@ class thfindMDB ():
         if not self.plotonly:
             try:
                 self.vasp_db = vasp_db
-                self.items = (self.vasp_db).db[self.qhamode].find({})
+                self.items = (self.vasp_db).db[self.qhamode].find({'adopted': True})
                 if self.qhamode=='phonon':
                     self.items = list((self.vasp_db).db['phonon'].find({"S_vib": { "$exists": True } },\
                         {'metadata':1, 'unitcell':1, 'volume':1, 'supercell_matrix':1}))
@@ -191,14 +191,6 @@ class thfindMDB ():
         ITEMS = []
         self.supercellsize = []
         for i in self.items:
-            """
-            try:
-                ii = len(i['S_vib'])
-                mm = i['metadata']
-            except:
-                continue
-            if ii <= 0: continue
-            """
             mm = i['metadata']
             if mm in hit:
                 if i['volume'] not in volumes[hit.index(mm)]:
@@ -265,21 +257,7 @@ class thfindMDB ():
             for ii, calc in enumerate(static_calculations):
                 vol = calc['output']['structure']['lattice']['volume']
                 if potsoc is None:
-                    pot = calc['input']['pseudo_potential']['functional'].upper()
-                    if pot=="":
-                        pot = calc['orig_inputs']['potcar']['functional'].upper()
-                        if pot=='Perdew-Zunger81'.upper(): pot="LDA"
-
-                    try:
-                        pot += "+"+calc['input']['incar']['GGA']
-                    except:
-                        pass
-
-                    if calc['input']['is_hubbard']: pot+= '+U'
-                    try:
-                        if calc['input']['incar']['LSORBIT']: potsoc = pot +"+SOC"
-                    except:
-                        potsoc = pot
+                    potsoc = get_used_pot(calc)
                     pname = phases[i].split('#')
                     if len(pname)>1: phases[i] = pname[0]+potsoc+'#'+pname[1]
                     else: phases[i] = pname[0]+potsoc
@@ -304,7 +282,7 @@ class thfindMDB ():
                     sys.stdout.write('{}, phonon: {:>2}, static: {:>2}, SN: {:>3}, qha_phonon: {:<1.1s}, {},{}\n'\
                         .format(m, count[i], nS, self.supercellsize[i], str(qha_phonon_success), phases[i],jobpath))
                 #if count[i]>=5: self.tags.append({'tag':m['tag'],'phasename':phases[i]})
-                if count[i]>=self.nV: self.tags.append({'tag':m['tag'],'phasename':phases[i]})
+                self.tags.append({'tag':m['tag'],'phasename':phases[i]})
         sys.stdout.write ('\n{}/{} qha_phonon successful under the given searching conditions.\n'\
             .format(total_qha_phonon, total))
 
@@ -365,21 +343,7 @@ class thfindMDB ():
                 volumes.append(calc['output']['structure']['lattice']['volume'])
                 energies.append(calc['output']['energy'])
                 if potsoc is None:
-                    pot = calc['input']['pseudo_potential']['functional'].upper()
-                    if pot=="":
-                        pot = calc['orig_inputs']['potcar']['functional'].upper()
-                        if pot=='Perdew-Zunger81'.upper(): pot="LDA"
-
-                    try:
-                        pot += "+"+calc['input']['incar']['GGA']
-                    except:
-                        pass
-
-                    if calc['input']['is_hubbard']: pot+= '+U'
-                    try:
-                        if calc['input']['incar']['LSORBIT']: potsoc = pot +"+SOC"
-                    except:
-                        potsoc = pot
+                    potsoc = get_used_pot(calc)
                     pname = phases[i].split('#')
                     if len(pname)>1: phases[i] = pname[0]+potsoc+'#'+pname[1]
                     else: phases[i] = pname[0]+potsoc
@@ -410,14 +374,6 @@ class thfindMDB ():
         phases = []
         count = []
         for i in self.items:
-            """
-            try:
-                ii = len(i['debye'])
-                mm = i['metadata']
-            except:
-                continue
-            if ii < 6: continue
-            """
             mm = i['metadata']
             if mm in hit:
                 count[hit.index(mm)] += 1

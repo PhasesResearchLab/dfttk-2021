@@ -314,3 +314,32 @@ def get_rec_from_metatag(vasp_db,m):
     except:
         pass
     return EV,POSCAR,INCAR
+
+"""
+calc - mongoDB calculation entry
+return: the used potential and some key INCAR settings to be used for phasename from MongoDB
+"""
+def get_used_pot(calc):    
+    pot = calc['input']['pseudo_potential']['functional'].upper()
+    if pot=="":
+        pot = calc['orig_inputs']['potcar']['functional'].upper()
+        if pot=='Perdew-Zunger81'.upper(): pot="LDA"
+
+    if 'GGA' in calc['input']['incar']:
+        pot = calc['input']['incar']['GGA']
+
+    if 'IVDW' in calc['input']['incar']:
+        pot += "+IVDW"+str(calc['input']['incar']['IVDW'])
+    elif 'IVDW' in calc['orig_inputs']['incar']:
+        pot += "xIVDW"+str(calc['orig_inputs']['incar']['IVDW'])
+
+    if 'METAGGA' in calc['input']['incar']:
+        pot += "+"+calc['input']['incar']['METAGGA']
+
+    if calc['input']['is_hubbard']: pot += '+U'
+
+    if 'LSORBIT' in calc['input']['incar']:
+        pot += "+SOC"
+    
+    return pot
+
