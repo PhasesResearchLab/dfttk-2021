@@ -373,7 +373,13 @@ def caclf(pe, pdos, NELECTRONS, Beta, mu_ref=0.0, dF=0.0, IntegrationFunc=trapz)
 
     #print ("dF=", dF)
     if 1==1:
-        mu_el = brentq(gfind, mu_ref-10.0, mu_ref+10.0, args=(pe, pdos, NELECTRONS, Beta, IntegrationFunc), maxiter=10000)
+        deltaE = 2
+        for i in range(8):
+            try:
+                mu_el = brentq(gfind, mu_ref-deltaE, mu_ref+deltaE, args=(pe, pdos, NELECTRONS, Beta, IntegrationFunc), maxiter=10000)
+                break
+            except:
+                deltaE *= 2
     else:
         t0 = mu_ref
         d0 = gfind(t0, pe, pdos, NELECTRONS, Beta, IntegrationFunc)
@@ -1548,7 +1554,9 @@ class thelecMDB():
         if not good:
             print("static volume:", self.volumes)
             print("phonon volume:", self.Vlat)
-            raise ValueError("\nFATAL ERROR! It appears that the calculations are not all done!\n")
+            print("\nFATAL ERROR! It appears that the calculations are not all done!\n")
+        return good
+            #raise ValueError("\nFATAL ERROR! It appears that the calculations are not all done!\n")
 
 
     # get the energies, volumes and DOS objects by searching for the tag
@@ -2695,7 +2703,7 @@ class thelecMDB():
 
         if not self.pyphon: self.get_qha()
         self.hasSCF = True
-        self.check_vol()
+        if not self.check_vol(): return None, None, None, None
         if self.local!="":
             self.has_Cij = self.get_Cij(self.phasename, pinv=False)
             self.has_btp2 = self.get_btp2(self.local)

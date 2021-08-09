@@ -293,8 +293,6 @@ class EVcheck_QHA(FiretaskBase):
         vol_adds = check_deformations_in_volumes(deformations, volumes, structure.volume)
         if (len(vol_adds)) == 0:
             self.check_points(db_file, metadata, eos_tolerance, threshold, del_limited, volumes, energies, verbose)
-        elif len(volumes)>11:
-            self.correct = False
         else:
             self.correct = True
             self.error = 1e10
@@ -593,7 +591,9 @@ class EVcheck_QHA(FiretaskBase):
             while (counter < max_append) and (result[-1] > vol_min):
                 result.append(result[-1] - vol_spacing)
                 counter += 1
-        return(np.array(result))
+        
+        if len(volume)>11: return(np.array([]))
+        else: return(np.array(result))
 
     def check_fit(self, volumes, energies):
         eos = EOS('vinet')

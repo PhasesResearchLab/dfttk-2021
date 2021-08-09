@@ -251,9 +251,9 @@ class thfindMDB ():
             else:
                 qha_phonon_success = False
 
-            nS = 0
             gapfound = False
             potsoc = None
+            _volumes = []
             for ii, calc in enumerate(static_calculations):
                 vol = calc['output']['structure']['lattice']['volume']
                 if potsoc is None:
@@ -261,15 +261,14 @@ class thfindMDB ():
                     pname = phases[i].split('#')
                     if len(pname)>1: phases[i] = pname[0]+potsoc+'#'+pname[1]
                     else: phases[i] = pname[0]+potsoc
-                nS += 1
+                if vol not in _volumes: _volumes.append(vol)
                 bandgap = calc['output']['bandgap']
                 if not gapfound: gapfound = float(bandgap) > 0.0
+            nS = len(_volumes)
             if self.findbandgap:
                 if gapfound: sys.stdout.write('{}, phonon: {:>2}, static: {:>2}, supercellsize: {:>3}, {}\n'.format(m, count[i], nS, self.supercellsize[i], phases[i]))
             else:
                 if count[i] < self.nV: continue
-                if self.db_repair:
-                    if qha_phonon_success and not self.db_renew: continue
                 if self.supercellsize[i] < self.supercellN: continue
                 jobpath = findjobdir(self.jobpath, m['tag'])
                 if self.remove:
@@ -283,6 +282,7 @@ class thfindMDB ():
                         .format(m, count[i], nS, self.supercellsize[i], str(qha_phonon_success), phases[i],jobpath))
                 #if count[i]>=5: self.tags.append({'tag':m['tag'],'phasename':phases[i]})
                 self.tags.append({'tag':m['tag'],'phasename':phases[i]})
+                #print(sorted(volumes[i]))
         sys.stdout.write ('\n{}/{} qha_phonon successful under the given searching conditions.\n'\
             .format(total_qha_phonon, total))
 
@@ -340,6 +340,13 @@ class thfindMDB ():
             volumes = []
             energies = []
             for ii, calc in enumerate(static_calculations):
+                vol = calc['output']['structure']['lattice']['volume']
+                if vol in volumes:
+                    if len (f['metadata']) > 1: contimue
+                    else:
+                        ix = volumes.index(vol)
+                        volumes.pop(ix)
+                        energies.pop(ix)
                 volumes.append(calc['output']['structure']['lattice']['volume'])
                 energies.append(calc['output']['energy'])
                 if potsoc is None:

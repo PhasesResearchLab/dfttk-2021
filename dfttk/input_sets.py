@@ -73,14 +73,14 @@ class RelaxSet(DictSet):
     The default is tuned for metal relaxations.
     Kpoints have a 8000 kpoints per reciprocal atom default.
     """
-    default_CONFIG = _load_yaml_config("MPRelaxSet")
+    CONFIG = _load_yaml_config("MPRelaxSet")
     # we never are comparing relaxations, only using them for optimizing structures.
-    default_CONFIG['INCAR'].pop('ENCUT')  # use the ENCUT set by PREC
-    default_CONFIG['KPOINTS'].update({
+    CONFIG['INCAR'].pop('ENCUT')  # use the ENCUT set by PREC
+    CONFIG['KPOINTS'].update({
         'grid_density': 8000,
     })
-    default_CONFIG['KPOINTS'].pop('reciprocal_density') # to be explicit
-    default_CONFIG['INCAR'].update({
+    CONFIG['KPOINTS'].pop('reciprocal_density') # to be explicit
+    CONFIG['INCAR'].update({
         'EDIFF_PER_ATOM': 1e-5,
         'ISMEAR': 1,
         'SIGMA': 0.2,
@@ -94,10 +94,8 @@ class RelaxSet(DictSet):
         'ENCUT': 520,
     })
     # now we reset the potentials
-    default_CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
-    default_CONFIG['POTCAR'].update(POTCAR_UPDATES)
-
-    CONFIG = copy.deepcopy(default_CONFIG)
+    CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
+    CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
     def __init__(self, structure, volume_relax=False, isif=None, **kwargs):
         """If volume relax is True, will do volume only, ISIF 7"""
@@ -105,7 +103,7 @@ class RelaxSet(DictSet):
         self.volume_relax = volume_relax
         self.isif = isif
         uis = copy.deepcopy(self.kwargs.get('user_incar_settings', {}))
-        new_config = copy.deepcopy(RelaxSet.default_CONFIG)
+        new_config = copy.deepcopy(RelaxSet.CONFIG)
         if self.volume_relax and self.isif is not None:
             raise ValueError("isif cannot have a value while volume_relax is True.")
         if self.volume_relax:
@@ -144,10 +142,7 @@ class RelaxSet(DictSet):
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:
             new_config['POTCAR_FUNCTIONAL'] = pot
-        self.kwargs.update({'user_potcar_functional':new_config['POTCAR_FUNCTIONAL']})
-        self.kwargs.update({'user_incar_settings':new_config['INCAR']})
-        RelaxSet.CONFIG = copy.deepcopy(RelaxSet.default_CONFIG)
-        super(RelaxSet, self).__init__(structure, RelaxSet.CONFIG, sort_structure=False, **self.kwargs)
+        super(RelaxSet, self).__init__(structure, new_config, sort_structure=False, **self.kwargs)
 
 
 class PreStaticSet(DictSet):
@@ -155,12 +150,12 @@ class PreStaticSet(DictSet):
     Add `isif` parameter to the set to easily allow for overriding ISIF setting.
     Kpoints have a 6000 reciprocal density default.
     """
-    default_CONFIG = _load_yaml_config("MPRelaxSet")
-    default_CONFIG['KPOINTS'].update({
+    CONFIG = _load_yaml_config("MPRelaxSet")
+    CONFIG['KPOINTS'].update({
         'grid_density': 1000,
     })
-    default_CONFIG['KPOINTS'].pop('reciprocal_density')  # to be explicit
-    default_CONFIG['INCAR'].update({
+    CONFIG['KPOINTS'].pop('reciprocal_density')  # to be explicit
+    CONFIG['INCAR'].update({
         'EDIFF_PER_ATOM': 1e-5,
         'ENCUT': 520,  # MP compatibility
         'ISMEAR': 1,
@@ -178,9 +173,8 @@ class PreStaticSet(DictSet):
         "NEDOS": 5001,
     })
     # now we reset the potentials
-    default_CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
-    default_CONFIG['POTCAR'].update(POTCAR_UPDATES)
-    CONFIG = copy.deepcopy(default_CONFIG)
+    CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
+    CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
     def __init__(self, structure, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
@@ -192,7 +186,7 @@ class PreStaticSet(DictSet):
                 pass
         self.kwargs = copy.deepcopy(kwargs)
         uis = copy.deepcopy(self.kwargs.get('user_incar_settings', {}))
-        new_config = copy.deepcopy(PreStaticSet.default_CONFIG)
+        new_config = copy.deepcopy(PreStaticSet.CONFIG)
         if 'ISPIN' not in uis:
             if magnetic_check(structure):
                 uis.update({'ISPIN': 2})
@@ -202,10 +196,7 @@ class PreStaticSet(DictSet):
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:
             new_config['POTCAR_FUNCTIONAL'] = pot
-        self.kwargs.update({'user_potcar_functional':new_config['POTCAR_FUNCTIONAL']})
-        self.kwargs.update({'user_incar_settings':new_config['INCAR']})
-        PreStaticSet.CONFIG = copy.deepcopy(PreStaticSet.default_CONFIG)
-        super(PreStaticSet, self).__init__(structure, PreStaticSet.CONFIG, sort_structure=False, **self.kwargs)
+        super(PreStaticSet, self).__init__(structure, new_config, sort_structure=False, **self.kwargs)
 
 
 class ForceConstantsSet(DictSet):
@@ -219,14 +210,14 @@ class ForceConstantsSet(DictSet):
 
     Kpoints have a 8000 kpoints per reciprocal atom default.
     """
-    default_CONFIG = _load_yaml_config("MPRelaxSet")
+    CONFIG = _load_yaml_config("MPRelaxSet")
     # we never are comparing relaxations, only using them for optimizing structures.
-    default_CONFIG['KPOINTS'].update({
+    CONFIG['KPOINTS'].update({
         'grid_density': 8000,
     })
-    default_CONFIG['KPOINTS'].pop('reciprocal_density') # to be explicit
-    default_CONFIG['INCAR'].pop('ENCUT')  # use the ENCUT set by PREC
-    default_CONFIG['INCAR'].update({
+    CONFIG['KPOINTS'].pop('reciprocal_density') # to be explicit
+    CONFIG['INCAR'].pop('ENCUT')  # use the ENCUT set by PREC
+    CONFIG['INCAR'].update({
         'EDIFF_PER_ATOM': 1e-6,
         'ISMEAR': 1,
         'SIGMA': 0.2,
@@ -242,14 +233,13 @@ class ForceConstantsSet(DictSet):
         "ICHARG": 2,
     })
     # now we reset the potentials
-    default_CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
-    default_CONFIG['POTCAR'].update(POTCAR_UPDATES)
-    CONFIG = copy.deepcopy(default_CONFIG)
+    CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
+    CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
     def __init__(self, structure, **kwargs):
         self.kwargs = copy.deepcopy(kwargs)
         uis = copy.deepcopy(self.kwargs.get('user_incar_settings', {}))
-        new_config = copy.deepcopy(ForceConstantsSet.default_CONFIG)
+        new_config = copy.deepcopy(ForceConstantsSet.CONFIG)
         if 'ISPIN' not in uis:
             if magnetic_check(structure):
                 uis.update({'ISPIN': 2})
@@ -270,11 +260,8 @@ class ForceConstantsSet(DictSet):
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:
             new_config['POTCAR_FUNCTIONAL'] = pot
-        self.kwargs.update({'user_potcar_functional':new_config['POTCAR_FUNCTIONAL']})
-        self.kwargs.update({'user_incar_settings':new_config['INCAR']})
-        ForceConstantsSet.CONFIG = copy.deepcopy(ForceConstantsSet.default_CONFIG)
         super(ForceConstantsSet, self).__init__(
-            structure, ForceConstantsSet.CONFIG, sort_structure=False, **self.kwargs)
+            structure, new_config, sort_structure=False, **self.kwargs)
 
 
 class StaticSet(DictSet):
@@ -282,12 +269,12 @@ class StaticSet(DictSet):
     Add `isif` parameter to the set to easily allow for overriding ISIF setting.
     Kpoints have a 6000 reciprocal density default.
     """
-    default_CONFIG = _load_yaml_config("MPRelaxSet")
-    default_CONFIG['KPOINTS'].update({
+    CONFIG = _load_yaml_config("MPRelaxSet")
+    CONFIG['KPOINTS'].update({
         'grid_density': 8000,
     })
-    default_CONFIG['KPOINTS'].pop('reciprocal_density')  # to be explicit
-    default_CONFIG['INCAR'].update({
+    CONFIG['KPOINTS'].pop('reciprocal_density')  # to be explicit
+    CONFIG['INCAR'].update({
         'EDIFF_PER_ATOM': 1e-6,
         'ENCUT': 520,  # MP compatibility
         'ISMEAR': -5,
@@ -305,9 +292,8 @@ class StaticSet(DictSet):
         "NEDOS": 5001,
     })
     # now we reset the potentials
-    default_CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
-    default_CONFIG['POTCAR'].update(POTCAR_UPDATES)
-    CONFIG = copy.deepcopy(default_CONFIG)
+    CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
+    CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
     def __init__(self, structure, isif=2, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
@@ -322,7 +308,7 @@ class StaticSet(DictSet):
         self.kwargs = copy.deepcopy(kwargs)
         uis = copy.deepcopy(self.kwargs.get('user_incar_settings', {}))
         uis['ISIF'] = isif
-        new_config = copy.deepcopy(StaticSet.default_CONFIG)
+        new_config = copy.deepcopy(StaticSet.CONFIG)
 
         if 'ISPIN' not in uis:
             if magnetic_check(structure):
@@ -340,10 +326,7 @@ class StaticSet(DictSet):
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:
             new_config['POTCAR_FUNCTIONAL'] = pot
-        self.kwargs.update({'user_potcar_functional':new_config['POTCAR_FUNCTIONAL']})
-        self.kwargs.update({'user_incar_settings':new_config['INCAR']})
-        StaticSet.CONFIG = copy.deepcopy(StaticSet.default_CONFIG)
-        super(StaticSet, self).__init__(structure, StaticSet.CONFIG, sort_structure=False, **self.kwargs)
+        super(StaticSet, self).__init__(structure, new_config, sort_structure=False, **self.kwargs)
 
 
 class ATATIDSet():
@@ -432,13 +415,13 @@ class BornChargeSet(DictSet):
     Kpoints have a 6000 reciprocal density default.
     Provide by Yi Wang, Aug. 24, 2020
     """
-    default_CONFIG = _load_yaml_config("MPRelaxSet")
-    default_CONFIG['KPOINTS'].update({
+    CONFIG = _load_yaml_config("MPRelaxSet")
+    CONFIG['KPOINTS'].update({
         'grid_density': 8000,
     })
-    default_CONFIG['KPOINTS'].pop('reciprocal_density')  # to be explicit
+    CONFIG['KPOINTS'].pop('reciprocal_density')  # to be explicit
 
-    default_CONFIG['INCAR'].update({
+    CONFIG['INCAR'].update({
         "LEPSILON": True,  #For Born Effective Charge
         "NCORE": 1,
         #"NPAR": 1,
@@ -457,16 +440,15 @@ class BornChargeSet(DictSet):
         "ICHARG": 2,
     })
 
-    default_CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
-    default_CONFIG['POTCAR'].update(POTCAR_UPDATES)
-    CONFIG = copy.deepcopy(default_CONFIG)
+    CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
+    CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
     def __init__(self, structure, isif=2, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
         self.isif = isif
 
         uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
-        new_config = copy.deepcopy(BornChargeSet.default_CONFIG)
+        new_config = copy.deepcopy(BornChargeSet.CONFIG)
         """
         old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', \
             'user_potcar_functional', 'user_incar_settings']
@@ -511,10 +493,7 @@ class BornChargeSet(DictSet):
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:
             new_config['POTCAR_FUNCTIONAL'] = pot
-        self.kwargs.update({'user_potcar_functional':new_config['POTCAR_FUNCTIONAL']})
-        self.kwargs.update({'user_incar_settings':new_config['INCAR']})
-        BornChargeSet.CONFIG = copy.deepcopy(BornChargeSet.default_CONFIG)
-        super(BornChargeSet, self).__init__(structure, BornChargeSet.CONFIG, sort_structure=False, **self.kwargs)
+        super(BornChargeSet, self).__init__(structure, new_config, sort_structure=False, **self.kwargs)
 
 
 class ElasticSet(DictSet):
@@ -522,9 +501,9 @@ class ElasticSet(DictSet):
     Add `isif` parameter to the set to easily allow for overriding ISIF setting.
     Kpoints have a 6000 reciprocal density default.
     """
-    default_CONFIG = _load_yaml_config("MPRelaxSet")
+    CONFIG = _load_yaml_config("MPRelaxSet")
     #    'EDIFF_PER_ATOM': 1e-6,
-    default_CONFIG['INCAR'] = {
+    CONFIG['INCAR'] = {
         'EDIFF': 1e-6,
         'ENCUT': 520,  # MP compatibility
         'ISMEAR': -5,
@@ -539,21 +518,20 @@ class ElasticSet(DictSet):
         "LVHAR": True,
         "ICHARG": 0,
         "NSW": 99,
-        "MAGMOM": default_CONFIG['INCAR']['MAGMOM'],
+        "MAGMOM": CONFIG['INCAR']['MAGMOM'],
         "ISPIN": 2,
         "ISIF": 2,
         "PREC": "High"
     }
     # now we reset the potentials
-    default_CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
-    default_CONFIG['POTCAR'].update(POTCAR_UPDATES)
-    CONFIG = copy.deepcopy(default_CONFIG)
+    CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
+    CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
     def __init__(self, structure, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
         
         uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
-        new_config = copy.deepcopy(ElasticSet.default_CONFIG)
+        new_config = copy.deepcopy(ElasticSet.CONFIG)
         """
         old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', \
             'user_potcar_functional', 'user_incar_settings']
@@ -607,8 +585,5 @@ class ElasticSet(DictSet):
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:
             new_config['POTCAR_FUNCTIONAL'] = pot
-        self.kwargs.update({'user_potcar_functional':new_config['POTCAR_FUNCTIONAL']})
-        self.kwargs.update({'user_incar_settings':new_config['INCAR']})
-        ElasticSet.CONFIG = copy.deepcopy(ElasticSet.default_CONFIG)
-        super(ElasticSet, self).__init__(structure, ElasticSet.CONFIG, sort_structure=False, **self.kwargs)
+        super(ElasticSet, self).__init__(structure, new_config, sort_structure=False, **self.kwargs)
 
