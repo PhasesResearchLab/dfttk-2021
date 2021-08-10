@@ -173,12 +173,10 @@ def update_err(temperror, error, verbose, ind, **kwargs):
         temp_ind = kwargs["temp_ind"]
     if verbose:
         print('error = %.4f in %s ' %(temperror, temp_ind))
-    if temperror < error:
-        error = temperror
-        if "temp_ind" in kwargs:
-            ind = temp_ind
-            return error, ind
-    return error
+
+    if "temp_ind" not in kwargs: return min(temperror, error)
+    elif temperror < error: return temperror, temp_ind
+    else: return error, ind
 
 
 @explicit_serialize
@@ -653,10 +651,7 @@ class PreEV_check(FiretaskBase):
         verbose = self.get('verbose') or False
         modify_incar_params = self.get('modify_incar_params') or {}
         modify_kpoints_params = self.get('modify_kpoints_params') or {}
-        try:
-            powerups_options = modify_incar_params['powerups']
-        except:
-            powerups_options = None
+        powerups_options=modify_incar_params.get('powerups', None)
         symmetry_tolerance = self.get('symmetry_tolerance') or None
         run_isif2 = self.get('run_isif2') or None
         pass_isif4 = self.get('pass_isif4') or False
