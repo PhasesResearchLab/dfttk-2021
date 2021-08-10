@@ -237,10 +237,10 @@ class EVcheck_QHA(FiretaskBase):
         phonon_supercell_matrix = self.get('phonon_supercell_matrix', None)
         verbose = self.get('verbose', False)
         modify_incar_params = self.get('modify_incar_params', {})
-        try:
-            powerups_options = modify_incar_params['powerups']
-        except:
-            powerups_options = None
+
+        user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
+        powerups_options=user_incar_settings.get('powerups', None)
+
         modify_kpoints_params = self.get('modify_kpoints_params', {})
         site_properties = self.get('site_properties', None)
         override_default_vasp_params = self.get('override_default_vasp_params', {})
