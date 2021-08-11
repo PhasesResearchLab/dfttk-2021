@@ -218,7 +218,7 @@ class EVcheck_QHA(FiretaskBase):
         '''
         # Get the parameters from the object
         max_run = 10
-        db_file = env_chk(self.get('db_file', DB_FILE), fw_spec)
+        db_file = env_chk(self.get('db_file', ">>db_file<<"), fw_spec)
         #db_file = ">>db_file<<"
         vasp_cmd = ">>vasp_cmd<<"
         deformations = self.get('deformations', [])
@@ -234,14 +234,16 @@ class EVcheck_QHA(FiretaskBase):
         force_phonon = self.get('force_phonon', False)
         phonon_supercell_matrix = self.get('phonon_supercell_matrix', None)
         verbose = self.get('verbose', False)
-        modify_incar_params = self.get('modify_incar_params', {})
-
-        user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
-        powerups_options=user_incar_settings.get('powerups', None)
-
         modify_kpoints_params = self.get('modify_kpoints_params', {})
         site_properties = self.get('site_properties', None)
+
+        modify_incar_params = self.get('modify_incar_params', {})
+        powerups_options=modify_incar_params.get('powerups', None)
+
         override_default_vasp_params = self.get('override_default_vasp_params', {})
+        user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
+        powerups_options=user_incar_settings.get('powerups', powerups_options)
+
         override_symmetry_tolerances = self.get('override_symmetry_tolerances', {})
         store_volumetric_data = self.get('store_volumetric_data', False)
 

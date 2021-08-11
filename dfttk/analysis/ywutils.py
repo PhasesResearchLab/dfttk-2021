@@ -231,8 +231,10 @@ def get_rec_from_metatag(vasp_db,m):
     pressures = []
     magmoms = []
     emin = 1.e36
+    kpoints = None
     for calc in static_calculations:
         vol = calc['output']['structure']['lattice']['volume']
+        if kpoints is None: kpoints = calc['orig_inputs']['kpoints']['kpoints']
         if vol_within(vol, volumes): continue
         natoms = len(calc['output']['structure']['sites'])
         try:
@@ -260,8 +262,8 @@ def get_rec_from_metatag(vasp_db,m):
     all_static_calculations = vasp_db.collection.\
         find({'$and':[ {'metadata.tag': m}, {'adopted': True} ]})
     for calc in all_static_calculations:
+        if len(calc['metadata'])<=1:continue # only check constrained calculation
         vol = calc['output']['structure']['lattice']['volume']
-        if len(calc['output'])<=1:continue # only check constrained calculation
         if vol_within(vol, volumes): continue
         natoms = len(calc['output']['structure']['sites'])
         try:
@@ -305,14 +307,8 @@ def get_rec_from_metatag(vasp_db,m):
     EV['pressures'] = pressures
     EV['bandgaps'] = bandgaps
     EV['lattices'] = lattices
-    try:
-        for volume in magmoms:
-            for magmom in volume.values():
-                if magmom!=0.:
-                    EV['magmoms'] = magmoms
-                    break
-    except:
-        pass
+    EV['magmoms'] = magmoms
+    EV['kpoints'] = kpoints
     return EV,POSCAR,INCAR
 
 """

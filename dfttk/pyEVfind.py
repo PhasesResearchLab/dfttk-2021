@@ -182,7 +182,10 @@ class EVfindMDB ():
             readme['E-V'] = EV
             readme['INCAR'] = INCAR
             readme['POSCAR'] = POSCAR
+            natoms = len(structure.sites)
+            readme['natoms'] = natoms
             with open (os.path.join(folder,'readme'), 'w') as fp:
                 myjsonout(readme, fp, indent="", comma="")
-
-            thermoplot(folder,"0 K total energies (eV/atom)",EV['volumes'], EV['energies'])
+            structure = Structure.from_file(os.path.join(folder,'POSCAR'))
+            thermoplot(folder,"0 K total energies (eV/atom)", \
+                np.array(EV['volumes'])/natoms, np.array(EV['energies'])/natoms)

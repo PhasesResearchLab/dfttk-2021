@@ -342,7 +342,7 @@ class thfindMDB ():
             for ii, calc in enumerate(static_calculations):
                 vol = calc['output']['structure']['lattice']['volume']
                 if vol in volumes:
-                    if len (f['metadata']) > 1: contimue
+                    if len (calc['metadata']) > 1: contimue
                     else:
                         ix = volumes.index(vol)
                         volumes.pop(ix)
@@ -403,10 +403,21 @@ class thfindMDB ():
                         phasename = nphasename
                         break
                 phases.append(phasename)
+
         print("\nfound complete calculations in the collection:", self.qhamode, "\n")
+        all_static_calculations = list((self.vasp_db).db['tasks'].\
+            find({'$and':[{'metadata': { "$exists": True }}, {'adopted': True} ]},\
+            {'metadata':1, 'output':1, 'input':1, 'orig_inputs':1}))
         for i,m in enumerate(hit):
             if self.skipby(phases[i], m['tag']): continue
-            if self.qhamode == 'qha' : phases[i] += "_debye"
+            static_calculations = [f for f in all_static_calculations if f['metadata']['tag']==m['tag']]
+            for ii, calc in enumerate(static_calculations):
+                potsoc = get_used_pot(calc)
+                if self.qhamode == 'qha' : potsoc += "_debye"
+                pname = phases[i].split('#')
+                if len(pname)>1: phases[i] = pname[0]+potsoc+'#'+pname[1]
+                else: phases[i] = pname[0]+potsoc
+                break
             print (m, ":", phases[i])
             self.tags.append({'tag':m['tag'],'phasename':phases[i]})
 

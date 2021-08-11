@@ -248,9 +248,11 @@ def record_cmd_print(fdir, readme, dir=None):
             error ="**********FATAL ERROR encountered, you may check readme and E-V plot in the folder "+dir+"/figures"
             volumes = readme['E-V']['volumes']
             energies = readme['E-V']['energies']
+            natoms = readme['E-V']['natoms']
             folder = os.path.join(dir,'figures')
             if not os.path.exists(folder): os.mkdir(folder)
-            thermoplot(folder,"0 K total energies (eV/atom)",volumes, energies, plottitle=dir, lp=True)
+            thermoplot(folder,"0 K total energies (eV/atom)", \
+                np.array(volumes)/natoms, np.array(energies)/natoms, plottitle=dir, lp=True)
             with open (os.path.join(dir,"ERROR"), "w") as fp:
                 fp.write('{}\n'.format(readme['ERROR']))
                 if dir!=None:

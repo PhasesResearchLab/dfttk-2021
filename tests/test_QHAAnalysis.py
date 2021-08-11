@@ -6,6 +6,7 @@ import warnings
 import datetime
 import subprocess
 import os
+import sys
 import json
 import numpy as np
 import copy
@@ -72,4 +73,19 @@ def test_check_points():
     energies = [-342.98343642, -344.38954914, -344.89492019, -344.80547287, -344.28500957, -343.47527914, -342.47536783, -341.31384393, -340.16711161, -339.67940075, -338.41924052]
     proc.check_points("", "", 0.005, 14, 0.3, volumes, energies, True)
 
+@pytest.mark.check_points_1
+def test_check_points_1():
+    tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
+    proc = EVcheck_QHA()
+    db_file = 'C:/Users/lucas/OneDrive/Documents/GitHub/PureMetals/config/db.json'
+    volumes, energies, _ = proc.get_orig_EV(db_file, tag)
+    proc.check_points("", "", 0.005, 14, 0.3, volumes, energies, True)
+    #assert False
 
+@pytest.mark.EVcheck_QHA_2
+def test_EVcheck_QHA_2():
+    tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
+    db_file = 'C:/Users/lucas/OneDrive/Documents/GitHub/PureMetals/config/db.json'
+    wf = Firework(EVcheck_QHA(db_file=db_file,vasp_cmd=">>vasp_cmd<<",tag="test",metadata={'tag':tag}))
+    print(wf.as_dict())
+    #assert False
