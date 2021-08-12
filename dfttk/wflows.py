@@ -299,6 +299,19 @@ def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name=
     return wf
 
 
+import subprocess
+def supercell_scaling_by_Yphon(structure, supercellsize=64):
+    structure.to(filename='t.m.p.POSCAR')
+    cmd = "Ycell -SN " + str(supercellsize) +" <t.m.p.POSCAR"
+    output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        universal_newlines=True)
+    with open ("pMatrix", "r") as f : line = f.readline()
+    m = np.array([int(x) for x in line.split(' ') if x!='']).reshape((3, 3))
+    os.remove("t.m.p.POSCAR")
+    os.remove("pMatrix")
+    return m
+
+
 def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.1, 0.1), phonon=False, isif4=False,
                         phonon_supercell_matrix=None, override_symmetry_tolerances=None, t_min=5, t_max=2000,
                         t_step=5, eos_tolerance=0.01, volume_spacing_min=0.03, vasp_cmd=None, db_file=None,
@@ -393,10 +406,14 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
 
     if phonon:
         if isinstance(phonon_supercell_matrix, str):
-            phonon_supercell_matrix = supercell_scaling_by_atom_lat_vol(structure, min_obj=phonon_supercell_matrix_min,
+            if phonon_supercell_matrix=='Yphon':
+                phonon_supercell_matrix = supercell_scaling_by_Yphon(structure, 
+                                            supercellsize=phonon_supercell_matrix_max)
+            else:
+                phonon_supercell_matrix = supercell_scaling_by_atom_lat_vol(structure, min_obj=phonon_supercell_matrix_min,
                                             max_obj=phonon_supercell_matrix_max, scale_object=phonon_supercell_matrix,
                                             target_shape='sc', lower_search_limit=-2, upper_search_limit=2,
-                                            verbose=False, sc_tolerance=1e-5, optimize_sc=optimize_sc)
+                                            verbose=verbose, sc_tolerance=1e-5, optimize_sc=optimize_sc)
         ph_scm_size = np.array(phonon_supercell_matrix).shape
         if not (ph_scm_size[0] == 3 and ph_scm_size[1] == 3):
             raise ValueError('Current phonon_supercell_matrix({}) is not correct.'.format(phonon_supercell_matrix))

@@ -59,6 +59,10 @@ Following are the steps of adding API key number on DFTTK.
 
       PMG_MAPI_KEY: ######(your API key number)
 
+10. How to find the reason for FIZZLED job.
+
+  .. code-block:: bash
+      lpad get_fws -i fw_id -d more
 
 pymatgen 2021 issue
 ===================

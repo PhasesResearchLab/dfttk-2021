@@ -7,7 +7,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.io.vasp.inputs import Potcar
 #from dfttk.wflows import get_wf_gibbs, get_wf_EV_bjb, get_wf_gibbs_robust
 from dfttk.wflows import get_wf_gibbs
-from dfttk.utils import recursive_glob
+from dfttk.utils import recursive_glob, sort_x_by_y
 from dfttk.structure_builders.parse_anrl_prototype import multi_replace
 from monty.serialization import loadfn, dumpfn
 import dfttk.pythelec as pythelec
@@ -102,6 +102,8 @@ class thfindMDB ():
         self.td = args.td
         self.jobpath = args.jobpath
         self.findbandgap = args.findbandgap
+        self.db_repair = args.db_repair
+        self.db_renew = args.db_renew
         if args.within is not None: self.within, tmp = formula2composition(args.within)
         if args.containall is not None: self.containall, tmp = formula2composition(args.containall)
         if args.containany is not None: self.containany, tmp = formula2composition(args.containany)
@@ -175,8 +177,9 @@ class thfindMDB ():
         if self.plotonly: self.find_plotfiles()
         elif self.vasp_db==None: self.find_plotfiles()
         elif self.check: self.check_find()
+        elif self.db_repair or self.db_renew: self.qha_renew()
         elif self.qhamode=='phonon': self.phonon_find()
-        else: self.debye_find()
+        elif self.qhamode=='qha': self.debye_find()
         return self.tags
 
 
@@ -287,6 +290,8 @@ class thfindMDB ():
                 if gapfound: sys.stdout.write('{}, phonon: {:>2}, static: {:>2}, supercellsize: {:>3}, {}\n'.format(m, count[i], nS, self.supercellsize[i], phases[i]))
             else:
                 if count[i] < self.nV: continue
+                if self.db_repair:
+                    if qha_phonon_success and not self.db_renew: continue
                 if self.supercellsize[i] < self.supercellN: continue
                 jobpath = findjobdir(self.jobpath, m['tag'])
                 if self.remove:
@@ -302,6 +307,102 @@ class thfindMDB ():
                 if count[i]>=self.nV: self.tags.append({'tag':m['tag'],'phasename':phases[i]})
         sys.stdout.write ('\n{}/{} qha_phonon successful under the given searching conditions.\n'\
             .format(total_qha_phonon, total))
+
+
+    def qha_renew(self):
+        hit = []
+        phases = []
+        static_collection = (self.vasp_db).collection.find({})
+        for i in static_collection:
+            mm = i['metadata']
+            if mm in hit: continue
+            if len(mm)>1: continue
+            else:
+                hit.append(mm)
+                structure = Structure.from_dict(i['output']['structure'])
+                formula_pretty = structure.composition.reduced_formula
+                try:
+                    formula2composition(formula_pretty)
+                except:
+                    formula_pretty = reduced_formula(structure.composition.alphabetical_formula)
+
+                sa = SpacegroupAnalyzer(structure)
+                phasename = formula_pretty+'_'\
+                    + sa.get_space_group_symbol().replace('/','.')+'_'+str(sa.get_space_group_number())
+                if phasename in phases:
+                    for jj in range (10000):
+                        nphasename = phasename + "#" + str(jj)
+                        if nphasename in phases: continue
+                        phasename = nphasename
+                        break
+                phases.append(phasename)
+
+        print("\nfound complete calculations in the task collection:\n")
+        total = 0
+        total_qha = 0
+        total_qha_phonon = 0
+        all_static_calculations = list((self.vasp_db).db['tasks'].\
+            find({'$and':[{'metadata': { "$exists": True }}, {'adopted': True} ]},\
+            {'metadata':1, 'output':1, 'input':1, 'orig_inputs':1}))
+        all_qha_calculations = list((self.vasp_db).db['qha'].\
+            find({'$and':[{'metadata': { "$exists": True }},{'has_phonon':True}]}, {'metadata':1, 'temperatures':1}))
+        all_qha_phonon_calculations = list((self.vasp_db).db['qha_phonon'].\
+            find({'$and':[{'metadata': { "$exists": True }},{'has_phonon':True}]}, {'metadata':1, 'temperatures':1}))
+        for i,m in enumerate(hit):
+            if self.skipby(phases[i], m['tag']): continue
+            total += 1
+            static_calculations = [f for f in all_static_calculations if f['metadata']['tag']==m['tag']]
+            qha_calculations = [f for f in all_qha_calculations if f['metadata']['tag']==m['tag']]
+            qha_phonon_calculations = [f for f in all_qha_phonon_calculations if f['metadata']['tag']==m['tag']]
+            qha_phonon_success = len(qha_phonon_calculations) > 0
+            if qha_phonon_success: total_qha_phonon += 1
+            if len(qha_calculations) > 0 or qha_phonon_success: total_qha += 1
+
+            potsoc = None
+            volumes = []
+            energies = []
+            for ii, calc in enumerate(static_calculations):
+                volumes.append(calc['output']['structure']['lattice']['volume'])
+                energies.append(calc['output']['energy'])
+                if potsoc is None:
+                    pot = calc['input']['pseudo_potential']['functional'].upper()
+                    if pot=="":
+                        pot = calc['orig_inputs']['potcar']['functional'].upper()
+                        if pot=='Perdew-Zunger81'.upper(): pot="LDA"
+
+                    try:
+                        pot += "+"+calc['input']['incar']['GGA']
+                    except:
+                        pass
+
+                    if calc['input']['is_hubbard']: pot+= '+U'
+                    try:
+                        if calc['input']['incar']['LSORBIT']: potsoc = pot +"+SOC"
+                    except:
+                        potsoc = pot
+                    pname = phases[i].split('#')
+                    if len(pname)>1: phases[i] = pname[0]+potsoc+'#'+pname[1]
+                    else: phases[i] = pname[0]+potsoc
+            nS = len(volumes)
+            if nS < 6: continue
+            if qha_phonon_success and not self.db_renew: continue
+            energies = sort_x_by_y(energies, volumes)
+            volumes = sorted(volumes)
+            volumes = np.array(volumes)
+            energies = np.array(energies)
+            val, idx = min((val, idx) for (idx, val) in enumerate(energies))
+            if idx <2 or idx>nS-2: continue
+
+            jobpath = findjobdir(self.jobpath, m['tag'])
+            if jobpath==None:
+                sys.stdout.write('{}, static: {:>2}, qha_phonon: {:<1.1s}, {}\n'\
+                    .format(m, nS, str(qha_phonon_success), phases[i]))
+            else:
+                sys.stdout.write('{}, static: {:>2}, qha_phonon: {:<1.1s}, {},{}\n'\
+                    .format(m, nS, str(qha_phonon_success), phases[i],jobpath))
+            self.tags.append({'tag':m['tag'],'phasename':phases[i]})
+        sys.stdout.write ('\n({},{})/{} (qha, qha_phonon) entries returned under the given searching conditions.\n'\
+            .format(total_qha, total_qha_phonon, total))
 
 
     def debye_find(self):
@@ -342,6 +443,7 @@ class thfindMDB ():
         print("\nfound complete calculations in the collection:", self.qhamode, "\n")
         for i,m in enumerate(hit):
             if self.skipby(phases[i], m['tag']): continue
+            if self.qhamode == 'qha' : phases[i] += "_debye"
             print (m, ":", phases[i])
             self.tags.append({'tag':m['tag'],'phasename':phases[i]})
 

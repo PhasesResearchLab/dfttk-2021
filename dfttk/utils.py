@@ -396,7 +396,7 @@ def supercell_scaling_by_atom_lat_vol(structure, min_obj=60, max_obj=120, scale_
         unit_obj = structure.volume
     else:
         raise ValueError('Unsupported scale object, please choose atom or lattice or volume.')
-    size_range = [int(min_obj/unit_obj), math.ceil(max_obj/unit_obj)]
+    size_range = [max(1,int(min_obj/unit_obj)), max(1,math.ceil(max_obj/unit_obj))]
 
     optimal_supercell_shapes = []  # numpy arrays of optimal shapes
     optimal_supercell_scores = []  # will correspond to supercell size
@@ -406,7 +406,7 @@ def supercell_scaling_by_atom_lat_vol(structure, min_obj=60, max_obj=120, scale_
     for sc_size in range(size_range[0], size_range[1]):
         optimal_shape = find_optimal_cell_shape_in_range(structure.lattice.matrix, sc_size, target_shape,
             size_range=size_range, upper_limit=upper_search_limit, lower_limit=lower_search_limit,
-            verbose=True, sc_tolerance=sc_tolerance, optimize_sc=optimize_sc)
+            verbose=verbose, sc_tolerance=sc_tolerance, optimize_sc=optimize_sc)
         optimal_supercell_shapes.append(optimal_shape)
         norm_cell = get_norm_cell(structure.lattice.matrix, sc_size, target_shape=target_shape)
         scores = get_deviation_from_optimal_cell_shape(np.dot(optimal_shape, norm_cell), target_shape)

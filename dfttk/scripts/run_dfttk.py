@@ -16,6 +16,7 @@ import copy
 import os
 import sys
 import shutil
+import glob
 
 
 def get_abspath(path):
@@ -65,11 +66,10 @@ def get_structure_file(STR_FOLDER=".", RECURSIVE=False, MATCH_PATTERN="*"):
         if RECURSIVE:
             STR_FILES = recursive_glob(STR_FOLDER, MATCH_PATTERN)
         else:
-            STR_FILES = os.listdir(STR_FOLDER)
+            STR_FILES = glob.glob(os.path.join(STR_FOLDER,MATCH_PATTERN))
             for file_i in STR_FILES:
                 if os.path.isdir(file_i):
                     STR_FILES.remove(file_i)
-            STR_FILES = [os.path.join(STR_FOLDER, file_i) for file_i in STR_FILES]
     return STR_FILES
 
 def get_user_settings(STR_FILENAME, STR_PATH="./", NEW_SETTING="SETTINGS"):
@@ -381,7 +381,6 @@ def run(args):
 
                 if flag_run:
                     user_settings = get_user_settings(STR_FILENAME_WITH_EXT, STR_PATH=STR_PATH, NEW_SETTING=SETTINGS)
-
                     metadatai = metadatas.get(STR_FILE, None)
                     if metadatai:
                         user_settings.update({'metadata': metadatai})

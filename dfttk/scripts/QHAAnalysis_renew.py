@@ -40,12 +40,14 @@ from pymatgen.analysis.eos import EOS
 from fireworks import Firework
 from atomate.vasp.config import VASP_CMD, DB_FILE
 import os
+from dfttk.pythelec import get_static_calculations
 
 head,tail = os.path.split(__file__)
 db_file = os.path.join(head,"db.json")
 
+
 @explicit_serialize
-class QHAAnalysis_failure(FiretaskBase):
+class QHAAnalysis_renew(FiretaskBase):
     """
     Do the quasiharmonic calculation from either phonon or Debye.
 
@@ -85,31 +87,9 @@ class QHAAnalysis_failure(FiretaskBase):
         tag = self["tag"]
         admin = self.get('admin', False)
         _db_file = self.get('db_file', db_file)
-
-
         vasp_db = VaspCalcDb.from_db_file(db_file=_db_file, admin=admin)
-
-        # get the energies, volumes and DOS objects by searching for the tag
-        static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
-
-        energies = []
-        volumes = []
-        dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
-        structure = None  # single Structure for QHA calculation
-        for calc in static_calculations:
-            energies.append(calc['output']['energy'])
-            volumes.append(calc['output']['structure']['lattice']['volume'])
-            dos_objs.append(vasp_db.get_dos(calc['task_id']))
-            # get a Structure. We only need one for the masses and number of atoms in the unit cell.
-            if structure is None:
-                structure = Structure.from_dict(calc['output']['structure'])
-
-        # sort everything in volume order
-        # note that we are doing volume last because it is the thing we are sorting by!
-
-        energies = sort_x_by_y(energies, volumes)
-        dos_objs = sort_x_by_y(dos_objs, volumes)
-        volumes = sorted(volumes)
+        volumes, energies, dos_objs, _calc = get_static_calculations(vasp_db, tag)
+        structure = Structure.from_dict(_calc['output']['structure'])
 
         qha_result = {}
         qha_result['structure'] = structure.as_dict()
@@ -119,23 +99,26 @@ class QHAAnalysis_failure(FiretaskBase):
         #qha_result['has_phonon'] = self['phonon']
 
         poisson = self.get('poisson', 0.363615)
-        bp2gru = self.get('bp2gru', 1)
+        bp2gru = self.get('bp2gru', 2./3.)
 
         # phonon properties
         # check if phonon calculations existed
         #always perform phonon calculations when when enough phonon calculations found
-        num_phonons = len(list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})))       
+        num_phonons = len(list(vasp_db.db['phonon'].find({'$and':[ {'metadata': {'tag':tag}}, {'adopted': True} ]})))       
+        #num_phonons = len(list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})))       
         qha_result['has_phonon'] = num_phonons >= 5
         #if self['phonon']:
         if qha_result['has_phonon']:
             # get the vibrational properties from the FW spec
             phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
+            #phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata': {'tag':tag}}, {'adopted': True} ]}))
             vol_vol = []
             vol_f_vib = []
             vol_s_vib = []
             vol_c_vib = []
             for calc in phonon_calculations:
                 if calc['volume'] in vol_vol: continue
+                if calc['volume'] not in volumes: continue
                 vol_vol.append(calc['volume'])
                 vol_f_vib.append(calc['F_vib'])
                 vol_s_vib.append(calc['S_vib'])
@@ -158,8 +141,8 @@ class QHAAnalysis_failure(FiretaskBase):
                 _dos_objs.append(dos_objs[iv])
             volumes = _volumes
             energies = _energies
-            dos_objs = _dos_objs            
-                
+            dos_objs = _dos_objs      
+               
             qha = Quasiharmonic(energies, volumes, structure, dos_objects=dos_objs, F_vib=f_vib,
                                 t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'],
                                 poisson=poisson, bp2gru=bp2gru)
@@ -184,8 +167,8 @@ class QHAAnalysis_failure(FiretaskBase):
         eos_res['b1'] = float(eos.b1)
         eos_res['eq_volume'] = float(eos.v0)
         eos_res['eq_energy'] = float(eos.e0)
-        eos_res['energies'] = energies
-        eos_res['volumes'] = volumes
+        eos_res['energies'] = list(energies)
+        eos_res['volumes'] = list(volumes)
         eos_res['name'] = 'Vinet'
         eos_res['error'] = {}
         eos_res['error']['difference'] = errors.tolist()  # volume by volume differences
@@ -222,6 +205,8 @@ class QHAAnalysis_failure(FiretaskBase):
         #if self['phonon']:
         if qha_result['has_phonon']:
             vasp_db.db['qha_phonon'].insert_one(qha_result)
+            qha_result.pop('phonon')
+            vasp_db.db['qha'].insert_one(qha_result)
         else:
             vasp_db.db['qha'].insert_one(qha_result)
 

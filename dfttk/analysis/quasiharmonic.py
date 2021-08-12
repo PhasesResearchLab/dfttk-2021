@@ -19,8 +19,7 @@ from scipy.optimize import minimize
 from pymatgen.analysis.eos import EOS, EOSError
 
 from dfttk.analysis.thermal_electronic import calculate_thermal_electronic_contribution
-#from dfttk.analysis.debye import DebyeModel
-from dfttk.analysis.debye_ext import DebyeModel
+from dfttk.analysis.debye import DebyeModel
 
 __author__ = "Kiran Mathew, Brandon Bocklund"
 __credits__ = "Cormac Toher"
@@ -68,7 +67,7 @@ class Quasiharmonic(object):
     def __init__(self, energies, volumes, structure, dos_objects=None, F_vib=None, S_vib=None, C_vib=None,
                  t_min=5, t_step=5,
                  t_max=2000.0, eos="vinet", pressure=0.0, poisson=0.25,
-                 bp2gru=1., vib_kwargs=None):
+                 bp2gru=2./3., vib_kwargs=None):
         self.energies = np.array(energies)
         self.volumes = np.array(volumes)
         self.natoms = len(structure)

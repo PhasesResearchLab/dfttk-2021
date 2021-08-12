@@ -95,25 +95,22 @@ def set_execution_options(
 import atomate.vasp.powerups as powerups
 def Customizing_Workflows(original_wf, user_settings={}):
     """
-    if os.path.exists('SETTINGS.yaml'):
-        user_settings= loadfn('SETTINGS.yaml')
-    else:
-        user_settings={}
-    #ymal dict, see https://atomate.org/customizing_workflows.html
+    set _preserve_fworker spec of Fireworker(s) of a Workflow. Can be used to
+    pin a workflow to the first fworker it is run with. Very useful when running
+    on multiple machines that can't share files.
     """
+    original_wf = powerups.preserve_fworker(original_wf)
     powerups_options = user_settings.get('powerups', {}) 
     if len(powerups_options) == 0:
         if 'user_incar_settings' in user_settings:
             powerups_options = user_settings['user_incar_settings'].get('powerups', {})
+            
     if 'set_execution_options' in powerups_options:
         execution_options = powerups_options['set_execution_options']
-        #original_wf = powerups.set_execution_options(original_wf, 
         original_wf = set_execution_options(original_wf, 
             fworker_name=execution_options.get("fworker_name", None),
             category=execution_options.get("category", None),
             )
-        #original_wf = powerups.preserve_fworker(original_wf)
-        #print(original_wf)
 
     if 'set_queue_options' in powerups_options:
         queue_options = powerups_options['set_queue_options']
