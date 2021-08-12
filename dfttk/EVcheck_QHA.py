@@ -218,9 +218,8 @@ class EVcheck_QHA(FiretaskBase):
         '''
         # Get the parameters from the object
         max_run = 10
-        db_file = env_chk(self.get('db_file', ">>db_file<<"), fw_spec)
-        #db_file = ">>db_file<<"
-        vasp_cmd = ">>vasp_cmd<<"
+        db_file = env_chk(self.get('db_file', DB_FILE), fw_spec) #always concrete db_fiel
+        vasp_cmd = ">>vasp_cmd<<" #chould change for user to provide the change
         deformations = self.get('deformations', [])
         run_num = self.get('run_num', 0)
         eos_tolerance = self.get('eos_tolerance', 0.005)
@@ -264,7 +263,7 @@ class EVcheck_QHA(FiretaskBase):
             tag = str(uuid4())
             metadata['tag'] = tag
 
-        common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': db_file, "metadata": metadata, "tag": tag,
+        common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': self.get('db_file', DB_FILE), "metadata": metadata, "tag": tag,
                          'override_default_vasp_params': override_default_vasp_params,}
         vasp_kwargs = {'modify_incar_params': modify_incar_params, 'modify_kpoints_params': modify_kpoints_params}
         t_kwargs = {'t_min': t_min, 't_max': t_max, 't_step': t_step}
@@ -374,7 +373,7 @@ class EVcheck_QHA(FiretaskBase):
                     too_many_run_error()
             else:  # No need to do more VASP calculation, QHA could be running
                 print('Success in Volumes-Energies checking, enter QHA ...')
-                debye_fw = Firework(QHAAnalysis(phonon=phonon, t_min=t_min, t_max=t_max, t_step=t_step, db_file=">>db_file<<", tag=tag, metadata=metadata),
+                debye_fw = Firework(QHAAnalysis(phonon=phonon, t_min=t_min, t_max=t_max, t_step=t_step, db_file=self.get('db_file', DB_FILE), tag=tag, metadata=metadata),
                                     name="{}-qha_analysis".format(structure.composition.reduced_formula))
                 fws.append(debye_fw)
                 '''
@@ -694,12 +693,12 @@ class PreEV_check(FiretaskBase):
                     vis_prestatic = PreStaticSet(structure)
                     for vol_add in vol_adds:
                         prestatic = StaticFW(structure=structure, job_type='normal', name='VR_%.3f-PreStatic' %vol_add,
-                                           prev_calc_loc=False, vasp_input_set=vis_prestatic, vasp_cmd=">>vasp_cmd<<", db_file=db_file,
+                                           prev_calc_loc=False, vasp_input_set=vis_prestatic, vasp_cmd=">>vasp_cmd<<", db_file=self.get('db_file', DB_FILE),
                                            metadata=metadata, Prestatic=True)
                         fws.append(prestatic)
                         prestatic_calcs.append(prestatic)
 
-                    check_result = Firework(PreEV_check(db_file = db_file, tag = tag, relax_path = relax_path, deformations = deformations, run_isif2=run_isif2,
+                    check_result = Firework(PreEV_check(db_file = self.get('db_file', DB_FILE), tag = tag, relax_path = relax_path, deformations = deformations, run_isif2=run_isif2,
                                                         tolerance = tolerance, threshold = 14, vol_spacing = vol_spacing, vasp_cmd = ">>vasp_cmd<<", pass_isif4=pass_isif4,
                                                         metadata = metadata, t_min=t_min, t_max=t_max, t_step=t_step, phonon = phonon, symmetry_tolerance = symmetry_tolerance,
                                                         phonon_supercell_matrix = phonon_supercell_matrix, verbose = verbose, site_properties=site_properties,
@@ -724,7 +723,7 @@ class PreEV_check(FiretaskBase):
                     print('Success in PreStatic calculations, entering Position relax ...')
                     vis_relax = RelaxSet(structure)
                     ps2_relax_fw = OptimizeFW(structure, symmetry_tolerance=symmetry_tolerance, job_type='normal', name='MinE V=%.3f relax' %vol_orig,
-                                               prev_calc_loc=False, vasp_input_set=vis_relax, vasp_cmd=">>vasp_cmd<<", db_file=db_file,
+                                               prev_calc_loc=False, vasp_input_set=vis_relax, vasp_cmd=">>vasp_cmd<<", db_file=self.get('db_file', DB_FILE),
                                                metadata=metadata, record_path = True, modify_incar = {'ISIF': 2}, run_isif2=run_isif2, pass_isif4=pass_isif4,
                                                modify_incar_params=modify_incar_params, modify_kpoints_params = modify_kpoints_params,
                                                spec={'_preserve_fworker': True}, store_volumetric_data=store_volumetric_data)
@@ -732,7 +731,7 @@ class PreEV_check(FiretaskBase):
                 else:
                     print('Initial setting found, enter static claculations ...')
                     ps2_relax_fw = None
-                check_result = Firework(EVcheck_QHA(db_file = db_file, tag = tag, relax_path = relax_path, tolerance = tolerance, run_isif2=run_isif2,
+                check_result = Firework(EVcheck_QHA(db_file = self.get('db_file', DB_FILE), tag = tag, relax_path = relax_path, tolerance = tolerance, run_isif2=run_isif2,
                                                     threshold = threshold, vol_spacing = vol_spacing, vasp_cmd = ">>vasp_cmd<<", run_num = run_num,
                                                     metadata = metadata, t_min = t_min, t_max = t_max, t_step = t_step, phonon = phonon, deformations =deformations,
                                                     phonon_supercell_matrix = phonon_supercell_matrix, symmetry_tolerance = symmetry_tolerance,
