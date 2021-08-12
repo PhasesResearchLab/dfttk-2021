@@ -374,7 +374,7 @@ class EVcheck_QHA(FiretaskBase):
                     too_many_run_error()
             else:  # No need to do more VASP calculation, QHA could be running
                 print('Success in Volumes-Energies checking, enter QHA ...')
-                debye_fw = Firework(QHAAnalysis(phonon=phonon, t_min=t_min, t_max=t_max, t_step=t_step, db_file=db_file, tag=tag, metadata=metadata),
+                debye_fw = Firework(QHAAnalysis(phonon=phonon, t_min=t_min, t_max=t_max, t_step=t_step, db_file=">>db_file<<", tag=tag, metadata=metadata),
                                     name="{}-qha_analysis".format(structure.composition.reduced_formula))
                 fws.append(debye_fw)
                 '''

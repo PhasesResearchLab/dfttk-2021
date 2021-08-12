@@ -554,6 +554,9 @@ def run_ext_EVfind(subparsers):
     pEVfind.add_argument("-all", "--containall", dest="containall", nargs="?", type=str, default=None,
                       help="find calculations must contain all elements in the list\n"
                            "Default: None")
+    pEVfind.add_argument("-tag", "--metatag", dest="metatag", nargs="?", type=str, default=None,
+                      help="metatag: MongoDB metadata tag field. \n"
+                           "Default: None")
     pEVfind.add_argument("-xall", "--excludeall", dest="excludeall", nargs="?", type=str, default=None,
                       help="exclude calculations that conain all elements in the list\n"
                            "Default: None")

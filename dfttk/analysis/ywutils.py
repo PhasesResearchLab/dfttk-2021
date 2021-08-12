@@ -246,6 +246,7 @@ def get_rec_from_metatag(vasp_db,m):
         sts = calc['output']['stress']
         ene = calc['output']['energy']
         if ene < emin:
+            emin = ene
             structure = Structure.from_dict(calc['input']['structure'])
             POSCAR = structure.to(fmt="poscar")
             INCAR = calc['input']['incar']
@@ -275,6 +276,7 @@ def get_rec_from_metatag(vasp_db,m):
         sts = calc['output']['stress']
         ene = calc['output']['energy']
         if ene < emin:
+            emin = ene
             structure = Structure.from_dict(calc['input']['structure'])
             POSCAR = structure.to(fmt="poscar")
             INCAR = calc['input']['incar']

@@ -77,12 +77,15 @@ class EVfindMDB ():
         self.print = args.print
         self.plot = args.plot
         self.findbandgap = args.findbandgap
+        self.metatag = args.metatag
         if args.within is not None: self.within, tmp = formula2composition(args.within)
         if args.containall is not None: self.containall, tmp = formula2composition(args.containall)
         if args.containany is not None: self.containany, tmp = formula2composition(args.containany)
         if args.excludeall is not None: self.excludeall, tmp = formula2composition(args.excludeall)
 
-    def skipby(self, phase):
+    def skipby(self, phase, metatag):
+        if self.metatag!=None:
+            if self.metatag!=metatag: return True
         els,tmp = formula2composition(phase.split('_')[0])
         if len (self.within) != 0:
             for e in els:
@@ -137,7 +140,6 @@ class EVfindMDB ():
                 potsoc = get_used_pot(i)
 
                 structure = Structure.from_dict(i['output']['structure'])
-                natoms = len(structure.sites)
                 formula_pretty = structure.composition.reduced_formula
                 try:
                     formula2composition(formula_pretty)
@@ -162,7 +164,7 @@ class EVfindMDB ():
                 if self.qhamode == 'phonon':
                     if self.hit_count[self.hit_condition.index(mm)] < self.nV: continue
             if count[i]<self.nV: continue
-            if self.skipby(phases[i]): continue
+            if self.skipby(phases[i], mm): continue
             if self.qhamode == 'phonon':
                 if self.hit_count[self.hit_condition.index(mm)] < self.nV: continue
             metadata = {'tag':mm}
@@ -182,10 +184,8 @@ class EVfindMDB ():
             readme['E-V'] = EV
             readme['INCAR'] = INCAR
             readme['POSCAR'] = POSCAR
-            natoms = len(structure.sites)
-            readme['natoms'] = natoms
+            natoms = readme['E-V']['natoms']
             with open (os.path.join(folder,'readme'), 'w') as fp:
                 myjsonout(readme, fp, indent="", comma="")
-            structure = Structure.from_file(os.path.join(folder,'POSCAR'))
             thermoplot(folder,"0 K total energies (eV/atom)", \
                 np.array(EV['volumes'])/natoms, np.array(EV['energies'])/natoms)
