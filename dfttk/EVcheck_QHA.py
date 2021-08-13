@@ -203,7 +203,7 @@ class EVcheck_QHA(FiretaskBase):
                        'del_limited', 'vol_spacing', 't_min', 't_max', 't_step', 'phonon', 'phonon_supercell_matrix',
                        'verbose', 'modify_incar_params', 'run_num','modify_kpoints_params', 'site_properties',
                        'override_symmetry_tolerances', 'override_default_vasp_params', 'db_file', 'vasp_cmd',
-                       'force_phonon', 'stable_tor', 'store_volumetric_data']
+                       'force_phonon', 'stable_tor', 'store_volumetric_data','test']
 
     def run_task(self, fw_spec):
         '''
@@ -225,7 +225,7 @@ class EVcheck_QHA(FiretaskBase):
         eos_tolerance = self.get('eos_tolerance', 0.005)
         threshold = self.get('threshold', 14)
         del_limited = self.get('del_limited', 0.3)
-        vol_spacing = self.get('vol_spacing', 0.03)
+        vol_spacing = self.get('vol_spacing', 0.05)
         t_min = self.get('t_min', 5)
         t_max = self.get('t_max', 2000)
         t_step = self.get('t_step', 5)
@@ -248,6 +248,7 @@ class EVcheck_QHA(FiretaskBase):
 
         stable_tor = self.get('stable_tor', 0.01)
         force_phonon = self.get('force_phonon', False)
+        test = self.get('test', False)
 
         relax_structure = self.get('structure') or fw_spec.get('structure', None)
         relax_scheme = self.get('relax_scheme') or fw_spec.get('relax_scheme', [2])
@@ -368,7 +369,7 @@ class EVcheck_QHA(FiretaskBase):
                         from dfttk.utils import add_modify_kpoints_by_FWname
                         add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
                     wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
-                    lpad.add_wf(wfs)
+                    if not test: lpad.add_wf(wfs)
                 else:
                     too_many_run_error()
             else:  # No need to do more VASP calculation, QHA could be running
@@ -391,7 +392,7 @@ class EVcheck_QHA(FiretaskBase):
                 strname = "{}:{}".format(structure.composition.reduced_formula, 'QHA')
                 wfs = Workflow(fws, name = strname, metadata=metadata)
                 wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
-                lpad.add_wf(wfs)
+                if not test: lpad.add_wf(wfs)
         else:   # failure to meet the tolerance
             if len(volumes) == 0: #self.error == 1e10:   # Bad initial running set
                 pass_result_error()
@@ -524,6 +525,7 @@ class EVcheck_QHA(FiretaskBase):
 
         # Check minimum spacing
         volumer = [vol_i / vol_orig for vol_i in volumer]
+        """
         decimals = 4
         for m in range(len(volumer) - 1):
             vol_space_m = volumer[m + 1] - volumer[m]
@@ -531,6 +533,8 @@ class EVcheck_QHA(FiretaskBase):
                 vol = np.linspace(volumer[m], volumer[m + 1], math.ceil(vol_space_m / vol_spacing) + 1).tolist()
                 print('Additional volume({}) is appended for the volume space({}) is larger than specified({})'.format(vol[1:-1], vol_space_m, vol_spacing))
                 result.append(vol[1:-1])
+                #result.extend(vol[1:-1])
+        """
 
         # To check (and extend) deformation coverage
         # To make sure that coverage extension smaller than interpolation spacing
@@ -570,6 +574,7 @@ class EVcheck_QHA(FiretaskBase):
         print('Evaluated MIN volume is %.3f;' %vol_min)
         print('Evaluated MAX volume is %.3f;' %vol_max)
 
+        """
         vol_max = vol_max / vol_orig
         vol_min = vol_min / vol_orig
         counter = 1
@@ -590,9 +595,19 @@ class EVcheck_QHA(FiretaskBase):
             while (counter < max_append) and (result[-1] > vol_min):
                 result.append(result[-1] - vol_spacing)
                 counter += 1
-        
-        if len(volume)>11: return(np.array([]))
-        else: return(np.array(result))
+        """
+        val, idx = min((val, idx) for (idx, val) in enumerate(energy))
+        nV = len(energy)
+        max_append = 3
+        if max_append - idx > 0:
+            vol_spacing = volumer[1] - volumer[0]
+            for i in range(max_append-idx):
+                result.append(volumer[0] - (max_append-idx-i)*vol_spacing)
+        elif idx+1+max_append - nV > 0:
+            vol_spacing = volumer[-1] - volumer[-2]
+            for i in range(idx+1+max_append-nV):
+                result.append(volumer[-1] + (i+1)*vol_spacing)
+        return(np.array(result))
 
     def check_fit(self, volumes, energies):
         eos = EOS('vinet')
@@ -643,7 +658,7 @@ class PreEV_check(FiretaskBase):
         tolerance = self.get('tolerance') or 0.005
         threshold = self.get('threshold') or 14
         del_limited = self.get('del_limited') or 0.3
-        vol_spacing = self.get('vol_spacing') or 0.03
+        vol_spacing = self.get('vol_spacing') or 0.05
         t_min = self.get('t_min') or 5
         t_max = self.get('t_max') or 2000
         t_step = self.get('t_step') or 5

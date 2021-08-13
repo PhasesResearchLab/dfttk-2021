@@ -42,6 +42,7 @@ from fireworks import Firework
 from atomate.vasp.config import VASP_CMD, DB_FILE
 import os
 from dfttk.ftasks import QHAAnalysis
+from dfttk.analysis.ywutils import get_rec_from_metatag, get_used_pot
 
 head,tail = os.path.split(__file__)
 db_file = os.path.join(head,"db.json")
@@ -76,16 +77,29 @@ def test_check_points():
 @pytest.mark.check_points_1
 def test_check_points_1():
     tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
+    tag = 'd054780c-f051-4450-a611-d374d41d1884'
     proc = EVcheck_QHA()
     db_file = 'C:/Users/lucas/OneDrive/Documents/GitHub/PureMetals/config/db.json'
     volumes, energies, _ = proc.get_orig_EV(db_file, tag)
     proc.check_points("", "", 0.005, 14, 0.3, volumes, energies, True)
     #assert False
 
+@pytest.mark.check_points_2
+def test_check_points_2():
+    tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
+    tag = 'd054780c-f051-4450-a611-d374d41d1884'
+    db_file = 'C:/Users/lucas/OneDrive/Documents/GitHub/PureMetals/config/db.json'
+    vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
+    EV, POSCAR, INCAR = get_rec_from_metatag(vasp_db, tag, test=True)
+    structure = Structure.from_str(POSCAR, fmt='POSCAR')
+    proc = EVcheck_QHA(db_file=db_file, metadata={'tag':tag}, structure=structure, test=True)
+    proc.run_task({})
+    assert False
+
 @pytest.mark.EVcheck_QHA_2
 def test_EVcheck_QHA_2():
     tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
     db_file = 'C:/Users/lucas/OneDrive/Documents/GitHub/PureMetals/config/db.json'
-    wf = Firework(EVcheck_QHA(db_file=db_file,vasp_cmd=">>vasp_cmd<<",tag="test",metadata={'tag':tag}))
+    wf = Firework(EVcheck_QHA(db_file=db_file,vasp_cmd=">>vasp_cmd<<",tag="test",metadata={'tag':tag}, test=True))
     print(wf.as_dict())
     #assert False

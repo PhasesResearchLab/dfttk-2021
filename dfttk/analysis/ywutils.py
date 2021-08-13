@@ -219,7 +219,7 @@ vasp_db - MonggoDB database connection
 m - metadata tag value
 return: E-V, strain, stresses, bandgap etc
 """
-def get_rec_from_metatag(vasp_db,m):
+def get_rec_from_metatag(vasp_db,m, test=False):
     static_calculations = vasp_db.collection.\
         find({'$and':[ {'metadata': {'tag':m}}, {'adopted': True} ]})
     gapfound = False
@@ -275,6 +275,11 @@ def get_rec_from_metatag(vasp_db,m):
         lat = calc['output']['structure']['lattice']['matrix']
         sts = calc['output']['stress']
         ene = calc['output']['energy']
+        if test:
+            structure = Structure.from_dict(calc['input']['structure'])
+            POSCAR = structure.to(fmt="poscar")
+            INCAR = calc['input']['incar']
+            break            
         if ene < emin:
             emin = ene
             structure = Structure.from_dict(calc['input']['structure'])
