@@ -94,7 +94,7 @@ def test_check_points_2():
     structure = Structure.from_str(POSCAR, fmt='POSCAR')
     proc = EVcheck_QHA(db_file=db_file, metadata={'tag':tag}, structure=structure, test=True)
     proc.run_task({})
-    assert False
+    #assert False
 
 @pytest.mark.EVcheck_QHA_2
 def test_EVcheck_QHA_2():

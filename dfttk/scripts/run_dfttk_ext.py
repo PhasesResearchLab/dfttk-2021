@@ -22,6 +22,7 @@ import shutil
 from datetime import datetime
 from dfttk.analysis.ywplot import myjsonout, thermoplot
 from dfttk.analysis.ywutils import get_melting_temperature, reduced_formula, get_expt
+import numpy as np
 
 no_MongoDB = False
 

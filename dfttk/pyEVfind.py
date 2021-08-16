@@ -41,7 +41,9 @@ class EVfindMDB ():
     def __init__(self, args, vasp_db):
         self.vasp_db = vasp_db
         self.qhamode = args.qhamode
-        self.items = (self.vasp_db).collection.find({'adopted': True})
+        #self.items = (self.vasp_db).collection.find({'adopted': True})
+        self.items = (self.vasp_db).collection.find({'output.structure.lattice.volume': {'$exists': True} })
+        
         if self.qhamode=='phonon':
             hit_condition = list((self.vasp_db).db['phonon'].find({'$and':[{'adopted': True}, {"S_vib": { "$exists": True } }]},\
                 {'metadata':1, 'volume':1}))

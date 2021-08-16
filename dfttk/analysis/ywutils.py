@@ -220,8 +220,13 @@ m - metadata tag value
 return: E-V, strain, stresses, bandgap etc
 """
 def get_rec_from_metatag(vasp_db,m, test=False):
-    static_calculations = vasp_db.collection.\
-        find({'$and':[ {'metadata': {'tag':m}}, {'adopted': True} ]})
+    if vasp_db.collection.count_documents({'$and':[ {'metadata.tag': m}, {'adopted': True}, \
+            {'output.structure.lattice.volume': {'$exists': True}}]}) <= 5:
+        static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': m}, \
+            {'output.structure.lattice.volume': {'$exists': True} }]})
+    else:
+        static_calculations = vasp_db.collection.\
+            find({'$and':[ {'metadata': {'tag':m}}, {'adopted': True} ]})
     gapfound = False
     energies = []
     volumes = []  
