@@ -128,7 +128,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     #int, the number of initial deformations, e.g. 7
     num_deformations = settings.get('num_deformations', 7)
     #list/tuple(min, max) or float(-max, max), the maximum amplitude of deformation, e.g. (-0.15, 0.15) means (0.95, 1.1) in volume
-    deformation_fraction = settings.get('deformation_fraction', (-0.15, 0.15))
+    deformation_fraction = settings.get('deformation_fraction', (-0.15, 0.20))
     #float, minimum ratio of Volumes spacing, e.g. 0.05
     volume_spacing_min = settings.get('volume_spacing_min', 0.05)
     #bool, run phonon(True) or not(False)

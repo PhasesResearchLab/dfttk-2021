@@ -598,14 +598,15 @@ class EVcheck_QHA(FiretaskBase):
         """
         val, idx = min((val, idx) for (idx, val) in enumerate(energy))
         nV = len(energy)
-        max_append = 3
-        if max_append - idx > 0:
+        nV_addL = 3
+        if nV_addL - idx > 0:
             vol_spacing = volumer[1] - volumer[0]
-            for i in range(max_append-idx):
-                result.append(volumer[0] - (max_append-idx-i)*vol_spacing)
-        elif idx+1+max_append - nV > 0:
+            for i in range(nV_addL-idx):
+                result.append(volumer[0] - (nV_addL-idx-i)*vol_spacing)
+        nV_addR = 4
+        if idx+1+nV_addR - nV > 0:
             vol_spacing = volumer[-1] - volumer[-2]
-            for i in range(idx+1+max_append-nV):
+            for i in range(idx+1+nV_addR-nV):
                 result.append(volumer[-1] + (i+1)*vol_spacing)
         return(np.array(result))
 
