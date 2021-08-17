@@ -188,6 +188,8 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     #check if fworker_name is assigned
     powerups = settings.get('powerups', {})
     if len(powerups)>0:
+        if 'user_incar_settings' not in override_default_vasp_params:
+            override_default_vasp_params.update({'user_incar_settings':{}})
         override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
         modify_incar_params.update({'powerups':powerups})
     
@@ -269,9 +271,9 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
                       vasp_cmd=">>vasp_cmd<<", override_default_vasp_params=override_default_vasp_params,
                       modify_incar=modify_incar_params)
     elif WORKFLOW == 'elastic':
-            wf = get_wf_elastic(structure=structure, metadata=metadata, vasp_cmd=">>vasp_cmd<<", db_file=">>db_file<<", name="elastic",
-                       override_default_vasp_params=override_default_vasp_params, strain_states=strain_states,
-                       stencils=stencils, analysis=analysis, sym_reduce=sym_reduce, order=order, conventional=conventional)
+        wf = get_wf_elastic(structure=structure, metadata=metadata, vasp_cmd=">>vasp_cmd<<", db_file=">>db_file<<", name="elastic",
+            override_default_vasp_params=override_default_vasp_params, strain_states=strain_states,
+            stencils=stencils, analysis=analysis, sym_reduce=sym_reduce, order=order, conventional=conventional)
     else:
         raise ValueError("Currently, only the gibbs energy workflow is supported.")
     return wf
@@ -345,7 +347,8 @@ def run(args):
                 user_settings.update({"phonon_supercell_matrix": "atoms"})
 
             wf = get_wf_single(structure, WORKFLOW=WORKFLOW, settings=user_settings)
-            wf = Customizing_Workflows(wf)
+            
+            wf = Customizing_Workflows(wf,powerups_options=user_settings.get('powerups', None))
             if isinstance(wf, list):
                 wfs = wfs + wf
             else:
