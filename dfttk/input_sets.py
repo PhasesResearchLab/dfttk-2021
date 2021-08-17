@@ -518,7 +518,7 @@ class ElasticSet(DictSet):
         "LVHAR": True,
         "ICHARG": 0,
         "NSW": 99,
-        "MAGMOM": CONFIG['INCAR']['MAGMOM'],
+        #"MAGMOM": CONFIG['INCAR']['MAGMOM'],
         "ISPIN": 2,
         "ISIF": 2,
         "PREC": "High"
