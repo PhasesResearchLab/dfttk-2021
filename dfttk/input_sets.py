@@ -595,3 +595,4 @@ class ElasticSet(DictSet):
         super(ElasticSet, self).__init__(structure, new_config, sort_structure=False, **self.kwargs)
         self.config = new_config
 
+
