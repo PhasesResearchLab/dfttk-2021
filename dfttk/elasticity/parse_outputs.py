@@ -305,9 +305,9 @@ class ElasticTensorToDb(FiretaskBase):
         }
         vasp_input_set = env_chk(self.get('vasp_input_set'), False)
         if vasp_input_set:
-            d['vasp_input_set_all'] = vasp_input_set.new_config
-            d['vasp_input_set'] = {'INCAR':vasp_input_set.new_config['INCAR'], \
-            'KPOINTS':vasp_input_set.new_config['KPOINTS'].as_dict()}
+            d['vasp_input_set_all'] = vasp_input_set.config
+            d['vasp_input_set'] = {'INCAR':vasp_input_set.config['INCAR'], \
+            'KPOINTS':vasp_input_set.config['KPOINTS'].as_dict()}
 
         # Get optimized structure
         calc_locs_opt = [cl for cl in fw_spec.get('calc_locs', []) if 'optimiz' in cl['name']]
