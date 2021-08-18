@@ -1782,7 +1782,7 @@ class thelecMDB():
         return fac0/fac1*fac2, gamma, theta_D
 
 
-    def get_lattice_conductivity_1(self):   
+    def get_lattice_conductivity_1(self,vol):   
         reduced_structure = self.structure.get_reduced_structure(reduction_algo='niggli')
         formula_pretty = self.structure.composition.reduced_formula
         try:
@@ -2251,7 +2251,7 @@ class thelecMDB():
                         T_div = self.T[i]
                     elif k_ph_fac==0:
                         if self.k_ph_mode==0:
-                            k_ph_fac, gamma = self.get_lattice_conductivity_1()
+                            k_ph_fac, gamma = self.get_lattice_conductivity_1(self.volT[0])
                         else:
                             k_ph_fac, gamma = self.get_lattice_conductivity_0(i, self.T[i], self.volT[i])
                         T_div = self.T[i]

@@ -122,8 +122,8 @@ class RelaxSet(DictSet):
             if 'MAGMOM' in new_config['INCAR']:
                 new_config['INCAR'].pop('MAGMOM')
         elif uis['ISPIN']==1:
-                if 'MAGMON' in uis.keys():
-                    uis.pop['MAGMOM']
+            if 'MAGMON' in uis.keys(): uis.pop['MAGMOM']
+            if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
 
         if 'Relax_settings' in uis:
             relax = uis['Relax_settings']
@@ -192,6 +192,14 @@ class PreStaticSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
+
+        if 'magmom' in uis:
+            if 'MAGMOM' in new_config['INCAR']:
+                new_config['INCAR'].pop('MAGMOM')
+        elif uis['ISPIN']==1:
+            if 'MAGMON' in uis.keys(): uis.pop['MAGMOM']
+            if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
+
         new_config['INCAR'].update(uis)
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:
@@ -245,13 +253,14 @@ class ForceConstantsSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
-        new_config['INCAR'].update(uis)
+
         if 'magmom' in uis:
             if 'MAGMOM' in new_config['INCAR']:
                 new_config['INCAR'].pop('MAGMOM')
         elif uis['ISPIN']==1:
-            if 'MAGMON' in uis.keys():
-                uis.pop['MAGMOM']
+            if 'MAGMON' in uis.keys(): uis.pop['MAGMOM']
+            if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
+
         new_config['INCAR'].update(uis)
         from pymatgen.io.vasp.inputs import Kpoints
         #kpoints = Kpoints.automatic_gamma_density(structure, 4000)
@@ -315,13 +324,14 @@ class StaticSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
-        new_config['INCAR'].update(uis)
+
         if 'magmom' in uis:
             if 'MAGMOM' in new_config['INCAR']:
                 new_config['INCAR'].pop('MAGMOM')
         elif uis['ISPIN']==1:
-                if 'MAGMON' in uis.keys():
-                    uis.pop['MAGMOM']
+            if 'MAGMON' in uis.keys(): uis.pop['MAGMOM']
+            if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
+
         new_config['INCAR'].update(uis)
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:
@@ -466,10 +476,13 @@ class BornChargeSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
-        else:
-            if uis['ISPIN']==1:
-                if 'MAGMON' in uis.keys():
-                    uis.pop['MAGMOM']
+
+        if 'magmom' in uis:
+            if 'MAGMOM' in new_config['INCAR']:
+                new_config['INCAR'].pop('MAGMOM')
+        elif uis['ISPIN']==1:
+            if 'MAGMON' in uis.keys(): uis.pop['MAGMOM']
+            if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
 
         for key in uis.keys():
             if key not in new_config['INCAR']:
@@ -481,11 +494,6 @@ class BornChargeSet(DictSet):
                 new_config['INCAR'][key] = uis[key]
             elif key == 'SIGMA':
                 new_config['INCAR'][key] = uis[key]
-               
-        if 'ISPIN' in new_config['INCAR']:
-            if new_config['INCAR']['ISPIN'] == 1:
-                if 'MAGMOM' in new_config['INCAR']:
-                    new_config['INCAR'].pop('MAGMOM')
 
         if 'SIGMA' in new_config['INCAR'] and 'ISMEAR' in new_config['INCAR'] :
             if new_config['INCAR']['ISMEAR'] == -5:
@@ -549,9 +557,13 @@ class ElasticSet(DictSet):
                 uis.update({'ISPIN': 2})
             else:
                 uis.update({'ISPIN': 1})
-        if uis['ISPIN']==1:
-            if 'MAGMON' in uis.keys():
-                uis.pop['MAGMOM']
+
+        if 'magmom' in uis:
+            if 'MAGMOM' in new_config['INCAR']:
+                new_config['INCAR'].pop('MAGMOM')
+        elif uis['ISPIN']==1:
+            if 'MAGMON' in uis.keys(): uis.pop['MAGMOM']
+            if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
 
         for key in uis.keys():
             if key not in new_config['INCAR']:
@@ -563,11 +575,6 @@ class ElasticSet(DictSet):
                 new_config['INCAR'][key] = uis[key]
             elif key == 'SIGMA':
                 new_config['INCAR'][key] = uis[key]
-               
-        if 'ISPIN' in new_config['INCAR']:
-            if new_config['INCAR']['ISPIN'] == 1:
-                if 'MAGMOM' in new_config['INCAR']:
-                    new_config['INCAR'].pop('MAGMOM')
 
         if 'SIGMA' in new_config['INCAR'] and 'ISMEAR' in new_config['INCAR'] :
             if new_config['INCAR']['ISMEAR'] == -5:

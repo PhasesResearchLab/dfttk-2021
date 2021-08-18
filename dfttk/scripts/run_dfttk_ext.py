@@ -579,6 +579,9 @@ def run_ext_EVfind(subparsers):
     pEVfind.add_argument("-plot", "-plot", dest="plot", action='store_true', default=False,
                       help="plot the EV. \n"
                            "Default: False")
+    pEVfind.add_argument("-db", "--db_file", dest="db_file", nargs="?", type=str, default=None,
+                      help="alternative database other than default\n"
+                           "Default: None")
     pEVfind.add_argument("-qhamode", "-qhamode", dest="qhamode", nargs="?", type=str, default=None,
                       help="quasiharmonic mode: debye, phonon, or yphon. \n"
                            "Default: None")
@@ -599,7 +602,10 @@ def ext_EVfind(args, vasp_db=None):
         WORKFLOW = args.WORKFLOW
             workflow, current only get_wf_gibbs
     """
-    if vasp_db is None:
+    if args.db_file is not None:
+        vasp_db = VaspCalcDb.from_db_file(args.db_file, admin=False)
+        db_file = args.db_file       
+    elif vasp_db is None:
         db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
         vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
     proc=EVfindMDB(args, vasp_db=vasp_db)
