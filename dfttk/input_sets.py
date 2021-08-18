@@ -540,11 +540,16 @@ class ElasticSet(DictSet):
         
         uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
         new_config = copy.deepcopy(ElasticSet.CONFIG)
+        if metal_check(structure): grid_density = 15625
+        else: grid_density = 8000
+        grid_density = kwargs.get('grid_density') or grid_density
         """
         old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', \
             'user_potcar_functional', 'user_incar_settings']
         """
-        old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol']
+        old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', \
+            'user_incar_settings']
+
         for k in old_kwargs:
             try:
                 kwargs.pop(k)
@@ -575,18 +580,20 @@ class ElasticSet(DictSet):
                 new_config['INCAR'][key] = uis[key]
             elif key == 'SIGMA':
                 new_config['INCAR'][key] = uis[key]
+            elif key == 'ENCUT':
+                new_config['INCAR'][key] = uis[key]
 
+        #avoid conflict betwwen HIHG and ENCUT
+        for key in uis.keys():
+            if key == 'PREC':
+                new_config['INCAR'][key] = uis[key]
+                if 'ENCUT' in new_config['INCAR'] : new_config['INCAR'].pop('ENCUT')
+    
         if 'SIGMA' in new_config['INCAR'] and 'ISMEAR' in new_config['INCAR'] :
             if new_config['INCAR']['ISMEAR'] == -5:
                 new_config['INCAR'].pop('SIGMA')
 
         from pymatgen.io.vasp.inputs import Kpoints
-        if metal_check(structure):
-            grid_density = 15625
-            #new_config['INCAR']['ISMEAR'] = 1
-            #new_config['INCAR']['SIGMA'] = 0.2
-        else:
-            grid_density = 8000
         kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
         new_config['KPOINTS'] = kpoints
         pot = self.kwargs.get('user_potcar_functional', None)
@@ -594,5 +601,4 @@ class ElasticSet(DictSet):
             new_config['POTCAR_FUNCTIONAL'] = pot
         super(ElasticSet, self).__init__(structure, new_config, sort_structure=False, **self.kwargs)
         self.config = new_config
-
 
