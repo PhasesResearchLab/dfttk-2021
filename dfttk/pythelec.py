@@ -2472,18 +2472,20 @@ class thelecMDB():
             self.Young_Modulus_Cij = []
             self.Shear_Modulus_Cij = []
             self.Bulk_Modulus_Cij = []
+            self.Possion_Ratio_Cij = []
             for i,m in enumerate(self.Cij_T):
-                E,G,B = self.Cij_to_Moduli(m)
+                E,G,B,Possion_Ratio = self.Cij_to_Moduli(m)
                 correction_factor = self.blat[i]*toGPa/B
                 #correction_factor = 1.0
                 for j in range(3):
                     for k in range(3):
                         self.Cij_T[i,j,k] *=correction_factor
-                E,G,B = self.Cij_to_Moduli(self.Cij_T[i,:,:])
+                E,G,B,Possion_Ratio = self.Cij_to_Moduli(self.Cij_T[i,:,:])
                 self.Young_Modulus_Cij.append(E)
                 self.Shear_Modulus_Cij.append(G)
                 #self.Bulk_Modulus_Cij.append(B)
                 self.Bulk_Modulus_Cij.append(correction_factor)
+                self.Possion_Ratio_Cij.append(Possion_Ratio)
 
             if ngroup>=1 and ngroup<=2: #for Triclinic system
                 fp.write('# T(K) V(Ang^3) B(GPa) C11 C12 C13 C14 C15 C16 C22 C23 C24 C25 C26 C33 C34'\
@@ -2568,6 +2570,7 @@ class thelecMDB():
             self.Young_Modulus_Cij_S = []
             self.Shear_Modulus_Cij_S = []
             self.Bulk_Modulus_Cij_S = []
+            self.Possion_Ratio_Cij_S = []
             ev = np.zeros((6), dtype=float)
             for i,m in enumerate(self.Cij_T):
                 eij = self.eij_T[i]
@@ -2591,10 +2594,11 @@ class thelecMDB():
                         else:
                             self.Cij_S[i, j, k] = self.Cij_T[i, j, k]
 
-                E,G,B = self.Cij_to_Moduli(self.Cij_S[i, :, :])
+                E,G,B,Possion_Ratio = self.Cij_to_Moduli(self.Cij_S[i, :, :])
                 self.Young_Modulus_Cij_S.append(E)
                 self.Shear_Modulus_Cij_S.append(G)
                 self.Bulk_Modulus_Cij_S.append(B)
+                self.Possion_Ratio_Cij_S.append(Possion_Ratio)
 
             if ngroup>=1 and ngroup<=2: #for Triclinic system
                 fp.write('# T(K) V(Ang^3) B(GPa) C11 C12 C13 C14 C15 C16 C22 C23 C24 C25 C26 C33 C34'\

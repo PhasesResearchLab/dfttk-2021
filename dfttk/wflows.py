@@ -181,7 +181,7 @@ def get_wf_elastic(structure=None, metadata=None, tag=None, vasp_cmd=None, db_fi
             wf_elastic = get_wf_elastic_constant(struct, metadata, strain_states=strain_states, stencils=stencils,
                                 db_file=db_file, conventional=conventional, order=order, vasp_input_set=vasp_input_set,
                                 analysis=analysis, sym_reduce=sym_reduce, tag='{}-{}'.format(name, tag),
-                                vasp_cmd=vasp_cmd, **kwargs)
+                                vasp_cmd=vasp_cmd, override_default_vasp_params=override_default_vasp_params, **kwargs)
             wfs.append(wf_elastic)
     else:
         if structure is None:
