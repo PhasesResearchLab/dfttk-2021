@@ -542,13 +542,14 @@ class ElasticSet(DictSet):
         new_config = copy.deepcopy(ElasticSet.CONFIG)
         if metal_check(structure): grid_density = 15625
         else: grid_density = 8000
-        grid_density = kwargs.get('grid_density') or grid_density
+        user_kpoints_settings = kwargs.get('user_kpoints_settings', {})
+        grid_density = user_kpoints_settings.get('grid_density') or grid_density
         """
         old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', \
             'user_potcar_functional', 'user_incar_settings']
         """
         old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', \
-            'user_incar_settings']
+            'user_incar_settings', 'user_kpoints_settings']
 
         for k in old_kwargs:
             try:
