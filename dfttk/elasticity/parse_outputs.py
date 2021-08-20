@@ -401,11 +401,14 @@ class ElasticTensorToDb(FiretaskBase):
                 "ieee_format": ieee.voigt
             }
         })
-        if order == 2:
-            d.update({"derived_properties": ieee.get_structure_property_dict(ref_struct)})
-        else:
-            soec = ElasticTensor(ieee[0])
-            d.update({"derived_properties": soec.get_structure_property_dict(ref_struct)})
+        try:
+            if order == 2:
+                d.update({"derived_properties": ieee.get_structure_property_dict(ref_struct)})
+            else:
+                soec = ElasticTensor(ieee[0])
+                d.update({"derived_properties": soec.get_structure_property_dict(ref_struct)})
+        except:
+            pass
 
         d["formula_pretty"] = ref_struct.composition.reduced_formula
         d['last_updated'] = datetime.utcnow()
