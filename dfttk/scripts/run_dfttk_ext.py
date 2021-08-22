@@ -439,6 +439,9 @@ def run_ext_thfind(subparsers):
     pthfind.add_argument("-v", "--nV", dest="nV", nargs="?", type=int, default=6,
                       help="Return phonon calculations finished for number of volumes larger or equals to. \n"
                            "Default: 6")
+    pthfind.add_argument("-poisson", "--poisson_ratio", dest="poisson", nargs="?", type=float, default=None,
+                      help="Poisson ratio used for Dybye model, if default, wiil set to 0.363615. \n"
+                           "Default: 60.363615")
     pthfind.add_argument("-ss", "--supercellsize", dest="supercellN", nargs="?", type=int, default=0,
                       help="only return phonon calculation with supercell size larger than. \n"
                            "Default: 0")
@@ -519,7 +522,7 @@ def ext_thfind(args, vasp_db=None):
                 proc = QHAAnalysis_renew(phonon=True, t_min=t_min, t_max=t_max,
                 t_step=t_step, db_file=db_file, test_failure=False, admin=True,
                 metadata={'tag':tag}, bp2gru = args.debye_gruneisen_x, 
-                tag=tag)
+                tag=tag, poisson = args.poisson)
                 #proc.run_task()
 
                 try: 

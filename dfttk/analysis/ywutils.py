@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from scipy.interpolate import interp1d, splev, splrep, BSpline
 from scipy.optimize import linprog
 from numpy.linalg import solve
 from fractions import Fraction
@@ -350,4 +351,40 @@ def get_used_pot(calc):
         pot += "+SOC"
     
     return pot
+
+
+def get_Poisson_Ratio(vasp_db, tag, volume):
+    try:
+        volumes_c = vasp_db.db['elasticity'].find({'metadata.tag': tag}, \
+            {'_id':0, 'elastic_tensor':1, 'initial_structure':1, 'fitting_data':1})
+    except:
+        return None
+
+    VCij = []
+    Poisson_Ratio = []
+
+    for i in volumes_c:
+        vol  = float(i['initial_structure']['lattice']['volume'])
+        if vol in VCij: continue
+        Cij = np.array(i['elastic_tensor']['ieee_format'])
+        A = (Cij[0,0] + Cij[1,1] + Cij[2,2])/3.
+        B = (Cij[0,1] + Cij[0,2] + Cij[1,2])/3.
+        C = (Cij[3,3] + Cij[4,4] + Cij[5,5])/3.
+        Bv = (A + 2.*B)/3.
+        Gv = (A - B + 3.*C)/5.
+        Ev = 9.*Bv*Gv/(Gv+3.*Bv)
+        p_r = 0.5*Ev/Gv - 1.0
+        VCij.append(vol)
+        Poisson_Ratio.append(p_r)
+    if len(VCij)>1:
+        if vol<VCij[0] or vol>VCij[-1]:
+            return None
+        else:
+            Poisson_Ratio = np.array(sort_x_by_y(Poisson_Ratio, VCij))
+            VCij = sort_x_by_y(VCij, VCij)
+            f2 = interp1d(VCij,Poisson_Ratio)
+            pratio = float(f2(volume))
+            print("Calculated Poisson ratio based on Cij =",pratio)
+            return pratio
+        
 

@@ -292,7 +292,11 @@ class thfindMDB ():
         phases = []
         static_collection = (self.vasp_db).collection.find({})
         for i in static_collection:
-            mm = i['metadata']
+            #print("iiiiiiiii",i)
+            try:
+                mm = i['metadata']
+            except:
+                continue
             if mm in hit: continue
             if len(mm)>1: continue
             else:

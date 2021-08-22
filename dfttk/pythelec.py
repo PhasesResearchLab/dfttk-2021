@@ -1292,6 +1292,7 @@ class thelecMDB():
 
         self.Cij = []
         self.VCij = []
+        self.Poisson_Ratio = []
 
         if not os.path.exists(phdir): os.mkdir(phdir)
         for i in volumes_c:
@@ -1324,6 +1325,7 @@ class thelecMDB():
 
             self.Cij.append(Cij)
             self.VCij.append(vol)
+            self.Poisson_Ratio.append(self.self.Cij_to_Moduli(self.Cij))
             with open (voldir+'/Cij.out','w') as out:
                 for x in range(6):
                     for y in range(6):
@@ -1333,6 +1335,7 @@ class thelecMDB():
         has_Cij = len(self.Cij)>0
         if has_Cij:
             self.Cij = np.array(sort_x_by_y(self.Cij, self.VCij))
+            self.Poisson_Ratio = np.array(sort_x_by_y(self.Poisson_Ratio, self.VCij))
             self.VCij = sort_x_by_y(self.VCij, self.VCij)
         return has_Cij
 
@@ -2403,7 +2406,8 @@ class thelecMDB():
         Bv = (A + 2.*B)/3.
         Gv = (A - B + 3.*C)/5.
         Ev = 9.*Bv*Gv/(Gv+3.*Bv)
-        return Ev, Gv, Bv
+        Poisson_ration = 0.5*Ev/Gv - 1.0
+        return Ev, Gv, Bv, Poisson_ration
 
 
     def calc_uniform(self, volumes, uniform, outf):
@@ -2472,20 +2476,20 @@ class thelecMDB():
             self.Young_Modulus_Cij = []
             self.Shear_Modulus_Cij = []
             self.Bulk_Modulus_Cij = []
-            self.Possion_Ratio_Cij = []
+            self.Poisson_Ratio_Cij = []
             for i,m in enumerate(self.Cij_T):
-                E,G,B,Possion_Ratio = self.Cij_to_Moduli(m)
+                E,G,B,Poisson_Ratio = self.Cij_to_Moduli(m)
                 correction_factor = self.blat[i]*toGPa/B
                 #correction_factor = 1.0
                 for j in range(3):
                     for k in range(3):
                         self.Cij_T[i,j,k] *=correction_factor
-                E,G,B,Possion_Ratio = self.Cij_to_Moduli(self.Cij_T[i,:,:])
+                E,G,B,Poisson_Ratio = self.Cij_to_Moduli(self.Cij_T[i,:,:])
                 self.Young_Modulus_Cij.append(E)
                 self.Shear_Modulus_Cij.append(G)
                 #self.Bulk_Modulus_Cij.append(B)
                 self.Bulk_Modulus_Cij.append(correction_factor)
-                self.Possion_Ratio_Cij.append(Possion_Ratio)
+                self.Poisson_Ratio_Cij.append(Poisson_Ratio)
 
             if ngroup>=1 and ngroup<=2: #for Triclinic system
                 fp.write('# T(K) V(Ang^3) B(GPa) C11 C12 C13 C14 C15 C16 C22 C23 C24 C25 C26 C33 C34'\
@@ -2570,7 +2574,7 @@ class thelecMDB():
             self.Young_Modulus_Cij_S = []
             self.Shear_Modulus_Cij_S = []
             self.Bulk_Modulus_Cij_S = []
-            self.Possion_Ratio_Cij_S = []
+            self.Poisson_Ratio_Cij_S = []
             ev = np.zeros((6), dtype=float)
             for i,m in enumerate(self.Cij_T):
                 eij = self.eij_T[i]
@@ -2594,11 +2598,11 @@ class thelecMDB():
                         else:
                             self.Cij_S[i, j, k] = self.Cij_T[i, j, k]
 
-                E,G,B,Possion_Ratio = self.Cij_to_Moduli(self.Cij_S[i, :, :])
+                E,G,B,Poisson_Ratio = self.Cij_to_Moduli(self.Cij_S[i, :, :])
                 self.Young_Modulus_Cij_S.append(E)
                 self.Shear_Modulus_Cij_S.append(G)
                 self.Bulk_Modulus_Cij_S.append(B)
-                self.Possion_Ratio_Cij_S.append(Possion_Ratio)
+                self.Poisson_Ratio_Cij_S.append(Poisson_Ratio)
 
             if ngroup>=1 and ngroup<=2: #for Triclinic system
                 fp.write('# T(K) V(Ang^3) B(GPa) C11 C12 C13 C14 C15 C16 C22 C23 C24 C25 C26 C33 C34'\

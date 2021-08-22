@@ -35,6 +35,7 @@ from dfttk import __version__ as dfttk_ver
 from pymatgen.core import __version__ as pymatgen_ver
 
 from dfttk.EVcheck_QHA import *
+from dfttk.analysis.ywutils import get_Poisson_Ratio
 from pymatgen.core import Structure
 from pymatgen.analysis.eos import EOS
 from fireworks import Firework
@@ -84,7 +85,12 @@ class QHAAnalysis_renew(FiretaskBase):
     optional_params = ["poisson", "bp2gru", "metadata", "test_failure", "admin"]
 
     def get_vol_ene(self):
-        return self.volumes, self.energies
+        tag = self["tag"]
+        admin = self.get('admin', False)
+        _db_file = self.get('db_file', db_file)
+        vasp_db = VaspCalcDb.from_db_file(db_file=_db_file, admin=admin)
+        volumes, energies, _, _ = get_static_calculations(vasp_db, tag)
+        return volumes, energies
         
     def run_task(self):
         tag = self["tag"]
@@ -101,7 +107,12 @@ class QHAAnalysis_renew(FiretaskBase):
         qha_result['metadata'] = self.get('metadata', {'tag':tag})
         #qha_result['has_phonon'] = self['phonon']
 
-        poisson = self.get('poisson', 0.363615)
+        poisson = self.get('poisson')
+        val, idx = min((val, idx) for (idx, val) in enumerate(energies))
+        poisson_Cij = get_Poisson_Ratio(vasp_db, tag, volumes[idx])
+        if poisson is None:
+            poisson = poisson_Cij or 0.363615
+        print("Used Poisson ratio:", poisson)
         bp2gru = self.get('bp2gru', 2./3.)
 
         # phonon properties
