@@ -337,7 +337,8 @@ class StaticSet(DictSet):
         if pot:
             new_config['POTCAR_FUNCTIONAL'] = pot
         super(StaticSet, self).__init__(structure, new_config, sort_structure=False, **self.kwargs)
-
+        self.config = new_config
+        
 
 class ATATIDSet():
     """Set tuned for Inflection Detection runs using ATAT with correct smearing for metals.

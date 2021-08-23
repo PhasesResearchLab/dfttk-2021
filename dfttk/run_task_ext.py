@@ -27,7 +27,7 @@ def excludeCase_v0(kmesh_factor):
     return kmesh_factor
 
 
-def get_kmesh_factor(override_default_vasp_params):
+def get_kmesh_factor(override_default_vasp_params, vasp_input_set):
     user_incar_settings = override_default_vasp_params.get('user_incar_settings', {})
     store_raw_vasprunxml = user_incar_settings.get('store_raw_vasprunxml', False)
     
@@ -38,11 +38,16 @@ def get_kmesh_factor(override_default_vasp_params):
     for k in user_incar_settings:
         if k.upper() in ["METAGGA", "LHFCALC"] : return 1
 
+    if kmesh_factor >= 2:
+        user_incar_settings = vasp_input_set.get('INCAR', {})
+        for k in user_incar_settings:
+            if k.upper() in ["METAGGA", "LHFCALC"] : return 1
+
     return kmesh_factor
 
 
-def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
-    kmesh_factor = get_kmesh_factor(override_default_vasp_params)
+def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params,vasp_input_set):
+    kmesh_factor = get_kmesh_factor(override_default_vasp_params, vasp_input_set)
     if kmesh_factor > 1:
         t.append(nonscalc(kmesh_factor=kmesh_factor))
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
