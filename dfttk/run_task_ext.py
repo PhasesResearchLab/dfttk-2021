@@ -39,7 +39,7 @@ def get_kmesh_factor(override_default_vasp_params, vasp_input_set):
         if k.upper() in ["METAGGA", "LHFCALC"] : return 1
 
     if kmesh_factor >= 2:
-        user_incar_settings = vasp_input_set.get('INCAR', {})
+        user_incar_settings = vasp_input_set.config['INCAR'] or {}
         for k in user_incar_settings:
             if k.upper() in ["METAGGA", "LHFCALC"] : return 1
 
