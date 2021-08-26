@@ -290,13 +290,10 @@ class thfindMDB ():
     def qha_renew(self):
         hit = []
         phases = []
-        static_collection = (self.vasp_db).collection.find({})
+        static_collection = (self.vasp_db).collection.find({'$and':[{'metadata': { "$exists": True }}, \
+            {'adopted': True} ]})
         for i in static_collection:
-            #print("iiiiiiiii",i)
-            try:
-                mm = i['metadata']
-            except:
-                continue
+            mm = i['metadata']
             if mm in hit: continue
             if len(mm)>1: continue
             else:
@@ -346,7 +343,7 @@ class thfindMDB ():
             for ii, calc in enumerate(static_calculations):
                 vol = calc['output']['structure']['lattice']['volume']
                 if vol in volumes:
-                    if len (calc['metadata']) > 1: contimue
+                    if len (calc['metadata']) > 1: continue
                     else:
                         ix = volumes.index(vol)
                         volumes.pop(ix)

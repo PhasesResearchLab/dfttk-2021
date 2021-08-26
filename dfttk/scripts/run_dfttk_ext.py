@@ -28,7 +28,7 @@ no_MongoDB = False
 
 def ext_thelec(args, plotfiles=None, vasp_db=None):
     global no_MongoDB
-    print ("Postprocess for thermodynamic properties, Seebeck, Lorenz number etc. Yi Wang\n")
+    print ("Postprocess for thermodynamic properties, Seebeck, Lorenz number etc.\n")
     """
     Postprocess for thermodynamic properties, Seebeck, Lorenz number etc
 
@@ -341,11 +341,11 @@ def shared_aguments(pthelec):
     pthelec.add_argument("-jp", "-jobpath", dest="jobpath", nargs="?", type=str, default=None,
                       help="For debug/development purpoase. Parent path where jobs were submittedi to check settings. \n"
                            "Default: None")
-    pthelec.add_argument("-kpm", "--k_ph_mode", dest="k_ph_mode", nargs="?", type=int, default=0,
+    pthelec.add_argument("-kpm", "--k_ph_mode", dest="k_ph_mode", nargs="?", type=int, default=2,
                       help="Mode to calculate thermal conductivity using slack model.\n"
-                           "    0: Original model, using the Debye T calc. at lowest T; \n"
+                           "    2: Original model, using the Debye T calc. at lowest T; \n"
                            "    1: using thermodynamic gruneisen gamma and T-dependent debye T;  \n"
-                           "Default: 0")
+                           "Default: 2")
     pthelec.add_argument("-eq", "--eqmode", dest="eqmode", nargs="?", type=int, default=4,
                       help="Mode to calculate equilibrium volume and LTC.\n"
                            "    0: Symmetrical Central differential if the data is excellent; \n"
@@ -403,12 +403,12 @@ def shared_aguments(pthelec):
 
 
 def run_ext_thelec(subparsers):
-    # begin process by Yi Wang, July 23, 2020
+    # begin process
     #SUB-PROCESS: thelec
     pthelec = subparsers.add_parser("thelec", help="Postprocess DFTTK results after DFT job completed.")
     shared_aguments(pthelec)
     pthelec.set_defaults(func=ext_thelec)
-    # end process by Yi Wang, July 23, 2020
+    # end process
 
     #further extension for finding phonon calculation
     run_ext_thfind(subparsers)

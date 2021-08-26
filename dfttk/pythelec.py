@@ -6,6 +6,7 @@ import sys
 import xml.etree.ElementTree as ET
 import gzip
 import os
+from os import walk
 import subprocess
 import math
 import copy
@@ -946,6 +947,19 @@ def get_static_calculations(vasp_db, tag):
     return volumes, energies, dos_objs, _calc
 
 
+def finished_calc():
+    tags = []
+    _, dirs, _ = next(walk("."))
+    for calc in  dirs:
+        readme = os.path.join(calc, 'readme')
+        if not os.path.exists(readme) : continue
+        with open(readme) as f:
+            readme = json.load(f)
+            tag = readme['METADATA']['tag']
+            tags.append(tag)
+    return tags
+
+
 class thelecMDB():
     """
     API to calculate the thermal electronic properties from the saved dos and volume dependence in MongDB database
@@ -1347,7 +1361,6 @@ class thelecMDB():
         volumes_uniform_lambda = []
         uniform_tau = []
         uniform_lambda = []
-        from os import walk
         yphondir = os.path.join(btp2_dir,"Yphon")
         if not os.path.exists(yphondir): yphondir = btp2_dir
         _, static_calculations, _ = next(walk(yphondir))
@@ -1433,7 +1446,8 @@ class thelecMDB():
                 _nqwave = ""
                 if self.debug:
                     _nqwave = "-nqwave "+ str(1.e4)
-                cmd = "Yphon -tranI 2 -DebCut 0.5 " +_nqwave+ " <superfij.out"
+                #md = "Yphon -tranI 2 -DebCut 0.5 " +_nqwave+ " <superfij.out"
+                cmd = "Yphon -DebCut 0.5 " +_nqwave+ " <superfij.out"
                 if has_Born: cmd += " -Born dielecfij.out"
                 print(cmd, " at ", voldir)
                 output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -1629,7 +1643,6 @@ class thelecMDB():
 
     # get the energies, volumes and DOS objects by searching for the tag
     def find_static_calculations_local(self):
-        from os import walk
         yphondir = os.path.join(self.local,"Yphon")
         if not os.path.exists(yphondir): yphondir = self.local
 
@@ -1808,6 +1821,7 @@ class thelecMDB():
                 d1 = f1(self.volT[j])
             except:
                 print("********WARNING: volume=", self.volT[j], "at T=", self.T[i], "is out of range of", self.volumes)
+            print("d1=",d1)
             if d1 > self.T[j] :
                 d0 = d1 
                 t0 = self.T[j]
@@ -2242,24 +2256,29 @@ class thelecMDB():
                     if self.T[i]==0: gamma=0
                     else: gamma = beta*blat*self.volT[i]/clat
                     debyeT = get_debye_T_from_phonon_Cv(self.T[i], clat, dlat, self.natoms)
-                    if self.T[i] == 0:
+                    try:
+                        if self.T[i] == 0:
+                            k_ph_fac = 0
+                            T_div = 1
+                        elif self.k_ph_mode==1:
+                        #elif True:
+                            k_ph_fac, gamma = self.get_thermo_lattice_conductivity(beta, blat, self.volT[i], clat, debyeT)
+                            T_div = self.T[i]
+                        elif self.k_ph_mode==2:
+                            k_ph_fac, gamma, theta_D = self.get_lattice_conductivity(beta, blat, self.volT[i], clat, theta_D=theta_D)
+                            T_div = self.T[i]
+                        elif k_ph_fac==0:
+                            if self.k_ph_mode==0:
+                                k_ph_fac, gamma = self.get_lattice_conductivity_1(self.volT[0])
+                            else:
+                                k_ph_fac, gamma = self.get_lattice_conductivity_0(i, self.T[i], self.volT[i])
+                            T_div = self.T[i]
+                        else:
+                            T_div = self.T[i]
+                    except:
                         k_ph_fac = 0
                         T_div = 1
-                    elif self.k_ph_mode==1:
-                    #elif True:
-                        k_ph_fac, gamma = self.get_thermo_lattice_conductivity(beta, blat, self.volT[i], clat, debyeT)
-                        T_div = self.T[i]
-                    elif self.k_ph_mode==2:
-                        k_ph_fac, gamma, theta_D = self.get_lattice_conductivity(beta, blat, self.volT[i], clat, theta_D=theta_D)
-                        T_div = self.T[i]
-                    elif k_ph_fac==0:
-                        if self.k_ph_mode==0:
-                            k_ph_fac, gamma = self.get_lattice_conductivity_1(self.volT[0])
-                        else:
-                            k_ph_fac, gamma = self.get_lattice_conductivity_0(i, self.T[i], self.volT[i])
-                        T_div = self.T[i]
-                    else:
-                        T_div = self.T[i]
+                        pass
                     k_ph = k_ph_fac/T_div*self.volT[i]**(1./3)
 
                     self.Cp.append(cplat+prp_T[2])
@@ -2281,7 +2300,31 @@ class thelecMDB():
                     format(self.T[i], prp_T[0], prp_T[1], prp_T[2], prp_T[3], prp_T[4], L,
                     prp_T[5], prp_T[6], prp_T[7], prp_T[8], prp_T[10], prp_T[11], prp_T[12], prp_T[13],
                     self.volT[i], self.GibT[i]))
+        self.datasm(thermofile)
         return np.array(self.volumes)/self.natoms, np.array(self.energies_orig)/self.natoms, thermofile
+
+    def datasm(self, fname):
+        data = np.loadtxt(fname, comments="#", dtype=float)
+        nT = data.shape[0]
+        nF = data.shape[1]
+        nSmooth = 11
+        box = np.ones(nSmooth)/nSmooth
+        if nT <nSmooth : return
+        from scipy.signal import savgol_filter
+        for i in range(1,nF):
+            #data[:,i]=np.convolve(data[:,i], box, mode='same')
+            data[:,i]=savgol_filter(data[:,i], nSmooth, 3)
+        with open(fname+'_sm', 'w') as fout:
+            with open(fname, 'r') as fin:
+                lines = fin.readlines()
+                for line in lines:
+                    if line.startswith('#'): print(line.strip(),file=fout)
+
+            for i in range(0,nT):
+                for j in range(0,nF):
+                    if j==nF-1: fout.write('{}\n'.format(data[i,j]))
+                    else: fout.write('{} '.format(data[i,j])) 
+    
 
 
     def add_comput_inf(self):
@@ -2682,6 +2725,13 @@ class thelecMDB():
 
 
     def run_console(self):
+        finished_tags = finished_calc()
+        if not self.renew:
+            if self.tag is not None:
+                if self.tag in finished_tags:
+                    print ("\nWARNING: previous calculation existed. supply -renew in the options to recalculate.\n")
+                    return None, None, None, None
+
         if self.local!="": self.find_static_calculations_local()
         elif self.vasp_db!=None: self.find_static_calculations()
         else: self.find_static_calculations_without_DB()
