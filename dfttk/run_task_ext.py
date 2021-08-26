@@ -32,6 +32,7 @@ def get_kmesh_factor(override_default_vasp_params, vasp_input_set):
     store_raw_vasprunxml = user_incar_settings.get('store_raw_vasprunxml', False)
     
     if type(store_raw_vasprunxml)==int: kmesh_factor = store_raw_vasprunxml
+
     elif store_raw_vasprunxml is True: kmesh_factor = 2
     else : return 0
 
@@ -48,6 +49,7 @@ def get_kmesh_factor(override_default_vasp_params, vasp_input_set):
 
 def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params,vasp_input_set):
     kmesh_factor = get_kmesh_factor(override_default_vasp_params, vasp_input_set)
+
     if kmesh_factor > 1:
         t.append(nonscalc(kmesh_factor=kmesh_factor))
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))

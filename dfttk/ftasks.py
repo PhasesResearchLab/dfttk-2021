@@ -33,6 +33,7 @@ from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 from pymatgen.core import __version__ as pymatgen_ver
 from dfttk.pythelec import get_static_calculations
+
 from dfttk.scripts.assign_fworker_name import Customizing_Workflows, get_powerups_options
 
 def extend_calc_locs(name, fw_spec):

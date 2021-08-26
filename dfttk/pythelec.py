@@ -899,13 +899,13 @@ def vol_closest(vol, volumes, thr=1.e-6):
 def get_static_calculations(vasp_db, tag):
 
     # get the energies, volumes and DOS objects by searching for the tag
+
     if vasp_db.collection.count_documents({'$and':[ {'metadata.tag': tag}, {'adopted': True}, \
         {'output.structure.lattice.volume': {'$exists': True}}]}) <= 5:
         static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, \
             {'output.structure.lattice.volume': {'$exists': True} }]})
     else:
         static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
-    # static_calculations = vasp_db.collection.find({'$and':[ {'metadata': {'tag':tag}}, {'adopted': True} ]})
 
     energies = []
     volumes = []
@@ -919,8 +919,10 @@ def get_static_calculations(vasp_db, tag):
         ee = calc['output']['energy']
         if ee < emin : _calc = calc
         if len(calc['metadata'])==1:
+
             _vol = calc['output']['structure']['lattice']['volume']
             if np.any(abs(np.array(volumes)-_vol)<_vol*1.e-5): continue
+
             energies.append(ee)
             volumes.append(calc['output']['structure']['lattice']['volume'])
             dos_objs.append(vasp_db.get_dos(calc['task_id']))
@@ -958,7 +960,6 @@ def finished_calc():
             tag = readme['METADATA']['tag']
             tags.append(tag)
     return tags
-
 
 class thelecMDB():
     """
@@ -1600,6 +1601,7 @@ class thelecMDB():
 
         self.natoms = len(structure.sites)
         sa = SpacegroupAnalyzer(structure)
+
 
         potsoc = get_used_pot(_calc)
         self.space_group_number = sa.get_space_group_number()

@@ -269,6 +269,8 @@ class thfindMDB ():
                 if gapfound: sys.stdout.write('{}, phonon: {:>2}, static: {:>2}, supercellsize: {:>3}, {}\n'.format(m, count[i], nS, self.supercellsize[i], phases[i]))
             else:
                 if count[i] < self.nV: continue
+                if self.db_repair:
+                    if qha_phonon_success and not self.db_renew: continue
                 if self.supercellsize[i] < self.supercellN: continue
                 jobpath = findjobdir(self.jobpath, m['tag'])
                 if self.remove:
@@ -290,8 +292,10 @@ class thfindMDB ():
     def qha_renew(self):
         hit = []
         phases = []
+
         static_collection = (self.vasp_db).collection.find({'$and':[{'metadata': { "$exists": True }}, \
             {'adopted': True} ]})
+
         for i in static_collection:
             mm = i['metadata']
             if mm in hit: continue
@@ -341,6 +345,7 @@ class thfindMDB ():
             volumes = []
             energies = []
             for ii, calc in enumerate(static_calculations):
+
                 vol = calc['output']['structure']['lattice']['volume']
                 if vol in volumes:
                     if len (calc['metadata']) > 1: continue
@@ -352,6 +357,7 @@ class thfindMDB ():
                 energies.append(calc['output']['energy'])
                 if potsoc is None:
                     potsoc = get_used_pot(calc)
+
                     pname = phases[i].split('#')
                     if len(pname)>1: phases[i] = pname[0]+potsoc+'#'+pname[1]
                     else: phases[i] = pname[0]+potsoc
@@ -411,6 +417,7 @@ class thfindMDB ():
             {'metadata':1, 'output':1, 'input':1, 'orig_inputs':1}))
         for i,m in enumerate(hit):
             if self.skipby(phases[i], m['tag']): continue
+
             static_calculations = [f for f in all_static_calculations if f['metadata']['tag']==m['tag']]
             for ii, calc in enumerate(static_calculations):
                 potsoc = get_used_pot(calc)
@@ -419,6 +426,7 @@ class thfindMDB ():
                 if len(pname)>1: phases[i] = pname[0]+potsoc+'#'+pname[1]
                 else: phases[i] = pname[0]+potsoc
                 break
+
             print (m, ":", phases[i])
             self.tags.append({'tag':m['tag'],'phasename':phases[i]})
 

@@ -534,7 +534,6 @@ def ext_thfind(args, vasp_db=None):
                     print ("        energies=", energies)
                     continue
 
-
     if args.get:
         with open("runs.log", "a") as fp:
             fp.write ('\nPostprocessing run at {}\n\n'.format(datetime.now()))

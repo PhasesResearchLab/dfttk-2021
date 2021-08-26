@@ -124,6 +124,7 @@ def get_powerups_wf(original_wf):
     """
     get user powerups setting.
     """
+
     idx_list = get_fws_and_tasks(original_wf)
     for idx_fw, idx_t in idx_list:
         f0 = original_wf.fws[idx_fw].tasks[idx_t]
