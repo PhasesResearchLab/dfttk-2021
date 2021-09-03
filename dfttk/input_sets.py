@@ -226,17 +226,17 @@ class ForceConstantsSet(DictSet):
     CONFIG['KPOINTS'].pop('reciprocal_density') # to be explicit
     CONFIG['INCAR'].pop('ENCUT')  # use the ENCUT set by PREC
     CONFIG['INCAR'].update({
-        'EDIFF_PER_ATOM': 1e-8,
+        'EDIFF': 5e-7,
         'ISMEAR': 1,
         'SIGMA': 0.2,
         'LREAL': False,
-        'ISIF': 0,  # only calculate the forces, stress tensor is not needed
+        'ISIF': 2,  # only calculate the forces, stress tensor is not needed
         'IBRION': 6,  # calculate force constants by finite differences with symmetry
         'POTIM': 0.015,  # displacement distance
         'NFREE': 2,  # how many displacments to do. 2 gives +POTIM and -POTIM
         'NSW': 1,  # backwards compatibility setting
         'PREC': 'Accurate',
-        'ALGO': 'NORMAL',
+        'ALGO': 'Fast',
         'SYMPREC': 1e-4,  # some supercells seem to have issues with primcel VASP algorithm
         "ICHARG": 2,
     })
