@@ -573,6 +573,9 @@ def run_ext_EVfind(subparsers):
     pEVfind.add_argument("-v", "--nV", dest="nV", nargs="?", type=int, default=6,
                       help="Return phonon calculations finished for number of volumes larger or equals to. \n"
                            "Default: 6")
+    pEVfind.add_argument("-NA", "--natoms", dest="natoms", nargs="?", type=int, default=1,
+                      help="Return calculations finished for number of atoms in the primitive unit cell larger or equals to. \n"
+                           "Default: 1")
     pEVfind.add_argument("-fg", "--findbandgap", dest="findbandgap", action='store_true', default=False,
                       help="report the entries with band gap. \n"
                            "Default: False")

@@ -61,28 +61,6 @@ class thfindMDB ():
             workflow, current only get_wf_gibbs
     """
     def __init__(self, args, vasp_db):
-        self.plotonly = args.plotonly
-        if args.qhamode is not None:
-            self.qhamode = args.qhamode
-        else:
-            self.qhamode = 'phonon'
-        if args.qhamode == 'debye' : self.qhamode = 'qha'
-
-        if not self.plotonly:
-            try:
-                self.vasp_db = vasp_db
-                self.items = (self.vasp_db).db[self.qhamode].find({'adopted': True})
-                if self.qhamode=='phonon':
-                    self.items = list((self.vasp_db).db['phonon'].find({"S_vib": { "$exists": True } },\
-                        {'metadata':1, 'unitcell':1, 'volume':1, 'supercell_matrix':1}))
-                else:
-                    self.items = list((self.vasp_db).db['qha'].find({"debye": { "$exists": True } },\
-                        {'metadata':1, 'structure':1}))
-            except:
-                self.vasp_db = None
-                warnings.warn("\n*********WARNING: CANNOT get MongoDB service, so I will proceed using local data")
-
-
         self.check = args.check
         self.remove = args.remove
 
@@ -108,6 +86,47 @@ class thfindMDB ():
         if args.containall is not None: self.containall, tmp = formula2composition(args.containall)
         if args.containany is not None: self.containany, tmp = formula2composition(args.containany)
         if args.excludeall is not None: self.excludeall, tmp = formula2composition(args.excludeall)
+        if args.excludeany is not None: self.excludeany, tmp = formula2composition(args.excludeany)
+
+        self.plotonly = args.plotonly
+        if args.qhamode is not None:
+            self.qhamode = args.qhamode
+        else:
+            self.qhamode = 'phonon'
+        if args.qhamode == 'debye' : self.qhamode = 'qha'
+
+        search_condition = [{'output.structure.lattice.volume': {'$exists': True}}]
+        if len(self.containall)!=0:
+            search_condition.append({"elements":{"$all":self.containall}})
+        if len(self.containany)!=0:
+            search_condition.append({"elements":{"$in":self.containany}})
+        if len(self.excludeany)!=0:
+            search_condition.append({"elements":{"$nin":self.excludeany}})
+
+        scondition = []
+        if len(search_condition) > 1:
+            try:
+                metadata_list =  vasp_db.collection.find({'$and':search_condition},{'metadata':1})
+                metadata_list = list(set([i['metadata']['tag'] for i in metadata_list]))
+                metadata_list = [{'tag':i} for i in metadata_list]
+                scondition.append({"metadata":{"$in":metadata_list}})
+            except:
+                pass
+
+        if not self.plotonly:
+            try:
+                self.vasp_db = vasp_db
+                if self.qhamode=='phonon':
+                    scondition.append({"S_vib": { "$exists": True } })
+                    self.items = list((self.vasp_db).db['phonon'].find({'$and':scondition},\
+                        {'metadata':1, 'unitcell':1, 'volume':1, 'supercell_matrix':1}))
+                else:
+                    scondition.append({"debye": { "$exists": True } })
+                    self.items = list((self.vasp_db).db['qha'].find({'$and':scondition},\
+                        {'metadata':1, 'structure':1}))
+            except:
+                self.vasp_db = None
+                warnings.warn("\n*********WARNING: CANNOT get MongoDB service, so I will proceed using local data")
 
     def skipby(self, phase, metatag):
         if self.metatag!=None:

@@ -130,6 +130,7 @@ def pregetdos(f): # Line 186
                            float(data_line[3])) # we're leaving the last number behind
     lines = lines[6:n_dos+6]
     # line 197 goes to line 209
+
     eup = eup - eFermi
     edn = edn - eFermi
     vde = (eup - edn)/(n_dos-1) # This appears to be the change of v per electron, so what is v? Voltage in eV?
@@ -148,7 +149,23 @@ def pregetdos(f): # Line 186
             vaspEdos[i] += y
         else:
             t, vaspEdos[i], vdos = (float(split_l[0]), float(split_l[1]), float(split_l[2]))
-    return edn, eup, vde, ve, vaspEdos
+    _eFermi = CBMtoVBM(ve, vaspEdos)
+
+    return edn-_eFermi, eup-_eFermi, vde, ve-_eFermi, vaspEdos
+
+
+def CBMtoVBM(ve, vaspEdos):
+    # move eFermi to VBM if it in CBM
+    vde = ve[1] - ve[0]
+    for i, dos in enumerate(vaspEdos):
+        if ve[i] >= -vde: break
+        if dos!=0.0:
+            _eFermi = ve[i]
+    if _eFermi < -3*vde:
+        print ("Fermi energy shifted from CBM", 0.0, "to VBM", _eFermi)
+        return _eFermi+vde
+    else: return 0.0
+
 
 def getdos(xdn, xup, dope, NEDOS, gaussian, edn, eup, vde, ve, tdos): # Line 186
     """
@@ -554,6 +571,10 @@ def runthelec(t0, t1, td, xdn, xup, dope, ndosmx, gaussian, natom,
         vde = (eup - edn)/(n_dos-1) # change in energy per step
         dos_energies = np.linspace(edn, eup, n_dos) # linearize: sometimes rounding errors in DOSCAR
         vaspEdos = np.array(dos.get_densities())
+        _eFermi = CBMtoVBM(dos_energies, vaspEdos)
+        eup -= _eFermi
+        edn -= _eFermi
+        dos_energies -= _eFermi
     NELECTRONS, E0, dF, e, dos, Eg = getdos(xdn, xup, dope, ndosmx, gaussian, edn, eup, vde, dos_energies, vaspEdos)
 
     if Eg < 0.0: Eg = 0.0
@@ -1339,7 +1360,8 @@ class thelecMDB():
 
             self.Cij.append(Cij)
             self.VCij.append(vol)
-            self.Poisson_Ratio.append(self.self.Cij_to_Moduli(self.Cij))
+            _,_,_,Poisson_Ratio=self.Cij_to_Moduli(np.stack(Cij))
+            self.Poisson_Ratio.append(Poisson_Ratio)
             with open (voldir+'/Cij.out','w') as out:
                 for x in range(6):
                     for y in range(6):
