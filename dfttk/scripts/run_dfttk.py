@@ -278,7 +278,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
         magmom = uis['MAGMOM']
         if isinstance(magmom, str):
             magmom = Incar.from_string('MAGMOM={}'.format(magmom)).as_dict()['MAGMOM']
-        else: magmom = parse_magmom(magmom)
+        magmom = parse_magmom(magmom)
         structure.add_site_property('magmom', magmom)
     if not db_file:
         #from fireworks.fw_config import config_to_dict
