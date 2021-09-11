@@ -399,11 +399,12 @@ class PhononFW(Firework):
             tmp['user_incar_settings']['magmom']=supermag
             print("phonon setting", tmp)
 
-        vasp_input_set = vasp_input_set or ForceConstantsSet(structure, **tmp)
+        #vasp_input_set = vasp_input_set or ForceConstantsSet(structure, **tmp)
 
         supercell_structure = deepcopy(structure)
         supercell_structure.make_supercell(supercell_matrix)
         supercell_site_properties = deepcopy(supercell_structure.site_properties)
+        vasp_input_set = vasp_input_set or ForceConstantsSet(supercell_structure, **tmp)
 
         t = []
 
