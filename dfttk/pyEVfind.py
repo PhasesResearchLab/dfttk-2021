@@ -124,13 +124,16 @@ class EVfindMDB ():
 
 
     def EV_find(self):
+        evdirhome = 'E-V'
+        if not os.path.exists(evdirhome): os.mkdir(evdirhome)
+
         hit = []
         count = []
         phases = []
         volumes = []
         ITEMS = []
         potname = []
-        fp_ev = open(os.path.join("E-V","E-V.dat"),"w")
+        fp_ev = open(os.path.join(evdirhome,"E-V.dat"),"w")
         for i in self.items:
             mm = i['metadata']['tag']
             els = i['elements']
@@ -186,9 +189,7 @@ class EVfindMDB ():
             
             sys.stdout.write('{}, static: {:>2}, natoms: {:>3}, {}\n'.format(metadata, count[i], EV['natoms'], phases[i]))
 
-            evdir = 'E-V'
-            if not os.path.exists(evdir): os.mkdir(evdir)
-            folder = os.path.join(evdir,phases[i])
+            folder = os.path.join(evdirhome,phases[i])
             if not os.path.exists(folder): os.mkdir(folder)
             with open (os.path.join(folder,'POSCAR'), 'w') as fp:
                 fp.write(POSCAR)

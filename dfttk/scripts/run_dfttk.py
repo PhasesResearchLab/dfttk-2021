@@ -106,6 +106,46 @@ def get_user_settings(STR_FILENAME, STR_PATH="./", NEW_SETTING="SETTINGS"):
                         "http://guide.materialsvirtuallab.org/monty/monty.serialization.html#monty.serialization.loadfn")
     return user_settings
 
+def parse_magmom(magmom=None):
+    if magmom is None: return None
+    mm = []
+    i = 0
+    while i < len(magmom):
+        m = magmom[i]
+        n = str(m).replace(' ','').split('*')
+        if len(n)==1: mm.append(float(m))
+        else:
+            nn = int(n[0])
+            nsub = []
+            if n[1].startswith('('):
+                if n[1].endswith(')'):
+                    nsub.append(n[1].replace('(','').replace(')',''))
+                else:
+                    nsub.append(n[1].replace('(',''))
+                while i+1 < len(magmom):
+                    i += 1
+                    if magmom[i].endswith(')'):
+                        nsub.append(magmom[i].replace(')',''))
+                        break
+                    else:
+                        nsub.append(magmom[i])
+            else: nsub.append(n[1])
+
+            for k in range(nn):
+                for j in range(len(nsub)):
+                    mm.append(float(nsub[j]))            
+        i += 1
+    """
+    mm = []
+    for m in magmom:
+        n = str(m).split('*')
+        if len(n)==1: mm.append(float(m))
+        else:
+            for i in range(int(n[0])):
+                mm.append(float(n[1]))
+    """
+    return mm
+
 def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     """
     Get a single workflow
@@ -125,6 +165,8 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     db_file = settings.get('db_file', None)
     #list, the MAGMOM of the structure, e.g. [4.0, 4.0, -4.0, -4.0]
     magmom = settings.get('magmom', None)
+    magmom = parse_magmom(magmom)
+
     #int, the number of initial deformations, e.g. 7
     num_deformations = settings.get('num_deformations', 7)
     #list/tuple(min, max) or float(-max, max), the maximum amplitude of deformation, e.g. (-0.15, 0.15) means (0.95, 1.1) in volume
@@ -236,6 +278,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
         magmom = uis['MAGMOM']
         if isinstance(magmom, str):
             magmom = Incar.from_string('MAGMOM={}'.format(magmom)).as_dict()['MAGMOM']
+        else: magmom = parse_magmom(magmom)
         structure.add_site_property('magmom', magmom)
     if not db_file:
         #from fireworks.fw_config import config_to_dict
