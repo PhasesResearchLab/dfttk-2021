@@ -267,7 +267,7 @@ class ForceConstantsSet(DictSet):
         grid_density = user_kpoints_settings.get('grid_density') or None
         if grid_density is not None:
             #new_config['KPOINTS'].update({'grid_density': grid_density})
-            new_config['INCAR'].update({'ENCUT': 520})
+            new_config['INCAR'].update({'PREC': 'High'})
             kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
             new_config['KPOINTS'] = kpoints
         else:
