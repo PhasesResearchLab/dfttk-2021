@@ -266,10 +266,11 @@ class ForceConstantsSet(DictSet):
         user_kpoints_settings = kwargs.get('user_kpoints_settings', {})
         grid_density = user_kpoints_settings.get('grid_density') or None
         if grid_density is not None:
-            kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
+            new_config['KPOINTS'].update({'grid_density': grid_density})
+            #kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
         else:
             kpoints = Kpoints(kpts=[[3,3,3],])
-        new_config['KPOINTS'] = kpoints
+            new_config['KPOINTS'] = kpoints
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:
             new_config['POTCAR_FUNCTIONAL'] = pot
