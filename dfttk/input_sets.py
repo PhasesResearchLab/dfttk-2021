@@ -263,8 +263,12 @@ class ForceConstantsSet(DictSet):
 
         new_config['INCAR'].update(uis)
         from pymatgen.io.vasp.inputs import Kpoints
-        #kpoints = Kpoints.automatic_gamma_density(structure, 4000)
-        kpoints = Kpoints(kpts=[[3,3,3],])
+        user_kpoints_settings = kwargs.get('user_kpoints_settings', {})
+        grid_density = user_kpoints_settings.get('grid_density') or None
+        if grid_density is not None:
+            kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
+        else:
+            kpoints = Kpoints(kpts=[[3,3,3],])
         new_config['KPOINTS'] = kpoints
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:

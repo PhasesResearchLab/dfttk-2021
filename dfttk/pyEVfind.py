@@ -60,7 +60,7 @@ class EVfindMDB ():
         if args.excludeall is not None: self.excludeall, tmp = formula2composition(args.excludeall)
         if args.excludeany is not None: self.excludeany, tmp = formula2composition(args.excludeany)
 
-        search_condition = [{'output.structure.lattice.volume': {'$exists': True}}]
+        search_condition = [{'output.structure.lattice.volume': {'$exists': True}}, {'metadata': {'$exists': True}}]
         if len(self.containall)!=0:
             search_condition.append({"elements":{"$all":self.containall}})
         if len(self.containany)!=0:

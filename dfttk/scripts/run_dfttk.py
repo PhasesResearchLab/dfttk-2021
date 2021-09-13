@@ -106,7 +106,7 @@ def get_user_settings(STR_FILENAME, STR_PATH="./", NEW_SETTING="SETTINGS"):
                         "http://guide.materialsvirtuallab.org/monty/monty.serialization.html#monty.serialization.loadfn")
     return user_settings
 
-def parse_magmom(magmom=None):
+def parse_magmom(magmom=None, nvalue=0):
     if magmom is None: return None
     mm = []
     i = 0
@@ -135,6 +135,11 @@ def parse_magmom(magmom=None):
                 for j in range(len(nsub)):
                     mm.append(float(nsub[j]))            
         i += 1
+    if len(mm)==nvalue*3:
+        _mm = []
+        for i in range(len(mm)):
+            _mm.append(mm[i*3:(i+1)*3])
+        mm = _mm
     """
     mm = []
     for m in magmom:
@@ -165,7 +170,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     db_file = settings.get('db_file', None)
     #list, the MAGMOM of the structure, e.g. [4.0, 4.0, -4.0, -4.0]
     magmom = settings.get('magmom', None)
-    magmom = parse_magmom(magmom)
+    magmom = parse_magmom(magmom=magmom, nvalue=len(structure.sites))
 
     #int, the number of initial deformations, e.g. 7
     num_deformations = settings.get('num_deformations', 7)
@@ -278,7 +283,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
         magmom = uis['MAGMOM']
         if isinstance(magmom, str):
             magmom = Incar.from_string('MAGMOM={}'.format(magmom)).as_dict()['MAGMOM']
-        magmom = parse_magmom(magmom)
+        magmom = parse_magmom(magmom=magmom,nvalue=len(structure.sites))
         structure.add_site_property('magmom', magmom)
     if not db_file:
         #from fireworks.fw_config import config_to_dict
