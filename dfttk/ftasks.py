@@ -225,10 +225,13 @@ class CalculatePhononThermalProperties(FiretaskBase):
 
         unitcell = Structure.from_file('POSCAR-unitcell')
         supercell_matrix = self['supercell_matrix']
-        temperatures, f_vib, s_vib, cv_vib, force_constants = get_f_vib_phonopy(unitcell, supercell_matrix, vasprun_path='vasprun.xml', t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'])
+        temperatures, f_vib, s_vib, cv_vib, force_constants, code_version \
+            = get_f_vib_phonopy(unitcell, supercell_matrix, vasprun_path='vasprun.xml', t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'])
         if isinstance(supercell_matrix, np.ndarray):
             supercell_matrix = supercell_matrix.tolist()  # make serializable
         thermal_props_dict = {
+            'vasp_version': code_version,
+            'force_constant_factor': 1.0,
             'volume': unitcell.volume,
             'F_vib': f_vib.tolist(),
             'CV_vib': cv_vib.tolist(),

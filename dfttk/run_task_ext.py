@@ -11,7 +11,7 @@ from atomate.vasp.firetasks.run_calc import RunVaspCustodian
 from pymatgen.core import Structure
 import socket
 import pytz
-from dfttk.pythelec import get_code_version
+from dfttk.analysis.ywutils import get_code_version
 
 
 #exculde the case of HF and METAGGA calculations since non-scf calculations cannot be simply run

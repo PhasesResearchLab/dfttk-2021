@@ -34,23 +34,6 @@ import warnings
 k_B = physical_constants['Boltzmann constant in eV/K'][0]
 
 
-def get_code_version(xml='vasprun.xml'):
-    if xml.endswith(".gz"):
-        tree = ET.parse(gzip.open(xml))
-    else:
-        tree = ET.parse(xml)
-    root = tree.getroot()
-    codename, version = "", ""
-    for i, elem in enumerate(root):
-        for code in elem:
-            codeprogram = code.get('name')
-            if codeprogram=='program':
-                codename = code.text
-            elif codeprogram=='version':
-                version = code.text
-            if codename!="" and version!="": return codename, version
-
-
 def substr(str1, str2, pos):
   try:
     if str1.index(str2)==pos:
@@ -1058,9 +1041,8 @@ class thelecMDB():
         self.renew=renew
         self.refresh=args.refresh
         self.fitF=fitF
-        self.codename = ""
-        self.code_version = ""
         self.k_ph_mode = args.k_ph_mode
+        self.force_constant_factor = 1.0
 
         if self.debug:
             if self.dope==0.0: self.dope=-1.e-5
@@ -1129,11 +1111,6 @@ class thelecMDB():
             with open (os.path.join(voldir,'DOSCAR.gz'),'wb') as out:
                 out.write(self.dosgz[ii])
 
-            if self.codename=="" and self.code_version=="":
-                if os.path.exists(os.path.join(voldir,'vasprun.xml.gz')):
-                    self.codename, self.code_version = get_code_version(xml=os.path.join(voldir,'vasprun.xml.gz'))
-                print ("\nDFT code: ", self.codename, "version:", self.code_version,"\n")
-
 
         with open (os.path.join(voldir,'OSZICAR'),'w') as out:
             out.write('   1 F= xx E0= {}\n'.format(self.energies[(list(self.volumes)).index(i['volume'])]))
@@ -1163,8 +1140,9 @@ class thelecMDB():
                         for y in range(3):
                             hessian_matrix[ii*3+x, jj*3+y] = -force_constant_matrix[ii,jj,x,y]
 
-            if self.code_version >="6.2.0":
-                hessian_matrix *= 0.004091649655126895
+            hessian_matrix *= self.force_constant_factor
+            if self.force_constant_factor!=1.0: 
+                print ("\n force constant matrix has been rescaled by :", self.force_constant_factor)
 
             for xx in range(natoms*3):
                 for yy in range(natoms*3-1):
@@ -1444,8 +1422,13 @@ class thelecMDB():
             os.mkdir(phdir)
 
         has_Born = self.get_dielecfij(phdir)
-
         for i in (self.vasp_db).db['phonon'].find({'metadata.tag': self.tag}):
+            try:
+                self.force_constant_factor = i['force_constant_factor']
+            except:
+                if self.static_vasp_version[0:1] >= '6':
+                    self.force_constant_factor = 0.004091649655126895
+
             if i['volume'] not in self.volumes: continue
             voldir = self.get_superfij(i, phdir)
             if voldir is None: continue
@@ -1656,11 +1639,21 @@ class thelecMDB():
             self.xmlgz.append(pickle.loads(x['vasprun_xml_gz']))
             self.dosgz.append(pickle.loads(x['DOSCAR_gz']))
             self.xmlvol.append(x['volume'])
-            print ("found non-selfconsistent results with with k-mesh factor of 2x2x2:", 'vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
+            print ("found ", 'vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
 
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
         if not os.path.exists(self.phasename):
             os.mkdir(self.phasename)
+
+        vasp_version = list(self.vasp_db.db['tasks'].find({'$and':[ {'metadata.tag': self.tag}, { 'calcs_reversed': { '$exists': True } }]}))
+        self.static_vasp_version = None
+        for i in vasp_version:
+            v = i['calcs_reversed'][0]['vasp_version']
+            if self.static_vasp_version is None: self.static_vasp_version = v
+            elif v[0:1]!=self.static_vasp_version[0:1]:
+                print("\n***********FETAL messing up calculation! please remove:", self.tag, "\n")
+        if self.static_vasp_version is not None:
+            print("\nvasp version for the static calculation is:", self.static_vasp_version, " for ", self.tag, "\n")
 
 
     # get the energies, volumes and DOS objects by searching for the tag

@@ -388,3 +388,20 @@ def get_Poisson_Ratio(vasp_db, tag, volume):
             return pratio
         
 
+def get_code_version(xml='vasprun.xml'):
+    if xml.endswith(".gz"):
+        tree = ET.parse(gzip.open(xml))
+    else:
+        tree = ET.parse(xml)
+    root = tree.getroot()
+    codename, version = "", ""
+    for i, elem in enumerate(root):
+        for code in elem:
+            codeprogram = code.get('name')
+            if codeprogram=='program':
+                codename = code.text
+            elif codeprogram=='version':
+                version = code.text
+            if codename!="" and version!="": return codename, version
+    return "Unknown", "0"
+
