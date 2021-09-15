@@ -3,7 +3,6 @@
 # common block named comcon
 from __future__ import division
 import sys
-import xml.etree.ElementTree as ET
 import gzip
 import os
 from os import walk
@@ -1995,6 +1994,15 @@ class thelecMDB():
             except:
                 self.qhamode='debye'
                 self.qha_items = self.vasp_db.db['qha'].find({'metadata.tag': self.tag})
+        # check compatibility with vasp6
+        if self.qhamode=='phonon':
+            for i in (self.vasp_db).db['phonon'].find({'metadata.tag': self.tag}):
+                try:
+                    self.force_constant_factor = i['force_constant_factor']
+                except:
+                    if self.static_vasp_version[0:1] >= '6':
+                        print("\n**************FETAL ERROR! force constant not compatible for :", self.tag, "by default phonopy with vasp6\n")
+                        
 
         try:
             sys.stdout.write("\nTrying to get quasiharmonic mode : {}... \n".format(self.qhamode))
