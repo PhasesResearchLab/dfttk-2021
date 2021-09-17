@@ -267,41 +267,44 @@ def get_rec_from_metatag(vasp_db,m, test=False):
         if sts!=None: pressures.append((sts[0][0]+sts[1][1]+sts[2][2])/3.)
         else: pressures.append(None)
         if not gapfound: gapfound = float(gap) > 0.0
-
-    all_static_calculations = vasp_db.collection.\
-        find({'$and':[ {'metadata.tag': m}, {'adopted': True} ]})
-    for calc in all_static_calculations:
-        if len(calc['metadata'])<=1:continue # only check constrained calculation
-        vol = calc['output']['structure']['lattice']['volume']
-        if vol_within(vol, volumes): continue
-        natoms = len(calc['output']['structure']['sites'])
-        try:
-            sites = calc['output']['structure']['sites']
-            magmoms.append([{s['label']:s['properties']['magmom']} for s in sites])
-        except:
-            pass
-        lat = calc['output']['structure']['lattice']['matrix']
-        sts = calc['output']['stress']
-        ene = calc['output']['energy']
-        if test:
-            structure = Structure.from_dict(calc['input']['structure'])
-            POSCAR = structure.to(fmt="poscar")
-            INCAR = calc['input']['incar']
-            break            
-        if ene < emin:
-            emin = ene
-            structure = Structure.from_dict(calc['input']['structure'])
-            POSCAR = structure.to(fmt="poscar")
-            INCAR = calc['input']['incar']
-        gap = calc['output']['bandgap']
-        volumes.append(vol)
-        energies.append(ene)
-        stresses.append(sts)
-        lattices.append(lat)
-        bandgaps.append(gap)
-        if sts!=None: pressures.append((sts[0][0]+sts[1][1]+sts[2][2])/3.)
-        else: pressures.append(None)
-        if not gapfound: gapfound = float(gap) > 0.0
+    tvolumes = np.array(sorted(volumes))
+    dvolumes = tvolumes[1:-1] - tvolumes[0:-2]
+    dvolumes = sorted(dvolumes)
+    if abs(dvolumes[-1]-dvolumes[-2]) > 0.01*dvolumes[-1]:
+        all_static_calculations = vasp_db.collection.\
+            find({'$and':[ {'metadata.tag': m}, {'adopted': True} ]})
+        for calc in all_static_calculations:
+            if len(calc['metadata'])<=1:continue # only check constrained calculation
+            vol = calc['output']['structure']['lattice']['volume']
+            if vol_within(vol, volumes): continue
+            natoms = len(calc['output']['structure']['sites'])
+            try:
+                sites = calc['output']['structure']['sites']
+                magmoms.append([{s['label']:s['properties']['magmom']} for s in sites])
+            except:
+                pass
+            lat = calc['output']['structure']['lattice']['matrix']
+            sts = calc['output']['stress']
+            ene = calc['output']['energy']
+            if test:
+                structure = Structure.from_dict(calc['input']['structure'])
+                POSCAR = structure.to(fmt="poscar")
+                INCAR = calc['input']['incar']
+                break            
+            if ene < emin:
+                emin = ene
+                structure = Structure.from_dict(calc['input']['structure'])
+                POSCAR = structure.to(fmt="poscar")
+                INCAR = calc['input']['incar']
+            gap = calc['output']['bandgap']
+            volumes.append(vol)
+            energies.append(ene)
+            stresses.append(sts)
+            lattices.append(lat)
+            bandgaps.append(gap)
+            if sts!=None: pressures.append((sts[0][0]+sts[1][1]+sts[2][2])/3.)
+            else: pressures.append(None)
+            if not gapfound: gapfound = float(gap) > 0.0
 
     energies = sort_x_by_y(energies, volumes)
     pressures = sort_x_by_y(pressures, volumes)

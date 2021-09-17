@@ -222,7 +222,6 @@ def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name=
     metadata = metadata or {}
     tag = metadata.get('tag', '{}'.format(str(uuid4())))
     metadata.update({'tag': tag})
-
     struct_energy_bandgap = is_property_exist_in_db(metadata=metadata, db_file=db_file)
     if struct_energy_bandgap:
         bandgap = struct_energy_bandgap[2]

@@ -18,6 +18,8 @@ import sys
 import shutil
 import glob
 
+from atomate.vasp.config import VASP_CMD, DB_FILE
+
 
 def get_abspath(path):
     """
@@ -151,7 +153,7 @@ def parse_magmom(magmom=None, nvalue=0):
     """
     return mm
 
-def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
+def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}, db_file=None):
     """
     Get a single workflow
 
@@ -167,7 +169,8 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     ################ PARAMETERS FOR WF #############################
     #str, the absolute path of db.json file, e.g. /storage/home/mjl6505/atomate/config/db.json
     #  If None, it will use the configuration in fireworks
-    db_file = settings.get('db_file', None)
+    if db_file is None:
+        db_file = settings.get('db_file', None)
     #list, the MAGMOM of the structure, e.g. [4.0, 4.0, -4.0, -4.0]
     magmom = settings.get('magmom', None)
     magmom = parse_magmom(magmom=magmom, nvalue=len(structure.sites))
@@ -315,7 +318,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
                  phonon_supercell_matrix_max=phonon_supercell_matrix_max, optimize_sc=optimize_sc, level=level,
                  force_phonon=force_phonon, stable_tor=stable_tor, store_volumetric_data=store_volumetric_data)
     elif WORKFLOW == "born":
-        wf = get_wf_borncharge(structure=structure, metadata=metadata, db_file=">>db_file<<", isif=2, name="born charge",
+        wf = get_wf_borncharge(structure=structure, metadata=metadata, db_file=db_file, isif=2, name="born charge",
                       vasp_cmd=">>vasp_cmd<<", override_default_vasp_params=override_default_vasp_params,
                       modify_incar=modify_incar_params)
     elif WORKFLOW == 'elastic':
@@ -361,10 +364,12 @@ def run(args):
     WRITE_OUT_WF = args.WRITE_OUT_WF    # Write out wf file or not
     TAG = args.TAG                      # Metadata from the command line
     APPEND = args.APPEND                # Append calculations, e.g. appending volumes or phonon or born
-
-    if os.path.exists('db.json'):
-        db_file = 'db.json'
-    else:
+    db_file = args.db_file              # user supplier db_file such as db.json
+    
+    if not db_file:
+        if os.path.exists('db.json'):
+            db_file = 'db.json'
+    elif not os.path.exists(db_file):
         db_file = None
 
     ## Initial wfs and metadatas
@@ -394,7 +399,7 @@ def run(args):
             if phonon_supercell_matrix is None:
                 user_settings.update({"phonon_supercell_matrix": "atoms"})
 
-            wf = get_wf_single(structure, WORKFLOW=WORKFLOW, settings=user_settings)
+            wf = get_wf_single(structure, WORKFLOW=WORKFLOW, settings=user_settings, db_file=db_file)
             
             wf = Customizing_Workflows(wf,powerups_options=user_settings.get('powerups', None))
             if isinstance(wf, list):
@@ -582,6 +587,9 @@ def run_dfttk():
                            "N(N>1): qlaunch rapidfire -m N")
     prun.add_argument("-o", "--write_out_wf", dest="WRITE_OUT_WF", action="store_true",
                       help="Write out the workflow")
+    prun.add_argument("-db", "--db_file", dest="db_file", nargs="?", type=str, default=None,
+                      help="alternative database other than default\n"
+                           "Default: None")
     prun.set_defaults(func=run)
 
     #SUB-PROCESS: config

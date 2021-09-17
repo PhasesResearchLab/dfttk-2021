@@ -42,7 +42,7 @@ def get_f_vib_phonopy(structure, supercell_matrix, vasprun_path,
     # get codename and version from vasprun.xml file
     code_name, code_version = get_code_version(xml=vasprun_path)
     force_constant_factor = 1.0
-    if code_version >= '6':
+    if code_version[0:1] >= '6':
         force_constant_factor = 0.004091649655126895
 
     # get the force constants from a vasprun.xml file
