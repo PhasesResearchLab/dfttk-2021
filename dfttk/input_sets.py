@@ -479,7 +479,7 @@ class BornChargeSet(DictSet):
                 pass
         self.kwargs = copy.deepcopy(kwargs)
 
-        if 'LCALCEPS' not in uis:
+        if 'LCALCEPS' in uis:
             if 'LEPSILON' in new_config['INCAR']:
                 new_config['INCAR'].pop('LEPSILON')
 
