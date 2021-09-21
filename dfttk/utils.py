@@ -770,9 +770,11 @@ def check_symbol(InputSet):
     struc = InputSet.structure
     syms = [site.specie.symbol for site in struc]
     incar_dict = InputSet.incar.as_dict()
+    print("xxxxxxxxx", incar_dict)
     if "MAGMOM" in incar_dict:
         magmom = incar_dict["MAGMOM"]
         syms = [syms[i]+str(magmom[i]) for i in range(len(syms))]
+    print("yyyyyyyyyy", magmom)
     symbol = [a[0] for a in itertools.groupby(syms)]
     symbol = ["".join(re.findall(r"[A-Z][a-z]*", symboli)) for symboli in symbol]
     natom = [str(len(tuple(a[1]))) for a in itertools.groupby(syms)]
