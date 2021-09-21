@@ -770,11 +770,9 @@ def check_symbol(InputSet):
     struc = InputSet.structure
     syms = [site.specie.symbol for site in struc]
     incar_dict = InputSet.incar.as_dict()
-    print("xxxxxxxxx", incar_dict)
     if "MAGMOM" in incar_dict:
         magmom = incar_dict["MAGMOM"]
         syms = [syms[i]+str(magmom[i]) for i in range(len(syms))]
-    print("yyyyyyyyyy", magmom)
     symbol = [a[0] for a in itertools.groupby(syms)]
     symbol = ["".join(re.findall(r"[A-Z][a-z]*", symboli)) for symboli in symbol]
     natom = [str(len(tuple(a[1]))) for a in itertools.groupby(syms)]
@@ -868,6 +866,7 @@ def check_symmetry(tol_energy=0.025, tol_strain=0.05, tol_bond=0.10, site_proper
     if site_properties:
         if 'magmom' in site_properties:
             in_mag = incar.as_dict()['MAGMOM']
+            print("xxxxxxxxx", in_mag)
             inp_struct.add_site_property('magmom', in_mag)
             out_mag = [m['tot'] for m in outcar.magnetization]
             out_struct.add_site_property('magmom', out_mag)
