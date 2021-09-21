@@ -147,6 +147,8 @@ direct
 magmom = [-3,3,4*0]
 magmom = parse_magmom(magmom)
 structure = Structure.from_str(POSCAR_CrF2, fmt='POSCAR')
+print(structure)
+print(magmom)
 structure.add_site_property('magmom', magmom)
 site_properties = structure.site.properties
 print (structure.site.properties)
