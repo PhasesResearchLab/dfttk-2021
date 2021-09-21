@@ -18,6 +18,7 @@ import numpy as np
 import itertools
 import scipy
 import math
+import copy
 
 # TODO: wrap MPRester calls in a try-except block to catch errors and retry automatically
 
@@ -868,6 +869,8 @@ def check_symmetry(tol_energy=0.025, tol_strain=0.05, tol_bond=0.10, site_proper
             in_mag = incar.as_dict()['MAGMOM']
             inp_struct.add_site_property('magmom', in_mag)
             out_mag = [m['tot'] for m in outcar.magnetization]
+            if len(out_mag)==0:
+                out_mag = copy.deepcopy(in_mag)
             out_struct.add_site_property('magmom', out_mag)
             site_properties.pop('magmom')
         for site_property in site_properties:
