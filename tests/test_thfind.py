@@ -146,7 +146,7 @@ direct
 0.260577 0.199090 0.799645 F"""
 magmom = [-3,3,4*0]
 magmom = parse_magmom(magmom)
-stru2 = Structure.from_str(POSCAR_CrF2, fmt='POSCAR')
+structure = Structure.from_str(POSCAR_CrF2, fmt='POSCAR')
 structure.add_site_property('magmom', magmom)
 site_properties = structure.site.properties
 print (structure.site.properties)
