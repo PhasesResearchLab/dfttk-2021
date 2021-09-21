@@ -137,6 +137,9 @@ class RelaxSet(DictSet):
                     new_config['INCAR'].update({ff:relax.get(ff)})
                 elif ff=='grid_density':
                     new_config['KPOINTS'].update({ff:relax.get(ff)})
+                elif ff=='k_mesh':
+                    kpoints = Kpoints(kpts=relax.get(ff))
+                    new_config['KPOINTS'] = kpoints
         #print (new_config)
 
         new_config['INCAR'].update(uis)
