@@ -151,7 +151,7 @@ print(structure)
 print(magmom)
 structure.add_site_property('magmom', magmom)
 site_properties = structure.site_properties
-print (structure.site.properties)
+print (site_properties)
 DIR = "/gpfs/scratch/yuw3/v7/block_2021-09-20-21-31-28-177520/launcher_2021-09-20-21-31-49-741147/launcher_2021-09-21-08-53-15-627218"
 if not os.path.exists(DIR): DIR = None
 @pytest.mark.check_symmetry_magmom
