@@ -87,6 +87,7 @@ class RelaxSet(DictSet):
         'LREAL': False,
         'PREC': 'Accurate',
         'ALGO': 'NORMAL',
+        "LORBIT": 11,
         'LWAVE': False,
         'LCHARG': False,
         'ISIF': 3,
@@ -230,6 +231,7 @@ class ForceConstantsSet(DictSet):
         'ISMEAR': 1,
         'SIGMA': 0.2,
         'LREAL': False,
+        "LORBIT": 11,
         'ISIF': 2,  # only calculate the forces, stress tensor is not needed
         'IBRION': 6,  # calculate force constants by finite differences with symmetry
         'POTIM': 0.015,  # displacement distance
@@ -449,6 +451,7 @@ class BornChargeSet(DictSet):
         'ENCUT': 520,  # MP compatibility
         'ISMEAR': 0,
         "NSW": 0,
+        "LORBIT": 11,
         "IBRION": -1,
         'LREAL': False,
         'ALGO': 'NORMAL',
@@ -534,7 +537,7 @@ class ElasticSet(DictSet):
         "LAECHG": True,
         "LCHARG": True,
         "LWAVE": False,
-        #"LORBIT": 11,
+        "LORBIT": 11,
         "LVHAR": True,
         "ICHARG": 0,
         "NSW": 99,
