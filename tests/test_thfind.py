@@ -150,7 +150,7 @@ structure = Structure.from_str(POSCAR_CrF2, fmt='POSCAR')
 print(structure)
 print(magmom)
 structure.add_site_property('magmom', magmom)
-site_properties = structure.site.properties
+site_properties = structure.properties
 print (structure.site.properties)
 DIR = "/gpfs/scratch/yuw3/v7/block_2021-09-20-21-31-28-177520/launcher_2021-09-20-21-31-49-741147/launcher_2021-09-21-08-53-15-627218"
 if not os.path.exists(DIR): DIR = None
