@@ -9,6 +9,7 @@ import copy
 from os import walk
 from atomate.vasp.database import VaspCalcDb
 from dfttk.scripts.run_dfttk_ext import ext_EVfind, ext_thfind, ext_thelec
+from dfttk.utils import check_symmetry
 
 
 head,tail = os.path.split(__file__)
