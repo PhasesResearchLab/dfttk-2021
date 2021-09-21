@@ -126,3 +126,13 @@ def test_thelec_Al2O3(capsys,tmp_path):
     compound, phasename = "Al2O3", "Al2O3_R-3c_167LDA"
     print ("testing thelec for", compound)
     run_thelec(capsys,tmp_path,compound, phasename, nfiles=8)
+
+
+DIR = "/gpfs/scratch/yuw3/v7/block_2021-09-20-21-31-28-177520/launcher_2021-09-20-21-31-49-741147/launcher_2021-09-21-08-53-15-627218"
+if not os.path.exists(DIR): DIR = None
+@pytest.mark.check_symmetry_magmom
+@pytest.mark.skipif(DIR is None, reason="Check magmom at the given path which needs to exist")
+def test_check_symmetry_magmom():
+    check_symmetry(tol_energy=0.025, tol_strain=0.05, tol_bond=0.10, site_properties=Ture)
+
+
