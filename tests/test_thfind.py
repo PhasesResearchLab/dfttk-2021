@@ -144,7 +144,7 @@ direct
 0.260577 0.300910 0.299645 F
 0.739424 0.699090 0.700355 F
 0.260577 0.199090 0.799645 F"""
-magmom = [-3,3,4*0]
+magmom = [-3,3,'4*0']
 magmom = parse_magmom(magmom)
 structure = Structure.from_str(POSCAR_CrF2, fmt='POSCAR')
 print(structure)
