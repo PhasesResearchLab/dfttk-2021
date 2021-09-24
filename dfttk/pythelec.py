@@ -908,8 +908,6 @@ def get_static_calculations(vasp_db, tag):
             {'output.structure.lattice.volume': {'$exists': True} }]})
     else:
         static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
-    # static_calculations = vasp_db.collection.find({'$and':[ {'metadata': {'tag':tag}}, {'adopted': True} ]})
-
     energies = []
     volumes = []
     dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects

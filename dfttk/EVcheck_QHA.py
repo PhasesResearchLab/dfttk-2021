@@ -744,32 +744,7 @@ class PreEV_check(FiretaskBase):
         vasp_db = VaspCalcDb.from_db_file(db_file = db_file, admin = True)
         volumes, energies, dos_objs, _ \
             = get_static_calculations(vasp_db, tag)
-        """
-        energies = []
-        volumes = []
-        static_calculations = vasp_db.db["PreStatic"].find({'$and':[ {'metadata.tag': tag},
-                                                    {'structure.lattice.volume': {'$exists': True} }]})
-        vol_last = 0
-        for calc in static_calculations:
-            vol = calc['structure']['lattice']['volume']
-            if abs((vol - vol_last) / vol) > 1e-8:
-                energies.append(calc['energy'])
-                volumes.append(vol)
-            else:
-                energies[-1] = calc['energy']
-                volumes[-1] = vol
-            vol_last = vol
-        self.scale_lattice = calc['scale_lattice']
-        # Reset to lattice
-        energies = sort_x_by_y(energies, volumes)
-        volumes = sorted(volumes)
-        n = len(volumes) - 1           # Delete duplicated
-        while n > 0:
-            if abs((volumes[n] - volumes[n - 1]) / volumes[n]) < 1e-8:
-                volumes.pop(n)
-                energies.pop(n)
-            n -= 1
-        """
+
         print('%s Volumes  = %s' %(len(volumes), volumes))
         print('%s Energies = %s' %(len(energies), energies))
         return(list(volumes), list(energies)) #, structure)
