@@ -612,9 +612,26 @@ class ElasticSet(DictSet):
             if new_config['INCAR']['ISMEAR'] == -5:
                 new_config['INCAR'].pop('SIGMA')
 
-        from pymatgen.io.vasp.inputs import Kpoints
-        kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
+        kpoints = Kpoints(kpts=[[31,31,31],])
         new_config['KPOINTS'] = kpoints
+
+        if 'Relax_settings' in uis:
+            relax = uis['Relax_settings']
+            for ff in relax:
+                if ff.lower()=='prec':
+                    if 'ENCUT' in new_config['INCAR']:
+                        new_config['INCAR'].pop('ENCUT')
+                    new_config['INCAR'].update({ff:relax.get(ff)})
+                elif ff=='KPAR':
+                    new_config['INCAR'].update({ff:relax.get(ff)})
+                elif ff=='grid_density':
+                    new_config['KPOINTS'].update({ff:relax.get(ff)})
+                    #kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
+                elif ff=='k_mesh':
+                    kpoints = Kpoints(kpts=relax.get(ff))
+                    new_config['KPOINTS'] = kpoints
+        from pymatgen.io.vasp.inputs import Kpoints
+
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:
             new_config['POTCAR_FUNCTIONAL'] = pot
