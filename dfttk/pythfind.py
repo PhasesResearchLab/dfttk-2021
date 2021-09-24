@@ -288,6 +288,8 @@ class thfindMDB ():
                 if gapfound: sys.stdout.write('{}, phonon: {:>2}, static: {:>2}, supercellsize: {:>3}, {}\n'.format(m, count[i], nS, self.supercellsize[i], phases[i]))
             else:
                 if count[i] < self.nV: continue
+                if self.db_repair:
+                    if qha_phonon_success and not self.db_renew: continue
                 if self.supercellsize[i] < self.supercellN: continue
                 jobpath = findjobdir(self.jobpath, m['tag'])
                 if self.remove:
