@@ -86,6 +86,7 @@ def test_check_points():
 def test_check_points_1():
     tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
     tag = 'd054780c-f051-4450-a611-d374d41d1884'
+    tag = 'fb1247ce-0e67-4bf3-ae39-9e868fc751ba'
     proc = EVcheck_QHA()
     volumes, energies, _ = proc.get_orig_EV(db_file, tag)
     proc.check_points("", "", 0.005, 14, 0.3, volumes, energies, True)
