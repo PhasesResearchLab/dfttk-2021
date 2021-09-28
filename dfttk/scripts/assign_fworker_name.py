@@ -1,6 +1,31 @@
 from fireworks import Workflow, Firework
 from atomate.utils.utils import get_meta_from_structure, get_fws_and_tasks
 import sys
+
+
+def add_priority(original_wf, root_priority, child_priority=None):
+    """
+    Adds priority to a workflow
+
+    Args:
+        original_wf (Workflow): original WF
+        root_priority (int): priority of first (root) job(s)
+        child_priority(int): priority of all child jobs. Defaults to
+            root_priority
+
+    Returns:
+       Workflow: priority-decorated workflow
+    """
+    child_priority = child_priority or root_priority
+    root_fw_ids = original_wf.root_fw_ids
+    for fw in original_wf.fws:
+        if fw.fw_id in root_fw_ids:
+            fw.spec["_priority"] = root_priority
+        else:
+            fw.spec["_priority"] = child_priority
+    return original_wf
+
+
 def set_queue_options(
     original_wf,
     walltime=None,
@@ -288,13 +313,13 @@ def Customizing_Workflows_wf(original_wf, powerups_options=None):
     if 'set_execution_options' in powerups_options:
         execution_options = powerups_options['set_execution_options']
         try:
-            if 'preserve_fworker' in powerups_options['set_execution_options']:
-                if powerups_options['set_execution_options']['preserve_fworker']:
+            original_wf = set_execution_options(original_wf, 
+                fworker_name=execution_options.get("fworker_name", None),
+                category=execution_options.get("category", None),
+                )
+            if 'preserve_fworker' in execution_options:
+                if execution_options['preserve_fworker']:
                     original_wf = powerups.preserve_fworker(original_wf)
-                    original_wf = set_execution_options(original_wf, 
-                    fworker_name=execution_options.get("fworker_name", None),
-                    category=execution_options.get("category", None),
-                    )
         except:
             if execution_options.get("fworker_name", None):
                 original_wf.spec["_fworker"] = execution_options.get("fworker_name", None)
@@ -302,6 +327,8 @@ def Customizing_Workflows_wf(original_wf, powerups_options=None):
                 original_wf.spec["_category"] = execution_options.get("category", None)
             if execution_options.get("preserve_fworker", None):
                 original_wf.spec["_preserve_fworker"] = execution_options.get("preserve_fworker", None)
+        if 'priority' in execution_options:
+            add_priority(original_wf, execution_options.get("priority", 0))
 
     if 'set_queue_options' in powerups_options:
         queue_options = powerups_options['set_queue_options']
