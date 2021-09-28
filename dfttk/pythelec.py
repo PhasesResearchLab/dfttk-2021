@@ -944,7 +944,13 @@ def get_static_calculations(vasp_db, tag):
                     volumes.append(_vol)
                     energies.append(_energies[i])
                     dos_objs.append(_dos_objs[i])
-
+    elif len(tvolumes)==0 and len(_volumes)!=0:
+        if len(_volumes)!=0:
+            for i, _vol in enumerate(_volumes):
+                if np.any(abs(np.array(volumes)-_vol)<_vol*1.e-5): continue
+                volumes.append(_vol)
+                energies.append(_energies[i])
+                dos_objs.append(_dos_objs[i])
     # sort everything in volume order
     # note that we are doing volume last because it is the thing we are sorting by!
     energies = sort_x_by_y(energies, volumes)

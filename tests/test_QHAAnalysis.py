@@ -86,7 +86,7 @@ def test_check_points():
 def test_check_points_1():
     tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
     tag = 'd054780c-f051-4450-a611-d374d41d1884'
-    tag = 'fb1247ce-0e67-4bf3-ae39-9e868fc751ba'
+    tag = 'ed85a69b-4054-41d4-a724-7373934cdcc6'
     proc = EVcheck_QHA()
     volumes, energies, _ = proc.get_orig_EV(db_file, tag)
     proc.check_points("", "", 0.005, 14, 0.3, volumes, energies, True)
@@ -96,10 +96,11 @@ def test_check_points_1():
 def test_check_points_2():
     tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
     tag = 'd054780c-f051-4450-a611-d374d41d1884'
+    tag = 'ed85a69b-4054-41d4-a724-7373934cdcc6'
     vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
     EV, POSCAR, INCAR = get_rec_from_metatag(vasp_db, tag, test=True)
     structure = Structure.from_str(POSCAR, fmt='POSCAR')
-    proc = EVcheck_QHA(db_file=db_file, metadata={'tag':tag}, structure=structure, test=True)
+    proc = EVcheck_QHA(db_file=db_file, metadata={'tag':tag}, structure=structure, deformations = np.linspace(0.94,1.06,7), test=True)
     proc.run_task({})
     #assert False
 
