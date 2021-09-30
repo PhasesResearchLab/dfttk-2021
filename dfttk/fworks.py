@@ -147,6 +147,11 @@ class RobustOptimizeFW(Firework):
             raise ValueError('The store_volumetric_data should be list or bool')
 
         override_default_vasp_params = override_default_vasp_params or {}
+        if isif!=4 and isif!=3:
+            if 'user_incar_settings' in override_default_vasp_params:
+                if 'EDIFFG' in override_default_vasp_params['user_incar_settings']:
+                    override_default_vasp_params['user_incar_settings'].pop('EDIFFG')
+                    
         override_symmetry_tolerances = override_symmetry_tolerances or {}
         vasp_input_set = vasp_input_set or RelaxSet(structure, isif=isif, **override_default_vasp_params)
         site_properties = deepcopy(structure).site_properties
