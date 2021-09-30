@@ -1649,7 +1649,7 @@ class thelecMDB():
             self.xmlgz.append(pickle.loads(x['vasprun_xml_gz']))
             self.dosgz.append(pickle.loads(x['DOSCAR_gz']))
             self.xmlvol.append(x['volume'])
-            print ("found ", 'vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
+            print ('found vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
 
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
         if not os.path.exists(self.phasename):
