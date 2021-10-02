@@ -393,6 +393,8 @@ class PhononFW(Firework):
         ncell = int(0.5+np.linalg.det(supercell_matrix))
         tmp = copy.deepcopy(override_default_vasp_params)
         if 'user_incar_settings' in tmp:
+          if 'EDIFFG' in tmp['user_incar_settings']:
+            tmp['user_incar_settings'].pop('EDIFFG')
           if 'magmom' in tmp['user_incar_settings']:
             mag = tmp['user_incar_settings']['magmom']
             supermag = []
