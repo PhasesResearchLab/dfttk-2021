@@ -242,9 +242,9 @@ class ForceConstantsSet(DictSet):
         'NSW': 1,  # backwards compatibility setting
         'PREC': 'Accurate',
         'ALGO': 'Fast',
+        'SYMPREC': 1e-4,  # some supercells seem to have issues with primcel VASP algorithm
         "ICHARG": 2,
     })
-    #    'SYMPREC': 1e-4,  # some supercells seem to have issues with primcel VASP algorithm
     # now we reset the potentials
     CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
     CONFIG['POTCAR'].update(POTCAR_UPDATES)
