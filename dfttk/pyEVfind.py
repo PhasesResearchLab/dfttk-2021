@@ -180,11 +180,11 @@ class EVfindMDB ():
                     if self.hit_count[mm] < self.nV: continue
             if count[i]<self.nV: continue
             if self.skipby(phases[i], mm): continue
+            EV, POSCAR, INCAR = get_rec_from_metatag(self.vasp_db, mm)
             metadata = {'tag':mm}
             pname = phases[i].split('#')
-            if len(pname)>1: phases[i] = pname[0]+potname[i]+'#'+pname[1]
-            else: phases[i] = pname[0]+potname[i]
-            EV, POSCAR, INCAR = get_rec_from_metatag(self.vasp_db, mm)
+            if len(pname)>1: phases[i] = pname[0]+potname[i]+EV['MagState']+'#'+pname[1]
+            else: phases[i] = pname[0]+potname[i]+EV['MagState']
             if EV['natoms'] < self.natoms: continue
             
             sys.stdout.write('{}, static: {:>2}, natoms: {:>3}, {}\n'.format(metadata, count[i], EV['natoms'], phases[i]))

@@ -931,17 +931,24 @@ def get_static_calculations(vasp_db, tag):
             _dos_objs.append(vasp_db.get_dos(calc['task_id']))
 
     tvolumes = np.array(sorted(volumes))
-    dvolumes = tvolumes[1:-1] - tvolumes[0:-2]
-    dvolumes = sorted(dvolumes)
-    if abs(dvolumes[-1]-dvolumes[-2]) > 0.01*dvolumes[-1]:
-        #adding useful contraint calculations if not calculated statically
+    if len(tvolumes)>1:
+        dvolumes = tvolumes[1:-1] - tvolumes[0:-2]
+        dvolumes = sorted(dvolumes)
+        if abs(dvolumes[-1]-dvolumes[-2]) > 0.01*dvolumes[-1]:
+            #adding useful contraint calculations if not calculated statically
+            if len(_volumes)!=0:
+                for i, _vol in enumerate(_volumes):
+                    if np.any(abs(np.array(volumes)-_vol)<_vol*1.e-5): continue
+                    volumes.append(_vol)
+                    energies.append(_energies[i])
+                    dos_objs.append(_dos_objs[i])
+    elif len(tvolumes)==0 and len(_volumes)!=0:
         if len(_volumes)!=0:
             for i, _vol in enumerate(_volumes):
                 if np.any(abs(np.array(volumes)-_vol)<_vol*1.e-5): continue
                 volumes.append(_vol)
                 energies.append(_energies[i])
                 dos_objs.append(_dos_objs[i])
-
     # sort everything in volume order
     # note that we are doing volume last because it is the thing we are sorting by!
     energies = sort_x_by_y(energies, volumes)
@@ -1640,7 +1647,7 @@ class thelecMDB():
             self.xmlgz.append(pickle.loads(x['vasprun_xml_gz']))
             self.dosgz.append(pickle.loads(x['DOSCAR_gz']))
             self.xmlvol.append(x['volume'])
-            print ("found ", 'vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
+            print ('found vasprun.xml.gz', 'DOSCAR.gz', "at", x['volume'])
 
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
         if not os.path.exists(self.phasename):

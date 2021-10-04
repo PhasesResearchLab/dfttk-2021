@@ -36,6 +36,7 @@ from dfttk import __version__ as dfttk_ver
 from pymatgen.core import __version__ as pymatgen_ver
 
 from dfttk.EVcheck_QHA import *
+from dfttk.pythelec import get_static_calculations
 from pymatgen.core import Structure
 from pymatgen.analysis.eos import EOS
 from fireworks import Firework
@@ -86,6 +87,7 @@ def test_check_points():
 def test_check_points_1():
     tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
     tag = 'd054780c-f051-4450-a611-d374d41d1884'
+    tag = 'ed85a69b-4054-41d4-a724-7373934cdcc6'
     proc = EVcheck_QHA()
     volumes, energies, _ = proc.get_orig_EV(db_file, tag)
     proc.check_points("", "", 0.005, 14, 0.3, volumes, energies, True)
@@ -95,10 +97,12 @@ def test_check_points_1():
 def test_check_points_2():
     tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
     tag = 'd054780c-f051-4450-a611-d374d41d1884'
+    tag = 'ed85a69b-4054-41d4-a724-7373934cdcc6'
+    tag = '0267947f-b5a0-4993-8b5e-58f9dfb4e362'
     vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
     EV, POSCAR, INCAR = get_rec_from_metatag(vasp_db, tag, test=True)
     structure = Structure.from_str(POSCAR, fmt='POSCAR')
-    proc = EVcheck_QHA(db_file=db_file, metadata={'tag':tag}, structure=structure, test=True)
+    proc = EVcheck_QHA(db_file=db_file, metadata={'tag':tag}, structure=structure, deformations = np.linspace(0.94,1.06,7), test=True)
     proc.run_task({})
     #assert False
 
@@ -108,3 +112,11 @@ def test_EVcheck_QHA_2():
     wf = Firework(EVcheck_QHA(db_file=db_file,vasp_cmd=">>vasp_cmd<<",tag="test",metadata={'tag':tag}, test=True))
     print(wf.as_dict())
     #assert False
+
+@pytest.mark.get_static_calculations
+def test_get_static_calculations():
+    tag = '0267947f-b5a0-4993-8b5e-58f9dfb4e362'
+    vasp_db = VaspCalcDb.from_db_file(db_file=db_file, admin = True)
+    volumes, energies, dos_objs, _ = get_static_calculations(vasp_db,tag)
+    #print(volumes, energies)
+    assert False

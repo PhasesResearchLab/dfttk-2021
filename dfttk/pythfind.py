@@ -23,7 +23,7 @@ import numpy as np
 from fireworks.fw_config import config_to_dict
 from monty.serialization import loadfn
 from atomate.vasp.database import VaspCalcDb
-from dfttk.analysis.ywutils import formula2composition, reduced_formula, get_used_pot
+from dfttk.analysis.ywutils import formula2composition, reduced_formula, get_used_pot, get_Magnetic_State
 
 def findjobdir(jobpath, metatag):
     try:
@@ -273,16 +273,19 @@ class thfindMDB ():
             gapfound = False
             potsoc = None
             _volumes = []
+            emin = 1.e36
             for ii, calc in enumerate(static_calculations):
                 vol = calc['output']['structure']['lattice']['volume']
-                if potsoc is None:
-                    potsoc = get_used_pot(calc)
-                    pname = phases[i].split('#')
-                    if len(pname)>1: phases[i] = pname[0]+potsoc+'#'+pname[1]
-                    else: phases[i] = pname[0]+potsoc
+                ene = calc['output']['energy']
+                if ene < emin: _calc = calc
                 if vol not in _volumes: _volumes.append(vol)
                 bandgap = calc['output']['bandgap']
                 if not gapfound: gapfound = float(bandgap) > 0.0
+            potsoc = get_used_pot(_calc)
+            Mag_State = get_Magnetic_State(_calc)
+            pname = phases[i].split('#')
+            if len(pname)>1: phases[i] = pname[0]+potsoc+Mag_State+'#'+pname[1]
+            else: phases[i] = pname[0]+potsoc+Mag_State
             nS = len(_volumes)
             if self.findbandgap:
                 if gapfound: sys.stdout.write('{}, phonon: {:>2}, static: {:>2}, supercellsize: {:>3}, {}\n'.format(m, count[i], nS, self.supercellsize[i], phases[i]))

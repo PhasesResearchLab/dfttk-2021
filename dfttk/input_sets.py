@@ -611,7 +611,8 @@ class ElasticSet(DictSet):
         if 'SIGMA' in new_config['INCAR'] and 'ISMEAR' in new_config['INCAR'] :
             if new_config['INCAR']['ISMEAR'] == -5:
                 new_config['INCAR'].pop('SIGMA')
-
+                
+        from pymatgen.io.vasp.inputs import Kpoints
         kpoints = Kpoints(kpts=[[31,31,31],])
         new_config['KPOINTS'] = kpoints
 

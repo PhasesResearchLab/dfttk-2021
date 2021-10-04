@@ -217,6 +217,25 @@ def get_melting_temperature(expt=None, formula=None):
     return None
 
 
+"""determine a structure if is FM, FIM, AFM, or NM states
+"""
+def get_Magnetic_State(calc):
+    sites = calc['output']['structure']['sites']
+    try: magmoms=[s['properties']['magmom'] for s in sites]
+    except: magmoms=[]
+    if len(magmoms)==0: return ""
+    magmoms = [k for k in magmoms]
+    magmoms = np.array(magmoms)
+    fmax = max(magmoms)
+    fmin = min(magmoms)
+    fsum = sum(magmoms)
+    if fmax>0.1 and fmin<=-0.1:
+        if abs(fsum) > 0.1: return "_FIM"
+        else: return "_AFM"
+    elif fmax>0.1 or fmin<=-0.1: return "_FM"
+    else: return ""
+    
+
 """return E-V data information from MonggoDB database of static calculations
 vasp_db - MonggoDB database connection
 m - metadata tag value
@@ -256,6 +275,7 @@ def get_rec_from_metatag(vasp_db,m, test=False):
         if ene < emin:
             emin = ene
             structure = Structure.from_dict(calc['input']['structure'])
+            MagState = get_Magnetic_State(calc)
             POSCAR = structure.to(fmt="poscar")
             INCAR = calc['input']['incar']
         gap = calc['output']['bandgap']
@@ -268,43 +288,45 @@ def get_rec_from_metatag(vasp_db,m, test=False):
         else: pressures.append(None)
         if not gapfound: gapfound = float(gap) > 0.0
     tvolumes = np.array(sorted(volumes))
-    dvolumes = tvolumes[1:-1] - tvolumes[0:-2]
-    dvolumes = sorted(dvolumes)
-    if abs(dvolumes[-1]-dvolumes[-2]) > 0.01*dvolumes[-1]:
-        all_static_calculations = vasp_db.collection.\
-            find({'$and':[ {'metadata.tag': m}, {'adopted': True} ]})
-        for calc in all_static_calculations:
-            if len(calc['metadata'])<=1:continue # only check constrained calculation
-            vol = calc['output']['structure']['lattice']['volume']
-            if vol_within(vol, volumes): continue
-            natoms = len(calc['output']['structure']['sites'])
-            try:
-                sites = calc['output']['structure']['sites']
-                magmoms.append([{s['label']:s['properties']['magmom']} for s in sites])
-            except:
-                pass
-            lat = calc['output']['structure']['lattice']['matrix']
-            sts = calc['output']['stress']
-            ene = calc['output']['energy']
-            if test:
-                structure = Structure.from_dict(calc['input']['structure'])
-                POSCAR = structure.to(fmt="poscar")
-                INCAR = calc['input']['incar']
-                break            
-            if ene < emin:
-                emin = ene
-                structure = Structure.from_dict(calc['input']['structure'])
-                POSCAR = structure.to(fmt="poscar")
-                INCAR = calc['input']['incar']
-            gap = calc['output']['bandgap']
-            volumes.append(vol)
-            energies.append(ene)
-            stresses.append(sts)
-            lattices.append(lat)
-            bandgaps.append(gap)
-            if sts!=None: pressures.append((sts[0][0]+sts[1][1]+sts[2][2])/3.)
-            else: pressures.append(None)
-            if not gapfound: gapfound = float(gap) > 0.0
+    if len(tvolumes)>1:
+        dvolumes = tvolumes[1:-1] - tvolumes[0:-2]
+        dvolumes = sorted(dvolumes)
+        if abs(dvolumes[-1]-dvolumes[-2]) > 0.01*dvolumes[-1]:
+            all_static_calculations = vasp_db.collection.\
+                find({'$and':[ {'metadata.tag': m}, {'adopted': True} ]})
+            for calc in all_static_calculations:
+                if len(calc['metadata'])<=1:continue # only check constrained calculation
+                vol = calc['output']['structure']['lattice']['volume']
+                if vol_within(vol, volumes): continue
+                natoms = len(calc['output']['structure']['sites'])
+                try:
+                    sites = calc['output']['structure']['sites']
+                    magmoms.append([{s['label']:s['properties']['magmom']} for s in sites])
+                except:
+                    pass
+                lat = calc['output']['structure']['lattice']['matrix']
+                sts = calc['output']['stress']
+                ene = calc['output']['energy']
+                if test:
+                    structure = Structure.from_dict(calc['input']['structure'])
+                    POSCAR = structure.to(fmt="poscar")
+                    INCAR = calc['input']['incar']
+                    break            
+                if ene < emin:
+                    emin = ene
+                    structure = Structure.from_dict(calc['input']['structure'])
+                    MagState = get_Magnetic_State(calc)
+                    POSCAR = structure.to(fmt="poscar")
+                    INCAR = calc['input']['incar']
+                gap = calc['output']['bandgap']
+                volumes.append(vol)
+                energies.append(ene)
+                stresses.append(sts)
+                lattices.append(lat)
+                bandgaps.append(gap)
+                if sts!=None: pressures.append((sts[0][0]+sts[1][1]+sts[2][2])/3.)
+                else: pressures.append(None)
+                if not gapfound: gapfound = float(gap) > 0.0
 
     energies = sort_x_by_y(energies, volumes)
     pressures = sort_x_by_y(pressures, volumes)
@@ -327,6 +349,7 @@ def get_rec_from_metatag(vasp_db,m, test=False):
     EV['lattices'] = lattices
     EV['magmoms'] = magmoms
     EV['kpoints'] = kpoints
+    EV['MagState'] = MagState
     return EV,POSCAR,INCAR
 
 """
