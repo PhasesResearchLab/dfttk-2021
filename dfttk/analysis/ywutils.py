@@ -217,6 +217,25 @@ def get_melting_temperature(expt=None, formula=None):
     return None
 
 
+"""determine a structure if is FM, FIM, AFM, or NM states
+"""
+def get_Magnetic_State(calc):
+    sites = calc['output']['structure']['sites']
+    try: magmoms=[s['properties']['magmom'] for s in sites]
+    except: magmoms=[]
+    if len(magmoms)==0: return ""
+    magmoms = [k for k in magmoms]
+    magmoms = np.array(magmoms)
+    fmax = max(magmoms)
+    fmin = min(magmoms)
+    fsum = sum(magmoms)
+    if fmax>0.1 and fmin<=-0.1:
+        if abs(fsum) > 0.1: return "_FIM"
+        else: return "_AFM"
+    elif fmax>0.1 or fmin<=-0.1: return "_FM"
+    else: return ""
+    
+
 """return E-V data information from MonggoDB database of static calculations
 vasp_db - MonggoDB database connection
 m - metadata tag value
@@ -256,6 +275,7 @@ def get_rec_from_metatag(vasp_db,m, test=False):
         if ene < emin:
             emin = ene
             structure = Structure.from_dict(calc['input']['structure'])
+            MagState = get_Magnetic_State(calc)
             POSCAR = structure.to(fmt="poscar")
             INCAR = calc['input']['incar']
         gap = calc['output']['bandgap']
@@ -295,6 +315,7 @@ def get_rec_from_metatag(vasp_db,m, test=False):
                 if ene < emin:
                     emin = ene
                     structure = Structure.from_dict(calc['input']['structure'])
+                    MagState = get_Magnetic_State(calc)
                     POSCAR = structure.to(fmt="poscar")
                     INCAR = calc['input']['incar']
                 gap = calc['output']['bandgap']
@@ -328,6 +349,7 @@ def get_rec_from_metatag(vasp_db,m, test=False):
     EV['lattices'] = lattices
     EV['magmoms'] = magmoms
     EV['kpoints'] = kpoints
+    EV['MagState'] = MagState
     return EV,POSCAR,INCAR
 
 """
