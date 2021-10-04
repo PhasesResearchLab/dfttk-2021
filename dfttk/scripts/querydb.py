@@ -74,6 +74,10 @@ def get_static_structure_by_metadata(metadata, db_file=None):
                 if pot=='Perdew-Zunger81'.upper(): pot="LDA"
             static_settings['user_potcar_functional'] = pot
             static_settings['user_incar_settings'] = itemi['input']['incar']
+            if 'MAGMOM' in static_settings['user_incar_settings']:
+                mag = static_settings['user_incar_settings']['MAGMOM']
+                static_settings['user_incar_settings'].pop('MAGMOM')
+                static_settings['user_incar_settings']['magmom'] = mag
 
     structure_list = sort_x_by_y(structure_list, volumes)
     band_gap = sort_x_by_y(band_gap, volumes)

@@ -158,9 +158,7 @@ def get_wf_elastic(structure=None, metadata=None, tag=None, vasp_cmd=None, db_fi
     wfs = []
     if bandgap:
         if override_default_vasp_params is None: override_default_vasp_params = {}
-        using_incar_new_settings = None
-        if 'user_incar_settings' in override_default_vasp_params.keys():
-            using_incar_new_settings = override_default_vasp_params['user_incar_settings']
+        using_incar_new_settings = override_default_vasp_params.get('user_incar_settings', None)
         override_default_vasp_params.update(static_setting)
         if using_incar_new_settings is not None:
             override_default_vasp_params['user_incar_settings'].update(using_incar_new_settings)
@@ -224,7 +222,6 @@ def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name=
     metadata = metadata or {}
     tag = metadata.get('tag', '{}'.format(str(uuid4())))
     metadata.update({'tag': tag})
-
     struct_energy_bandgap = is_property_exist_in_db(metadata=metadata, db_file=db_file)
     if struct_energy_bandgap:
         bandgap = struct_energy_bandgap[2]

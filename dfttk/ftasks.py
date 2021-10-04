@@ -33,6 +33,7 @@ from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 from pymatgen.core import __version__ as pymatgen_ver
 from dfttk.pythelec import get_static_calculations
+from dfttk.scripts.assign_fworker_name import Customizing_Workflows, get_powerups_options
 
 def extend_calc_locs(name, fw_spec):
     """
@@ -224,10 +225,13 @@ class CalculatePhononThermalProperties(FiretaskBase):
 
         unitcell = Structure.from_file('POSCAR-unitcell')
         supercell_matrix = self['supercell_matrix']
-        temperatures, f_vib, s_vib, cv_vib, force_constants = get_f_vib_phonopy(unitcell, supercell_matrix, vasprun_path='vasprun.xml', t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'])
+        temperatures, f_vib, s_vib, cv_vib, force_constants, code_version \
+            = get_f_vib_phonopy(unitcell, supercell_matrix, vasprun_path='vasprun.xml', t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'])
         if isinstance(supercell_matrix, np.ndarray):
             supercell_matrix = supercell_matrix.tolist()  # make serializable
         thermal_props_dict = {
+            'vasp_version': code_version,
+            'force_constant_factor': 1.0,
             'volume': unitcell.volume,
             'F_vib': f_vib.tolist(),
             'CV_vib': cv_vib.tolist(),
@@ -951,7 +955,11 @@ class CheckRelaxation(FiretaskBase):
                                 override_symmetry_tolerances=symmetry_options, store_volumetric_data=self.store_volumetric_data, **self["common_kwargs"]))
             else:
                 raise ValueError(f"Unknown job_type {job_type} for step {step}.")
-        return detour_fws
+        common_kwargs = self.get('common_kwargs',{})
+        override_default_vasp_params = common_kwargs.get('override_default_vasp_params',{})
+        user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
+        #user_incar_settings = common_kwargs.get('modify_incar_params',{})
+        return Customizing_Workflows(detour_fws, powerups_options=user_incar_settings.get('powerups', None))
 
 
 @explicit_serialize

@@ -6,6 +6,7 @@ import warnings
 import datetime
 import subprocess
 import os
+import sys
 import json
 import numpy as np
 import copy
@@ -41,14 +42,23 @@ from fireworks import Firework
 from atomate.vasp.config import VASP_CMD, DB_FILE
 import os
 from dfttk.ftasks import QHAAnalysis
+from dfttk.analysis.ywutils import get_rec_from_metatag, get_used_pot
+from monty.serialization import loadfn, dumpfn
 
-head,tail = os.path.split(__file__)
-db_file = os.path.join(head,"db.json")
+FW_CONFIG_FILE = os.getenv('FW_CONFIG_FILE')
+FW_CONFIG_FILE = loadfn(FW_CONFIG_FILE)
+
+CONFIG_FILE_DIR = FW_CONFIG_FILE.get('CONFIG_FILE_DIR',None)
+if CONFIG_FILE_DIR is not None:
+    db_file = os.path.join(CONFIG_FILE_DIR, 'db.json')
+else:
+    head,tail = os.path.split(__file__)
+    db_file = os.path.join(head,"db.json")
 
 @pytest.mark.QHAAnalysis
 def test_QHAAnalysis():
-    tags = ['ec77b415-8e36-440a-997c-1c3d512099ce',
-            '7e74e496-90b1-41c1-8113-38eec730b9f2']
+    tags = ['5e8b5a18-b2b9-4dcd-81a7-0bd75ee361ec']
+    print(db_file)
     for tag in tags:
         vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
         phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
@@ -65,3 +75,36 @@ def test_QHAAnalysis():
             tag=tag)
         proc.run_task("")
 
+@pytest.mark.check_points
+def test_check_points():
+    proc = EVcheck_QHA()
+    volumes = [504.4854780252552, 534.1610477526048, 563.8366733894931, 593.512427132093, 623.1879003769909, 652.8636686613459, 682.5393342833485, 711.6214250632727, 740.703761424463, 769.7858059616457, 798.8678864247061]
+    energies = [-342.98343642, -344.38954914, -344.89492019, -344.80547287, -344.28500957, -343.47527914, -342.47536783, -341.31384393, -340.16711161, -339.67940075, -338.41924052]
+    proc.check_points("", "", 0.005, 14, 0.3, volumes, energies, True)
+
+@pytest.mark.check_points_1
+def test_check_points_1():
+    tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
+    tag = 'd054780c-f051-4450-a611-d374d41d1884'
+    proc = EVcheck_QHA()
+    volumes, energies, _ = proc.get_orig_EV(db_file, tag)
+    proc.check_points("", "", 0.005, 14, 0.3, volumes, energies, True)
+    #assert False
+
+@pytest.mark.check_points_2
+def test_check_points_2():
+    tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
+    tag = 'd054780c-f051-4450-a611-d374d41d1884'
+    vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
+    EV, POSCAR, INCAR = get_rec_from_metatag(vasp_db, tag, test=True)
+    structure = Structure.from_str(POSCAR, fmt='POSCAR')
+    proc = EVcheck_QHA(db_file=db_file, metadata={'tag':tag}, structure=structure, test=True)
+    proc.run_task({})
+    #assert False
+
+@pytest.mark.EVcheck_QHA_2
+def test_EVcheck_QHA_2():
+    tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
+    wf = Firework(EVcheck_QHA(db_file=db_file,vasp_cmd=">>vasp_cmd<<",tag="test",metadata={'tag':tag}, test=True))
+    print(wf.as_dict())
+    #assert False

@@ -9,6 +9,9 @@ import copy
 from os import walk
 from atomate.vasp.database import VaspCalcDb
 from dfttk.scripts.run_dfttk_ext import ext_EVfind, ext_thfind, ext_thelec
+from dfttk.utils import check_symmetry
+from dfttk.scripts.run_dfttk import parse_magmom
+from pymatgen.core import Structure
 
 
 head,tail = os.path.split(__file__)
@@ -126,3 +129,33 @@ def test_thelec_Al2O3(capsys,tmp_path):
     compound, phasename = "Al2O3", "Al2O3_R-3c_167LDA"
     print ("testing thelec for", compound)
     run_thelec(capsys,tmp_path,compound, phasename, nfiles=8)
+
+POSCAR_CrF2 = """Cr2 F4
+1.0
+2.914805 0.000000 -1.853065
+0.000000 4.677386 0.000000
+-0.033319 0.000000 5.528192
+Cr F
+2 4
+direct
+-0.000000 -0.000000 0.000000 Cr
+-0.000000 0.500000 0.500000 Cr
+0.739424 0.800910 0.200356 F
+0.260577 0.300910 0.299645 F
+0.739424 0.699090 0.700355 F
+0.260577 0.199090 0.799645 F"""
+magmom = [-3,3,'4*0']
+magmom = parse_magmom(magmom)
+structure = Structure.from_str(POSCAR_CrF2, fmt='POSCAR')
+structure.add_site_property('magmom', magmom)
+site_properties = structure.site_properties
+print(structure)
+DIR = "/gpfs/scratch/yuw3/v7/block_2021-09-20-21-31-28-177520/launcher_2021-09-20-21-31-49-741147/launcher_2021-09-21-08-53-15-627218"
+if not os.path.exists(DIR): DIR = None
+@pytest.mark.check_symmetry_magmom
+@pytest.mark.skipif(DIR is None, reason="Check magmom at the given path which needs to exist")
+def test_check_symmetry_magmom():
+    os.chdir(DIR)
+    check_symmetry(tol_energy=0.025, tol_strain=0.05, tol_bond=0.10, site_properties=site_properties)
+
+

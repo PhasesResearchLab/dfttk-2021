@@ -231,6 +231,7 @@ class StaticFW(Firework):
         override_default_vasp_params = override_default_vasp_params or {}
         self.override_default_vasp_params = override_default_vasp_params
         vasp_input_set = vasp_input_set or StaticSet(structure, isif=isif, **override_default_vasp_params)
+        self.vasp_input_set = vasp_input_set
         site_properties = deepcopy(structure).site_properties
         # Avoids delivery (prev_calc_loc == '' (instead by True))
         t = []
@@ -256,7 +257,7 @@ class StaticFW(Firework):
             t.append(VaspToDb(db_file=">>db_file<<", parse_dos=True, additional_fields={"task_label": name, "metadata": metadata,
                                 "version_atomate": atomate_ver, "version_dfttk": dfttk_ver, "adopted": True, "tag": tag},
                                 store_volumetric_data=store_volumetric_data))
-            run_task_ext(t,vasp_cmd,">>db_file<<",structure,tag,self.override_default_vasp_params)
+            run_task_ext(t,vasp_cmd,">>db_file<<",structure,tag,self.override_default_vasp_params,self.vasp_input_set)
 
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, site_properties=site_properties))
         super(StaticFW, self).__init__(t, parents=parents, name="{}-{}".format(
@@ -398,11 +399,12 @@ class PhononFW(Firework):
             tmp['user_incar_settings']['magmom']=supermag
             print("phonon setting", tmp)
 
-        vasp_input_set = vasp_input_set or ForceConstantsSet(structure, **tmp)
+        #vasp_input_set = vasp_input_set or ForceConstantsSet(structure, **tmp)
 
         supercell_structure = deepcopy(structure)
         supercell_structure.make_supercell(supercell_matrix)
         supercell_site_properties = deepcopy(supercell_structure.site_properties)
+        vasp_input_set = vasp_input_set or ForceConstantsSet(supercell_structure, **tmp)
 
         t = []
 

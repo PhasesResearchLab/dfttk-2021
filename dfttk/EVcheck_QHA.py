@@ -18,6 +18,7 @@ from dfttk.fworks import OptimizeFW, StaticFW, PhononFW
 from dfttk.ftasks import QHAAnalysis
 from dfttk.analysis.quasiharmonic import Quasiharmonic
 from dfttk.scripts.assign_fworker_name import Customizing_Workflows
+from dfttk.pythelec import get_static_calculations
 
 from atomate.vasp.config import VASP_CMD, DB_FILE
 
@@ -172,12 +173,10 @@ def update_err(temperror, error, verbose, ind, **kwargs):
         temp_ind = kwargs["temp_ind"]
     if verbose:
         print('error = %.4f in %s ' %(temperror, temp_ind))
-    if temperror < error:
-        error = temperror
-        if "temp_ind" in kwargs:
-            ind = temp_ind
-            return error, ind
-    return error
+
+    if "temp_ind" not in kwargs: return min(temperror, error)
+    elif temperror < error: return temperror, temp_ind
+    else: return error, ind
 
 
 @explicit_serialize
@@ -204,7 +203,7 @@ class EVcheck_QHA(FiretaskBase):
                        'del_limited', 'vol_spacing', 't_min', 't_max', 't_step', 'phonon', 'phonon_supercell_matrix',
                        'verbose', 'modify_incar_params', 'run_num','modify_kpoints_params', 'site_properties',
                        'override_symmetry_tolerances', 'override_default_vasp_params', 'db_file', 'vasp_cmd',
-                       'force_phonon', 'stable_tor', 'store_volumetric_data']
+                       'force_phonon', 'stable_tor', 'store_volumetric_data','test']
 
     def run_task(self, fw_spec):
         '''
@@ -219,15 +218,14 @@ class EVcheck_QHA(FiretaskBase):
         '''
         # Get the parameters from the object
         max_run = 10
-        db_file = env_chk(self.get('db_file', DB_FILE), fw_spec)
-        #db_file = ">>db_file<<"
-        vasp_cmd = ">>vasp_cmd<<"
+        db_file = env_chk(self.get('db_file', DB_FILE), fw_spec) #always concrete db_fiel
+        vasp_cmd = ">>vasp_cmd<<" #chould change for user to provide the change
         deformations = self.get('deformations', [])
         run_num = self.get('run_num', 0)
         eos_tolerance = self.get('eos_tolerance', 0.005)
         threshold = self.get('threshold', 14)
         del_limited = self.get('del_limited', 0.3)
-        vol_spacing = self.get('vol_spacing', 0.03)
+        vol_spacing = self.get('vol_spacing', 0.05)
         t_min = self.get('t_min', 5)
         t_max = self.get('t_max', 2000)
         t_step = self.get('t_step', 5)
@@ -235,15 +233,22 @@ class EVcheck_QHA(FiretaskBase):
         force_phonon = self.get('force_phonon', False)
         phonon_supercell_matrix = self.get('phonon_supercell_matrix', None)
         verbose = self.get('verbose', False)
-        modify_incar_params = self.get('modify_incar_params', {})
         modify_kpoints_params = self.get('modify_kpoints_params', {})
         site_properties = self.get('site_properties', None)
+
+        modify_incar_params = self.get('modify_incar_params', {})
+        powerups_options=modify_incar_params.get('powerups', None)
+
         override_default_vasp_params = self.get('override_default_vasp_params', {})
+        user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
+        powerups_options=user_incar_settings.get('powerups', powerups_options)
+
         override_symmetry_tolerances = self.get('override_symmetry_tolerances', {})
         store_volumetric_data = self.get('store_volumetric_data', False)
 
         stable_tor = self.get('stable_tor', 0.01)
         force_phonon = self.get('force_phonon', False)
+        test = self.get('test', False)
 
         relax_structure = self.get('structure') or fw_spec.get('structure', None)
         relax_scheme = self.get('relax_scheme') or fw_spec.get('relax_scheme', [2])
@@ -259,7 +264,7 @@ class EVcheck_QHA(FiretaskBase):
             tag = str(uuid4())
             metadata['tag'] = tag
 
-        common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': db_file, "metadata": metadata, "tag": tag,
+        common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': self.get('db_file', DB_FILE), "metadata": metadata, "tag": tag,
                          'override_default_vasp_params': override_default_vasp_params,}
         vasp_kwargs = {'modify_incar_params': modify_incar_params, 'modify_kpoints_params': modify_kpoints_params}
         t_kwargs = {'t_min': t_min, 't_max': t_max, 't_step': t_step}
@@ -356,7 +361,6 @@ class EVcheck_QHA(FiretaskBase):
                     fws.append(check_result)
                     strname = "{}:{}".format(structure.composition.reduced_formula, 'EV_QHA_Append')
                     wfs = Workflow(fws, name = strname, metadata=metadata)
-                    wfs=Customizing_Workflows(wfs,user_settings=override_default_vasp_params)
 
                     if modify_incar_params != {}:
                         from dfttk.utils import add_modify_incar_by_FWname
@@ -364,12 +368,13 @@ class EVcheck_QHA(FiretaskBase):
                     if modify_kpoints_params != {}:
                         from dfttk.utils import add_modify_kpoints_by_FWname
                         add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
-                    lpad.add_wf(wfs)
+                    wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
+                    if not test: lpad.add_wf(wfs)
                 else:
                     too_many_run_error()
             else:  # No need to do more VASP calculation, QHA could be running
                 print('Success in Volumes-Energies checking, enter QHA ...')
-                debye_fw = Firework(QHAAnalysis(phonon=phonon, t_min=t_min, t_max=t_max, t_step=t_step, db_file=db_file, tag=tag, metadata=metadata),
+                debye_fw = Firework(QHAAnalysis(phonon=phonon, t_min=t_min, t_max=t_max, t_step=t_step, db_file=self.get('db_file', DB_FILE), tag=tag, metadata=metadata),
                                     name="{}-qha_analysis".format(structure.composition.reduced_formula))
                 fws.append(debye_fw)
                 '''
@@ -386,7 +391,8 @@ class EVcheck_QHA(FiretaskBase):
                 '''
                 strname = "{}:{}".format(structure.composition.reduced_formula, 'QHA')
                 wfs = Workflow(fws, name = strname, metadata=metadata)
-                lpad.add_wf(wfs)
+                wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
+                if not test: lpad.add_wf(wfs)
         else:   # failure to meet the tolerance
             if len(volumes) == 0: #self.error == 1e10:   # Bad initial running set
                 pass_result_error()
@@ -398,42 +404,11 @@ class EVcheck_QHA(FiretaskBase):
 
     def get_orig_EV(self, db_file, tag):
         vasp_db = VaspCalcDb.from_db_file(db_file=db_file, admin = True)
-        energies = []
-        volumes = []
-        dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
-        if vasp_db.collection.count_documents({'$and':[ {'metadata.tag': tag}, {'adopted': True},
-                                            {'output.structure.lattice.volume': {'$exists': True}}]}) <= 4:
-            static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag},
-                                                        {'output.structure.lattice.volume': {'$exists': True} }]})
-        else:
-            static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': True},
-                                                        {'output.structure.lattice.volume': {'$exists': True}}]})
-        vol_last = 0
-        for calc in static_calculations:
-            vol = calc['output']['structure']['lattice']['volume']
-            if abs((vol - vol_last) / vol) > 1e-8:
-                energies.append(calc['output']['energy'])
-                volumes.append(vol)
-                dos_objs.append(vasp_db.get_dos(calc['task_id']))
-            else:
-                energies[-1] = calc['output']['energy']
-                volumes[-1] = vol
-                dos_objs[-1] = vasp_db.get_dos(calc['task_id'])
-            vol_last = vol
-        energies = sort_x_by_y(energies, volumes)
-        dos_objs = sort_x_by_y(dos_objs, volumes)
-        ## should sort firstly?
-        volumes = sorted(volumes)
-        n = len(volumes) - 1           # Delete duplicated
-        while n > 0:
-            if abs((volumes[n] - volumes[n - 1]) / volumes[n]) < 1e-8:
-                volumes.pop(n)
-                energies.pop(n)
-                dos_objs.pop(n)
-            n -= 1
+        volumes, energies, dos_objs, _ \
+            = get_static_calculations(vasp_db, tag)
         print('%s Volumes  = %s' %(len(volumes), volumes))
         print('%s Energies = %s' %(len(energies), energies))
-        return(volumes, energies, dos_objs)
+        return(list(volumes), list(energies), dos_objs)
 
     def check_points(self, db_file, metadata, eos_tolerance, threshold, del_limited, volumes, energies, verbose = False):
         """
@@ -515,6 +490,7 @@ class EVcheck_QHA(FiretaskBase):
 
         # Check minimum spacing
         volumer = [vol_i / vol_orig for vol_i in volumer]
+        """
         decimals = 4
         for m in range(len(volumer) - 1):
             vol_space_m = volumer[m + 1] - volumer[m]
@@ -522,6 +498,8 @@ class EVcheck_QHA(FiretaskBase):
                 vol = np.linspace(volumer[m], volumer[m + 1], math.ceil(vol_space_m / vol_spacing) + 1).tolist()
                 print('Additional volume({}) is appended for the volume space({}) is larger than specified({})'.format(vol[1:-1], vol_space_m, vol_spacing))
                 result.append(vol[1:-1])
+                #result.extend(vol[1:-1])
+        """
 
         # To check (and extend) deformation coverage
         # To make sure that coverage extension smaller than interpolation spacing
@@ -538,8 +516,15 @@ class EVcheck_QHA(FiretaskBase):
             # TODO: add a stable check in Quasiharmonic
             vasp_db = VaspCalcDb.from_db_file(db_file = db_file, admin=True)
             phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
-            vol_vol = [calc['volume'] for calc in phonon_calculations]  # these are just used for sorting and will be thrown away
-            vol_f_vib = [calc['F_vib'] for calc in phonon_calculations]
+            #vol_vol = [calc['volume'] for calc in phonon_calculations]  # these are just used for sorting and will be thrown away
+            #vol_f_vib = [calc['F_vib'] for calc in phonon_calculations]
+            vol_vol = []
+            vol_f_vib = []
+            for calc in phonon_calculations:
+                if calc['volume'] in vol_vol: continue
+                if calc['volume'] not in volume: continue
+                vol_vol.append(calc['volume'])
+                vol_f_vib.append(calc['F_vib'])
             # sort them order of the unit cell volumes
             vol_f_vib = sort_x_by_y(vol_f_vib, vol_vol)
             f_vib = np.vstack(vol_f_vib)
@@ -554,6 +539,7 @@ class EVcheck_QHA(FiretaskBase):
         print('Evaluated MIN volume is %.3f;' %vol_min)
         print('Evaluated MAX volume is %.3f;' %vol_max)
 
+        """
         vol_max = vol_max / vol_orig
         vol_min = vol_min / vol_orig
         counter = 1
@@ -574,6 +560,19 @@ class EVcheck_QHA(FiretaskBase):
             while (counter < max_append) and (result[-1] > vol_min):
                 result.append(result[-1] - vol_spacing)
                 counter += 1
+        """
+        val, idx = min((val, idx) for (idx, val) in enumerate(energy))
+        nV = len(energy)
+        nV_addL = 3
+        if nV_addL - idx > 0:
+            vol_spacing = volumer[1] - volumer[0]
+            for i in range(nV_addL-idx):
+                result.append(volumer[0] - (nV_addL-idx-i)*vol_spacing)
+        nV_addR = 4
+        if idx+1+nV_addR - nV > 0:
+            vol_spacing = volumer[-1] - volumer[-2]
+            for i in range(idx+1+nV_addR-nV):
+                result.append(volumer[-1] + (i+1)*vol_spacing)
         return(np.array(result))
 
     def check_fit(self, volumes, energies):
@@ -625,7 +624,7 @@ class PreEV_check(FiretaskBase):
         tolerance = self.get('tolerance') or 0.005
         threshold = self.get('threshold') or 14
         del_limited = self.get('del_limited') or 0.3
-        vol_spacing = self.get('vol_spacing') or 0.03
+        vol_spacing = self.get('vol_spacing') or 0.05
         t_min = self.get('t_min') or 5
         t_max = self.get('t_max') or 2000
         t_step = self.get('t_step') or 5
@@ -634,6 +633,7 @@ class PreEV_check(FiretaskBase):
         verbose = self.get('verbose') or False
         modify_incar_params = self.get('modify_incar_params') or {}
         modify_kpoints_params = self.get('modify_kpoints_params') or {}
+        powerups_options=modify_incar_params.get('powerups', None)
         symmetry_tolerance = self.get('symmetry_tolerance') or None
         run_isif2 = self.get('run_isif2') or None
         pass_isif4 = self.get('pass_isif4') or False
@@ -674,12 +674,12 @@ class PreEV_check(FiretaskBase):
                     vis_prestatic = PreStaticSet(structure)
                     for vol_add in vol_adds:
                         prestatic = StaticFW(structure=structure, job_type='normal', name='VR_%.3f-PreStatic' %vol_add,
-                                           prev_calc_loc=False, vasp_input_set=vis_prestatic, vasp_cmd=">>vasp_cmd<<", db_file=db_file,
+                                           prev_calc_loc=False, vasp_input_set=vis_prestatic, vasp_cmd=">>vasp_cmd<<", db_file=self.get('db_file', DB_FILE),
                                            metadata=metadata, Prestatic=True)
                         fws.append(prestatic)
                         prestatic_calcs.append(prestatic)
 
-                    check_result = Firework(PreEV_check(db_file = db_file, tag = tag, relax_path = relax_path, deformations = deformations, run_isif2=run_isif2,
+                    check_result = Firework(PreEV_check(db_file = self.get('db_file', DB_FILE), tag = tag, relax_path = relax_path, deformations = deformations, run_isif2=run_isif2,
                                                         tolerance = tolerance, threshold = 14, vol_spacing = vol_spacing, vasp_cmd = ">>vasp_cmd<<", pass_isif4=pass_isif4,
                                                         metadata = metadata, t_min=t_min, t_max=t_max, t_step=t_step, phonon = phonon, symmetry_tolerance = symmetry_tolerance,
                                                         phonon_supercell_matrix = phonon_supercell_matrix, verbose = verbose, site_properties=site_properties,
@@ -694,6 +694,7 @@ class PreEV_check(FiretaskBase):
                     if modify_kpoints_params != {}:
                         from dfttk.utils import add_modify_kpoints_by_FWname
                         add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
+                    wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
                     lpad.add_wf(wfs)
                 else:
                     too_many_run_error()
@@ -703,7 +704,7 @@ class PreEV_check(FiretaskBase):
                     print('Success in PreStatic calculations, entering Position relax ...')
                     vis_relax = RelaxSet(structure)
                     ps2_relax_fw = OptimizeFW(structure, symmetry_tolerance=symmetry_tolerance, job_type='normal', name='MinE V=%.3f relax' %vol_orig,
-                                               prev_calc_loc=False, vasp_input_set=vis_relax, vasp_cmd=">>vasp_cmd<<", db_file=db_file,
+                                               prev_calc_loc=False, vasp_input_set=vis_relax, vasp_cmd=">>vasp_cmd<<", db_file=self.get('db_file', DB_FILE),
                                                metadata=metadata, record_path = True, modify_incar = {'ISIF': 2}, run_isif2=run_isif2, pass_isif4=pass_isif4,
                                                modify_incar_params=modify_incar_params, modify_kpoints_params = modify_kpoints_params,
                                                spec={'_preserve_fworker': True}, store_volumetric_data=store_volumetric_data)
@@ -711,7 +712,7 @@ class PreEV_check(FiretaskBase):
                 else:
                     print('Initial setting found, enter static claculations ...')
                     ps2_relax_fw = None
-                check_result = Firework(EVcheck_QHA(db_file = db_file, tag = tag, relax_path = relax_path, tolerance = tolerance, run_isif2=run_isif2,
+                check_result = Firework(EVcheck_QHA(db_file = self.get('db_file', DB_FILE), tag = tag, relax_path = relax_path, tolerance = tolerance, run_isif2=run_isif2,
                                                     threshold = threshold, vol_spacing = vol_spacing, vasp_cmd = ">>vasp_cmd<<", run_num = run_num,
                                                     metadata = metadata, t_min = t_min, t_max = t_max, t_step = t_step, phonon = phonon, deformations =deformations,
                                                     phonon_supercell_matrix = phonon_supercell_matrix, symmetry_tolerance = symmetry_tolerance,
@@ -727,6 +728,7 @@ class PreEV_check(FiretaskBase):
                 if modify_kpoints_params != {}:
                     from dfttk.utils import add_modify_kpoints_by_FWname
                     add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
+                wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
                 lpad.add_wf(wfs)
         else:   # failure to meet the tolerance
             if len(volumes) == 0: #self.error == 1e10:   # Bad initial running set
@@ -740,33 +742,12 @@ class PreEV_check(FiretaskBase):
 
     def get_orig_EV_structure(self, db_file, tag):
         vasp_db = VaspCalcDb.from_db_file(db_file = db_file, admin = True)
-        energies = []
-        volumes = []
-        static_calculations = vasp_db.db["PreStatic"].find({'$and':[ {'metadata.tag': tag},
-                                                    {'structure.lattice.volume': {'$exists': True} }]})
-        vol_last = 0
-        for calc in static_calculations:
-            vol = calc['structure']['lattice']['volume']
-            if abs((vol - vol_last) / vol) > 1e-8:
-                energies.append(calc['energy'])
-                volumes.append(vol)
-            else:
-                energies[-1] = calc['energy']
-                volumes[-1] = vol
-            vol_last = vol
-        self.scale_lattice = calc['scale_lattice']
-        # Reset to lattice
-        energies = sort_x_by_y(energies, volumes)
-        volumes = sorted(volumes)
-        n = len(volumes) - 1           # Delete duplicated
-        while n > 0:
-            if abs((volumes[n] - volumes[n - 1]) / volumes[n]) < 1e-8:
-                volumes.pop(n)
-                energies.pop(n)
-            n -= 1
+        volumes, energies, dos_objs, _ \
+            = get_static_calculations(vasp_db, tag)
+
         print('%s Volumes  = %s' %(len(volumes), volumes))
         print('%s Energies = %s' %(len(energies), energies))
-        return(volumes, energies) #, structure)
+        return(list(volumes), list(energies)) #, structure)
 
     def check_points(self, db_file, metadata, tolerance, threshold, del_limited, volumes, energies, verbose = False):
         self.correct = False

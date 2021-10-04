@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+from scipy.interpolate import interp1d, splev, splrep, BSpline
 from scipy.optimize import linprog
 from numpy.linalg import solve
 from fractions import Fraction
@@ -8,6 +9,8 @@ import os
 import json
 from pymatgen.ext.matproj import MPRester, Structure
 from atomate.vasp.database import VaspCalcDb
+import xml.etree.ElementTree as ET
+
 
 MM_of_Elements = {'H': 1.00794, 'He': 4.002602, 'Li': 6.941, 'Be': 9.012182, 'B': 10.811, 'C': 12.0107, 'N': 14.0067,
               'O': 15.9994, 'F': 18.9984032, 'Ne': 20.1797, 'Na': 22.98976928, 'Mg': 24.305, 'Al': 26.9815386,
@@ -219,20 +222,27 @@ vasp_db - MonggoDB database connection
 m - metadata tag value
 return: E-V, strain, stresses, bandgap etc
 """
-def get_rec_from_metatag(vasp_db,m):
-    static_calculations = vasp_db.collection.\
-        find({'$and':[ {'metadata.tag': m}, {'adopted': True} ]})
+def get_rec_from_metatag(vasp_db,m, test=False):
+    if vasp_db.collection.count_documents({'$and':[ {'metadata.tag': m}, {'adopted': True}, \
+            {'output.structure.lattice.volume': {'$exists': True}}]}) <= 5:
+        static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': m}, \
+            {'output.structure.lattice.volume': {'$exists': True} }]})
+    else:
+        static_calculations = vasp_db.collection.\
+            find({'$and':[ {'metadata': {'tag':m}}, {'adopted': True} ]})
     gapfound = False
     energies = []
-    volumes = []
+    volumes = []  
     stresses = []
     lattices = []
     bandgaps = []
     pressures = []
     magmoms = []
     emin = 1.e36
+    kpoints = None
     for calc in static_calculations:
         vol = calc['output']['structure']['lattice']['volume']
+        if kpoints is None: kpoints = calc['orig_inputs']['kpoints']['kpoints']
         if vol_within(vol, volumes): continue
         natoms = len(calc['output']['structure']['sites'])
         try:
@@ -244,6 +254,7 @@ def get_rec_from_metatag(vasp_db,m):
         sts = calc['output']['stress']
         ene = calc['output']['energy']
         if ene < emin:
+            emin = ene
             structure = Structure.from_dict(calc['input']['structure'])
             POSCAR = structure.to(fmt="poscar")
             INCAR = calc['input']['incar']
@@ -256,6 +267,45 @@ def get_rec_from_metatag(vasp_db,m):
         if sts!=None: pressures.append((sts[0][0]+sts[1][1]+sts[2][2])/3.)
         else: pressures.append(None)
         if not gapfound: gapfound = float(gap) > 0.0
+    tvolumes = np.array(sorted(volumes))
+    dvolumes = tvolumes[1:-1] - tvolumes[0:-2]
+    dvolumes = sorted(dvolumes)
+    if abs(dvolumes[-1]-dvolumes[-2]) > 0.01*dvolumes[-1]:
+        all_static_calculations = vasp_db.collection.\
+            find({'$and':[ {'metadata.tag': m}, {'adopted': True} ]})
+        for calc in all_static_calculations:
+            if len(calc['metadata'])<=1:continue # only check constrained calculation
+            vol = calc['output']['structure']['lattice']['volume']
+            if vol_within(vol, volumes): continue
+            natoms = len(calc['output']['structure']['sites'])
+            try:
+                sites = calc['output']['structure']['sites']
+                magmoms.append([{s['label']:s['properties']['magmom']} for s in sites])
+            except:
+                pass
+            lat = calc['output']['structure']['lattice']['matrix']
+            sts = calc['output']['stress']
+            ene = calc['output']['energy']
+            if test:
+                structure = Structure.from_dict(calc['input']['structure'])
+                POSCAR = structure.to(fmt="poscar")
+                INCAR = calc['input']['incar']
+                break            
+            if ene < emin:
+                emin = ene
+                structure = Structure.from_dict(calc['input']['structure'])
+                POSCAR = structure.to(fmt="poscar")
+                INCAR = calc['input']['incar']
+            gap = calc['output']['bandgap']
+            volumes.append(vol)
+            energies.append(ene)
+            stresses.append(sts)
+            lattices.append(lat)
+            bandgaps.append(gap)
+            if sts!=None: pressures.append((sts[0][0]+sts[1][1]+sts[2][2])/3.)
+            else: pressures.append(None)
+            if not gapfound: gapfound = float(gap) > 0.0
+
     energies = sort_x_by_y(energies, volumes)
     pressures = sort_x_by_y(pressures, volumes)
     stresses = sort_x_by_y(stresses, volumes)
@@ -275,12 +325,88 @@ def get_rec_from_metatag(vasp_db,m):
     EV['pressures'] = pressures
     EV['bandgaps'] = bandgaps
     EV['lattices'] = lattices
-    try:
-        for volume in magmoms:
-            for magmom in volume.values():
-                if magmom!=0.:
-                    EV['magmoms'] = magmoms
-                    break
-    except:
-        pass
+    EV['magmoms'] = magmoms
+    EV['kpoints'] = kpoints
     return EV,POSCAR,INCAR
+
+"""
+calc - mongoDB calculation entry
+return: the used potential and some key INCAR settings to be used for phasename from MongoDB
+"""
+def get_used_pot(calc):    
+    pot = calc['input']['pseudo_potential']['functional'].upper()
+    if pot=="":
+        pot = calc['orig_inputs']['potcar']['functional'].upper()
+        if pot=='Perdew-Zunger81'.upper(): pot="LDA"
+
+    if 'GGA' in calc['input']['incar']:
+        pot = calc['input']['incar']['GGA']
+
+    if 'IVDW' in calc['input']['incar']:
+        pot += "+IVDW"+str(calc['input']['incar']['IVDW'])
+    elif 'IVDW' in calc['orig_inputs']['incar']:
+        pot += "xIVDW"+str(calc['orig_inputs']['incar']['IVDW'])
+
+    if 'METAGGA' in calc['input']['incar']:
+        pot += "+"+calc['input']['incar']['METAGGA']
+
+    if calc['input']['is_hubbard']: pot += '+U'
+
+    if 'LSORBIT' in calc['input']['incar']:
+        pot += "+SOC"
+    
+    return pot
+
+
+def get_Poisson_Ratio(vasp_db, tag, volume):
+    try:
+        volumes_c = vasp_db.db['elasticity'].find({'metadata.tag': tag}, \
+            {'_id':0, 'elastic_tensor':1, 'initial_structure':1, 'fitting_data':1})
+    except:
+        return None
+
+    VCij = []
+    Poisson_Ratio = []
+
+    for i in volumes_c:
+        vol  = float(i['initial_structure']['lattice']['volume'])
+        if vol in VCij: continue
+        Cij = np.array(i['elastic_tensor']['ieee_format'])
+        A = (Cij[0,0] + Cij[1,1] + Cij[2,2])/3.
+        B = (Cij[0,1] + Cij[0,2] + Cij[1,2])/3.
+        C = (Cij[3,3] + Cij[4,4] + Cij[5,5])/3.
+        Bv = (A + 2.*B)/3.
+        Gv = (A - B + 3.*C)/5.
+        Ev = 9.*Bv*Gv/(Gv+3.*Bv)
+        p_r = 0.5*Ev/Gv - 1.0
+        VCij.append(vol)
+        Poisson_Ratio.append(p_r)
+    if len(VCij)>1:
+        if vol<VCij[0] or vol>VCij[-1]:
+            return None
+        else:
+            Poisson_Ratio = np.array(sort_x_by_y(Poisson_Ratio, VCij))
+            VCij = sort_x_by_y(VCij, VCij)
+            f2 = interp1d(VCij,Poisson_Ratio)
+            pratio = float(f2(volume))
+            print("Calculated Poisson ratio based on Cij =",pratio)
+            return pratio
+        
+
+def get_code_version(xml='vasprun.xml'):
+    if xml.endswith(".gz"):
+        tree = ET.parse(gzip.open(xml))
+    else:
+        tree = ET.parse(xml)
+    root = tree.getroot()
+    codename, version = "", ""
+    for i, elem in enumerate(root):
+        for code in elem:
+            codeprogram = code.get('name')
+            if codeprogram=='program':
+                codename = code.text
+            elif codeprogram=='version':
+                version = code.text
+            if codename!="" and version!="": return codename, version
+    return "Unknown", "0"
+

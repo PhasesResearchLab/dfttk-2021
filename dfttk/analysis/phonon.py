@@ -9,7 +9,7 @@ from phonopy.phonon.band_structure import get_band_qpoints_and_path_connections
 from dfttk.utils import J_per_mol_to_eV_per_atom
 from scipy.integrate import trapz
 import numpy as np
-
+from dfttk.analysis.ywutils import get_code_version
 
 def get_f_vib_phonopy(structure, supercell_matrix, vasprun_path,
                      qpoint_mesh=(50, 50, 50), t_min=5, t_step=5, t_max=2000.0,):
@@ -39,9 +39,16 @@ def get_f_vib_phonopy(structure, supercell_matrix, vasprun_path,
         Tuple of (temperature, F_vib, S_vib, Cv_vib, force_constants)
 
     """
+    # get codename and version from vasprun.xml file
+    code_name, code_version = get_code_version(xml=vasprun_path)
+    force_constant_factor = 1.0
+    if code_version[0:1] >= '6':
+        force_constant_factor = 0.004091649655126895
+
     # get the force constants from a vasprun.xml file
     vasprun = PhonopyVasprun(vasprun_path)
     force_constants, elements = vasprun.read_force_constants()
+    force_constants *= force_constant_factor
 
     ph_unitcell = get_phonopy_structure(structure)
     ph = Phonopy(ph_unitcell, supercell_matrix)
@@ -57,7 +64,7 @@ def get_f_vib_phonopy(structure, supercell_matrix, vasprun_path,
     f_vib = tp_dict['free_energy'] * J_per_mol_to_eV_per_atom*1000
     s_vib = tp_dict['entropy'] * J_per_mol_to_eV_per_atom
     cv_vib = tp_dict['heat_capacity'] * J_per_mol_to_eV_per_atom
-    return temperatures, f_vib, s_vib, cv_vib, ph.force_constants
+    return temperatures, f_vib, s_vib, cv_vib, ph.force_constants, code_version
 
 def get_phonon_band(structure, supercell_matrix, force_constants, band_paths=None, npoints=51, labels=None,
                     save_data=False, save_fig=False):

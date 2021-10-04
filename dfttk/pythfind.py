@@ -23,7 +23,7 @@ import numpy as np
 from fireworks.fw_config import config_to_dict
 from monty.serialization import loadfn
 from atomate.vasp.database import VaspCalcDb
-from dfttk.analysis.ywutils import formula2composition, reduced_formula
+from dfttk.analysis.ywutils import formula2composition, reduced_formula, get_used_pot
 
 def findjobdir(jobpath, metatag):
     try:
@@ -61,28 +61,6 @@ class thfindMDB ():
             workflow, current only get_wf_gibbs
     """
     def __init__(self, args, vasp_db):
-        self.plotonly = args.plotonly
-        if args.qhamode is not None:
-            self.qhamode = args.qhamode
-        else:
-            self.qhamode = 'phonon'
-        if args.qhamode == 'debye' : self.qhamode = 'qha'
-
-        if not self.plotonly:
-            try:
-                self.vasp_db = vasp_db
-                self.items = (self.vasp_db).db[self.qhamode].find({})
-                if self.qhamode=='phonon':
-                    self.items = list((self.vasp_db).db['phonon'].find({"S_vib": { "$exists": True } },\
-                        {'metadata':1, 'unitcell':1, 'volume':1, 'supercell_matrix':1}))
-                else:
-                    self.items = list((self.vasp_db).db['qha'].find({"debye": { "$exists": True } },\
-                        {'metadata':1, 'structure':1}))
-            except:
-                self.vasp_db = None
-                warnings.warn("\n*********WARNING: CANNOT get MongoDB service, so I will proceed using local data")
-
-
         self.check = args.check
         self.remove = args.remove
 
@@ -108,6 +86,47 @@ class thfindMDB ():
         if args.containall is not None: self.containall, tmp = formula2composition(args.containall)
         if args.containany is not None: self.containany, tmp = formula2composition(args.containany)
         if args.excludeall is not None: self.excludeall, tmp = formula2composition(args.excludeall)
+        if args.excludeany is not None: self.excludeany, tmp = formula2composition(args.excludeany)
+
+        self.plotonly = args.plotonly
+        if args.qhamode is not None:
+            self.qhamode = args.qhamode
+        else:
+            self.qhamode = 'phonon'
+        if args.qhamode == 'debye' : self.qhamode = 'qha'
+
+        search_condition = [{'output.structure.lattice.volume': {'$exists': True}}]
+        if len(self.containall)!=0:
+            search_condition.append({"elements":{"$all":self.containall}})
+        if len(self.containany)!=0:
+            search_condition.append({"elements":{"$in":self.containany}})
+        if len(self.excludeany)!=0:
+            search_condition.append({"elements":{"$nin":self.excludeany}})
+
+        scondition = []
+        if len(search_condition) > 1:
+            try:
+                metadata_list =  vasp_db.collection.find({'$and':search_condition},{'metadata':1})
+                metadata_list = list(set([i['metadata']['tag'] for i in metadata_list]))
+                metadata_list = [{'tag':i} for i in metadata_list]
+                scondition.append({"metadata":{"$in":metadata_list}})
+            except:
+                pass
+
+        if not self.plotonly:
+            try:
+                self.vasp_db = vasp_db
+                if self.qhamode=='phonon':
+                    scondition.append({"S_vib": { "$exists": True } })
+                    self.items = list((self.vasp_db).db['phonon'].find({'$and':scondition},\
+                        {'metadata':1, 'unitcell':1, 'volume':1, 'supercell_matrix':1}))
+                else:
+                    scondition.append({"debye": { "$exists": True } })
+                    self.items = list((self.vasp_db).db['qha'].find({'$and':scondition},\
+                        {'metadata':1, 'structure':1}))
+            except:
+                self.vasp_db = None
+                warnings.warn("\n*********WARNING: CANNOT get MongoDB service, so I will proceed using local data")
 
     def skipby(self, phase, metatag):
         if self.metatag!=None:
@@ -191,14 +210,6 @@ class thfindMDB ():
         ITEMS = []
         self.supercellsize = []
         for i in self.items:
-            """
-            try:
-                ii = len(i['S_vib'])
-                mm = i['metadata']
-            except:
-                continue
-            if ii <= 0: continue
-            """
             mm = i['metadata']
             if mm in hit:
                 if i['volume'] not in volumes[hit.index(mm)]:
@@ -259,33 +270,20 @@ class thfindMDB ():
             else:
                 qha_phonon_success = False
 
-            nS = 0
             gapfound = False
             potsoc = None
+            _volumes = []
             for ii, calc in enumerate(static_calculations):
                 vol = calc['output']['structure']['lattice']['volume']
                 if potsoc is None:
-                    pot = calc['input']['pseudo_potential']['functional'].upper()
-                    if pot=="":
-                        pot = calc['orig_inputs']['potcar']['functional'].upper()
-                        if pot=='Perdew-Zunger81'.upper(): pot="LDA"
-
-                    try:
-                        pot += "+"+calc['input']['incar']['GGA']
-                    except:
-                        pass
-
-                    if calc['input']['is_hubbard']: pot+= '+U'
-                    try:
-                        if calc['input']['incar']['LSORBIT']: potsoc = pot +"+SOC"
-                    except:
-                        potsoc = pot
+                    potsoc = get_used_pot(calc)
                     pname = phases[i].split('#')
                     if len(pname)>1: phases[i] = pname[0]+potsoc+'#'+pname[1]
                     else: phases[i] = pname[0]+potsoc
-                nS += 1
+                if vol not in _volumes: _volumes.append(vol)
                 bandgap = calc['output']['bandgap']
                 if not gapfound: gapfound = float(bandgap) > 0.0
+            nS = len(_volumes)
             if self.findbandgap:
                 if gapfound: sys.stdout.write('{}, phonon: {:>2}, static: {:>2}, supercellsize: {:>3}, {}\n'.format(m, count[i], nS, self.supercellsize[i], phases[i]))
             else:
@@ -304,7 +302,8 @@ class thfindMDB ():
                     sys.stdout.write('{}, phonon: {:>2}, static: {:>2}, SN: {:>3}, qha_phonon: {:<1.1s}, {},{}\n'\
                         .format(m, count[i], nS, self.supercellsize[i], str(qha_phonon_success), phases[i],jobpath))
                 #if count[i]>=5: self.tags.append({'tag':m['tag'],'phasename':phases[i]})
-                if count[i]>=self.nV: self.tags.append({'tag':m['tag'],'phasename':phases[i]})
+                self.tags.append({'tag':m['tag'],'phasename':phases[i]})
+                #print(sorted(volumes[i]))
         sys.stdout.write ('\n{}/{} qha_phonon successful under the given searching conditions.\n'\
             .format(total_qha_phonon, total))
 
@@ -312,7 +311,8 @@ class thfindMDB ():
     def qha_renew(self):
         hit = []
         phases = []
-        static_collection = (self.vasp_db).collection.find({})
+        static_collection = (self.vasp_db).collection.find({'$and':[{'metadata': { "$exists": True }}, \
+            {'adopted': True} ]})
         for i in static_collection:
             mm = i['metadata']
             if mm in hit: continue
@@ -362,24 +362,17 @@ class thfindMDB ():
             volumes = []
             energies = []
             for ii, calc in enumerate(static_calculations):
+                vol = calc['output']['structure']['lattice']['volume']
+                if vol in volumes:
+                    if len (calc['metadata']) > 1: continue
+                    else:
+                        ix = volumes.index(vol)
+                        volumes.pop(ix)
+                        energies.pop(ix)
                 volumes.append(calc['output']['structure']['lattice']['volume'])
                 energies.append(calc['output']['energy'])
                 if potsoc is None:
-                    pot = calc['input']['pseudo_potential']['functional'].upper()
-                    if pot=="":
-                        pot = calc['orig_inputs']['potcar']['functional'].upper()
-                        if pot=='Perdew-Zunger81'.upper(): pot="LDA"
-
-                    try:
-                        pot += "+"+calc['input']['incar']['GGA']
-                    except:
-                        pass
-
-                    if calc['input']['is_hubbard']: pot+= '+U'
-                    try:
-                        if calc['input']['incar']['LSORBIT']: potsoc = pot +"+SOC"
-                    except:
-                        potsoc = pot
+                    potsoc = get_used_pot(calc)
                     pname = phases[i].split('#')
                     if len(pname)>1: phases[i] = pname[0]+potsoc+'#'+pname[1]
                     else: phases[i] = pname[0]+potsoc
@@ -410,14 +403,6 @@ class thfindMDB ():
         phases = []
         count = []
         for i in self.items:
-            """
-            try:
-                ii = len(i['debye'])
-                mm = i['metadata']
-            except:
-                continue
-            if ii < 6: continue
-            """
             mm = i['metadata']
             if mm in hit:
                 count[hit.index(mm)] += 1
@@ -440,10 +425,21 @@ class thfindMDB ():
                         phasename = nphasename
                         break
                 phases.append(phasename)
+
         print("\nfound complete calculations in the collection:", self.qhamode, "\n")
+        all_static_calculations = list((self.vasp_db).db['tasks'].\
+            find({'$and':[{'metadata': { "$exists": True }}, {'adopted': True} ]},\
+            {'metadata':1, 'output':1, 'input':1, 'orig_inputs':1}))
         for i,m in enumerate(hit):
             if self.skipby(phases[i], m['tag']): continue
-            if self.qhamode == 'qha' : phases[i] += "_debye"
+            static_calculations = [f for f in all_static_calculations if f['metadata']['tag']==m['tag']]
+            for ii, calc in enumerate(static_calculations):
+                potsoc = get_used_pot(calc)
+                if self.qhamode == 'qha' : potsoc += "_debye"
+                pname = phases[i].split('#')
+                if len(pname)>1: phases[i] = pname[0]+potsoc+'#'+pname[1]
+                else: phases[i] = pname[0]+potsoc
+                break
             print (m, ":", phases[i])
             self.tags.append({'tag':m['tag'],'phasename':phases[i]})
 

@@ -1987,9 +1987,9 @@ def plotAPI(readme, thermofile, volumes=None, energies=None,
     else:
       print ("\nWarning! T0=", T0, "is higher than the T up limit:", thermo[-1,0], \
       " phonon perperties will be reported at 0 K\n")
-      f2=interp1d(thermo[:,0], thermo[:,1])
-      V0 = f2(0)
       try:
+        f2=interp1d(thermo[:,0], thermo[:,1])
+        V0 = f2(0)
         Plot298(folder, V0, volumes, debug=debug)
       except:
         pass

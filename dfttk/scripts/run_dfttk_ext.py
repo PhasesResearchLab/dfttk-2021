@@ -22,12 +22,13 @@ import shutil
 from datetime import datetime
 from dfttk.analysis.ywplot import myjsonout, thermoplot
 from dfttk.analysis.ywutils import get_melting_temperature, reduced_formula, get_expt
+import numpy as np
 
 no_MongoDB = False
 
 def ext_thelec(args, plotfiles=None, vasp_db=None):
     global no_MongoDB
-    print ("Postprocess for thermodynamic properties, Seebeck, Lorenz number etc. Yi Wang\n")
+    print ("Postprocess for thermodynamic properties, Seebeck, Lorenz number etc.\n")
     """
     Postprocess for thermodynamic properties, Seebeck, Lorenz number etc
 
@@ -92,22 +93,16 @@ def ext_thelec(args, plotfiles=None, vasp_db=None):
             return
 
         print("\nFull thermodynamic properties have outputed into:", thermofile)
-        #print(args.plot, "eeeeeeeee", volumes, energies, thermofile, comments)
         if args.plot==None: print("\nSupply '-plot phasename' for plot\n")
         else:
             from dfttk.analysis.ywplot import plotAPI
-            #print("xxxxxxx",proc.get_formula())
             if plotAPI(readme, thermofile, volumes, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp,
                 formula = proc.get_formula(), debug=args.debug,
                 plotlabel=args.plot, local=args.local):
-                #print ("xxxxxxx",proc.get_formula())
                 vtof = proc.get_free_energy_for_plot(readme)
                 if vtof is not None:
                     plotAPI(readme, thermofile, volumes, energies, expt=expt, xlim=xlim, _fitCp=args.SGTEfitCp,
                     formula = proc.get_formula(), vtof=vtof, plotlabel=args.plot)
-            """
-            """
-        #print("xxxxxxxxxxxx",readme)
         record_cmd_print(thermofile, readme)
     elif no_MongoDB:
             print("\n*********WARNING: CANNOT get MongoDB service, so I will proceed using local data")
@@ -145,7 +140,6 @@ def ext_thelec(args, plotfiles=None, vasp_db=None):
     elif vasp_db==None and plotfiles!=None:
         metatag, thermofile, volumes, energies, dir, formula = plotfiles
         sys.stdout.write('Processing {}, dir: {}, formula: {}\n'.format(metatag, dir, formula))
-        #print("xxxxxxxxxx", plotfiles)
         if expt!=None:
             _t1 = get_melting_temperature(expt, formula)
             if _t1!=None: t1 = _t1
@@ -157,7 +151,6 @@ def ext_thelec(args, plotfiles=None, vasp_db=None):
             smooth=smooth, debug=args.debug,
             phasename=dir, pyphon=args.pyphon, renew=args.renew, fitF=args.fitF, args=args)
         volumes, energies, thermofile, comments = proc.run_console()
-        #print ("xxxxxxx", comments)
         if comments!=None: readme.update(comments)
         else: return
         if "ERROR" in readme.keys():
@@ -256,9 +249,11 @@ def record_cmd_print(fdir, readme, dir=None):
             error ="**********FATAL ERROR encountered, you may check readme and E-V plot in the folder "+dir+"/figures"
             volumes = readme['E-V']['volumes']
             energies = readme['E-V']['energies']
+            natoms = readme['E-V']['natoms']
             folder = os.path.join(dir,'figures')
             if not os.path.exists(folder): os.mkdir(folder)
-            thermoplot(folder,"0 K total energies (eV/atom)",volumes, energies, plottitle=dir, lp=True)
+            thermoplot(folder,"0 K total energies (eV/atom)", \
+                np.array(volumes)/natoms, np.array(energies)/natoms, plottitle=dir, lp=True)
             with open (os.path.join(dir,"ERROR"), "w") as fp:
                 fp.write('{}\n'.format(readme['ERROR']))
                 if dir!=None:
@@ -346,11 +341,11 @@ def shared_aguments(pthelec):
     pthelec.add_argument("-jp", "-jobpath", dest="jobpath", nargs="?", type=str, default=None,
                       help="For debug/development purpoase. Parent path where jobs were submittedi to check settings. \n"
                            "Default: None")
-    pthelec.add_argument("-kpm", "--k_ph_mode", dest="k_ph_mode", nargs="?", type=int, default=0,
+    pthelec.add_argument("-kpm", "--k_ph_mode", dest="k_ph_mode", nargs="?", type=int, default=2,
                       help="Mode to calculate thermal conductivity using slack model.\n"
-                           "    0: Original model, using the Debye T calc. at lowest T; \n"
+                           "    2: Original model, using the Debye T calc. at lowest T; \n"
                            "    1: using thermodynamic gruneisen gamma and T-dependent debye T;  \n"
-                           "Default: 0")
+                           "Default: 2")
     pthelec.add_argument("-eq", "--eqmode", dest="eqmode", nargs="?", type=int, default=4,
                       help="Mode to calculate equilibrium volume and LTC.\n"
                            "    0: Symmetrical Central differential if the data is excellent; \n"
@@ -408,12 +403,12 @@ def shared_aguments(pthelec):
 
 
 def run_ext_thelec(subparsers):
-    # begin process by Yi Wang, July 23, 2020
+    # begin process
     #SUB-PROCESS: thelec
     pthelec = subparsers.add_parser("thelec", help="Postprocess DFTTK results after DFT job completed.")
     shared_aguments(pthelec)
     pthelec.set_defaults(func=ext_thelec)
-    # end process by Yi Wang, July 23, 2020
+    # end process
 
     #further extension for finding phonon calculation
     run_ext_thfind(subparsers)
@@ -444,6 +439,9 @@ def run_ext_thfind(subparsers):
     pthfind.add_argument("-v", "--nV", dest="nV", nargs="?", type=int, default=6,
                       help="Return phonon calculations finished for number of volumes larger or equals to. \n"
                            "Default: 6")
+    pthfind.add_argument("-poisson", "--poisson_ratio", dest="poisson", nargs="?", type=float, default=None,
+                      help="Poisson ratio used for Dybye model, if default, wiil set to 0.363615. \n"
+                           "Default: 60.363615")
     pthfind.add_argument("-ss", "--supercellsize", dest="supercellN", nargs="?", type=int, default=0,
                       help="only return phonon calculation with supercell size larger than. \n"
                            "Default: 0")
@@ -524,14 +522,18 @@ def ext_thfind(args, vasp_db=None):
                 proc = QHAAnalysis_renew(phonon=True, t_min=t_min, t_max=t_max,
                 t_step=t_step, db_file=db_file, test_failure=False, admin=True,
                 metadata={'tag':tag}, bp2gru = args.debye_gruneisen_x, 
-                tag=tag)
-                proc.run_task()
-                """
+                tag=tag, poisson = args.poisson)
+                #proc.run_task()
+
                 try: 
                     proc.run_task()
                 except:
+                    volumes, energies = proc.get_vol_ene()
+                    print ("\n********E-V data might in error for tag=", tag, )
+                    print ("        volumes=", volumes)
+                    print ("        energies=", energies)
                     continue
-                """
+
 
     if args.get:
         with open("runs.log", "a") as fp:
@@ -556,6 +558,9 @@ def run_ext_EVfind(subparsers):
     pEVfind.add_argument("-all", "--containall", dest="containall", nargs="?", type=str, default=None,
                       help="find calculations must contain all elements in the list\n"
                            "Default: None")
+    pEVfind.add_argument("-tag", "--metatag", dest="metatag", nargs="?", type=str, default=None,
+                      help="metatag: MongoDB metadata tag field. \n"
+                           "Default: None")
     pEVfind.add_argument("-xall", "--excludeall", dest="excludeall", nargs="?", type=str, default=None,
                       help="exclude calculations that conain all elements in the list\n"
                            "Default: None")
@@ -565,9 +570,12 @@ def run_ext_EVfind(subparsers):
     pEVfind.add_argument("-any", "--containany", dest="containany", nargs="?", type=str, default=None,
                       help="find calculations contain any elements in the list\n"
                            "Default: None")
-    pEVfind.add_argument("-v", "--nV", dest="nV", nargs="?", type=int, default=5,
+    pEVfind.add_argument("-v", "--nV", dest="nV", nargs="?", type=int, default=6,
                       help="Return phonon calculations finished for number of volumes larger or equals to. \n"
-                           "Default: 5")
+                           "Default: 6")
+    pEVfind.add_argument("-NA", "--natoms", dest="natoms", nargs="?", type=int, default=1,
+                      help="Return calculations finished for number of atoms in the primitive unit cell larger or equals to. \n"
+                           "Default: 1")
     pEVfind.add_argument("-fg", "--findbandgap", dest="findbandgap", action='store_true', default=False,
                       help="report the entries with band gap. \n"
                            "Default: False")
@@ -577,6 +585,12 @@ def run_ext_EVfind(subparsers):
     pEVfind.add_argument("-plot", "-plot", dest="plot", action='store_true', default=False,
                       help="plot the EV. \n"
                            "Default: False")
+    pEVfind.add_argument("-db", "--db_file", dest="db_file", nargs="?", type=str, default=None,
+                      help="alternative database other than default\n"
+                           "Default: None")
+    pEVfind.add_argument("-qhamode", "-qhamode", dest="qhamode", nargs="?", type=str, default=None,
+                      help="quasiharmonic mode: debye, phonon, or yphon. \n"
+                           "Default: None")
     pEVfind.set_defaults(func=ext_EVfind)
 
 
@@ -594,7 +608,10 @@ def ext_EVfind(args, vasp_db=None):
         WORKFLOW = args.WORKFLOW
             workflow, current only get_wf_gibbs
     """
-    if vasp_db is None:
+    if args.db_file is not None:
+        vasp_db = VaspCalcDb.from_db_file(args.db_file, admin=False)
+        db_file = args.db_file       
+    elif vasp_db is None:
         db_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
         vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
     proc=EVfindMDB(args, vasp_db=vasp_db)
