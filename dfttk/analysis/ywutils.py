@@ -227,10 +227,19 @@ def get_Magnetic_State(calc):
     magmoms = [k for k in magmoms]
     magmoms = np.array(magmoms)
     fmax = max(magmoms)
+    sdw = magmoms[magmoms>0.1]
+    if len(sdw)>0:
+        smin = min(sdw)
+        smax = max(sdw)
+    else:
+        smin = 0.0
+        smax = 0.0
+    fmax = max(magmoms)
     fmin = min(magmoms)
     fsum = sum(magmoms)
     if fmax>0.1 and fmin<=-0.1:
         if abs(fsum) > 0.1: return "_FIM"
+        elif smax-smin > 0.1: return "_SDW"
         else: return "_AFM"
     elif fmax>0.1 or fmin<=-0.1: return "_FM"
     else: return ""

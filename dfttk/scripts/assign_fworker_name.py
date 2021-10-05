@@ -278,6 +278,7 @@ def get_powerups_options(override_default_vasp_params):
 def Customizing_Workflows(wfs, powerups_options=None):
     if powerups_options is None: 
         powerups_options = get_powerups(wfs)
+    if powerups_options is None: return wfs
 
     if isinstance(wfs, list) :
         _wfs = []
