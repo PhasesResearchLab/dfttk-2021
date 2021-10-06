@@ -7,7 +7,7 @@ It is recommended to install DFTTK under the `anaconda <https://docs.anaconda.co
 
 .. code-block:: bash
 
-    pip install dfttk
+    pip install dfttk==0.3.4 #0.3.4 is latest which may change in a timely manner
 
 - Development version
 
@@ -30,7 +30,7 @@ to get the laste updates for the Alpha version based on one's current version, r
 .. code-block:: bash
 
     git fetch origin
-    git checkout 20210405 #20210405 is a branch name which may be change in a time maner
+    git checkout 20210826 #20210826 is a branch name which may be change in a timely manner
 
 mkdir a folder named ``config`` whereever you want to followed by copy the file ``db.json``, ``my_launchpad.yaml`` from your MongoDB manager into ``config/``. See the section :ref:`Config MongoDB`
 
