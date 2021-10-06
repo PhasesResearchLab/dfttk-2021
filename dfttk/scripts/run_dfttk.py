@@ -451,7 +451,7 @@ def run(args):
                         user_settings.update({"phonon_supercell_matrix": "atoms"})
 
                     wf = get_wf_single(structure, WORKFLOW=WORKFLOW, settings=user_settings)
-                    wf = Customizing_Workflows(wf)
+                    wf = Customizing_Workflows(wf,powerups_options=user_settings.get('powerups', None))
                     metadatas[STR_FILE] = wf.as_dict()["metadata"]
                     wfs.append(wf)
 

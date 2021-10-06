@@ -91,11 +91,11 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
         'override_default_vasp_params': override_default_vasp_params}
     fws = []
     full_relax_fw = OptimizeFW(structure, isif=3, vasp_cmd=VASP_CMD, db_file=DB_FILE,
-        name=structure.composition.reduced_formula+'-Fullrelax',
+        name='Fullrelax',
         store_volumetric_data=store_volumetric_data, **common_kwargs)
     fws.append(full_relax_fw)
-    static_fw = StaticFW(structure, isif=2, , vasp_cmd=VASP_CMD, db_file=DB_FILE, 
-        name=structure.composition.reduced_formula+'-Staitc',
+    static_fw = StaticFW(structure, isif=2, vasp_cmd=VASP_CMD, db_file=DB_FILE, 
+        name='Staitc',
         vasp_input_set=None, prev_calc_loc=True, parents=full_relax_fw,
         store_volumetric_data=store_volumetric_data, **common_kwargs)
     fws.append(static_fw)    
