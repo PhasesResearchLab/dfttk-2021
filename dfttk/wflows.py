@@ -76,6 +76,38 @@ def get_wf_EV_bjb(structure, deformation_fraction=(-0.08, 0.12), store_volumetri
     return wf
 
 
+def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, override_default_vasp_params=None):
+    """
+    Perform single volume relaxation calculation.
+
+    Parameters
+    ----------
+    structure : pymatgen.Structure
+    """
+    metadata = metadata or {}
+    tag = metadata.get('tag', '{}'.format(str(uuid4())))
+    metadata.update({'tag': tag})
+    common_kwargs = {"metadata": metadata, "tag":tag,
+        'override_default_vasp_params': override_default_vasp_params}
+    fws = []
+    full_relax_fw = OptimizeFW(structure, isif=3, vasp_cmd=VASP_CMD, db_file=DB_FILE,
+        name=structure.composition.reduced_formula+'-Fullrelax',
+        store_volumetric_data=store_volumetric_data, **common_kwargs)
+    fws.append(full_relax_fw)
+    static_fw = StaticFW(structure, isif=2, , vasp_cmd=VASP_CMD, db_file=DB_FILE, 
+        name=structure.composition.reduced_formula+'-Staitc',
+        vasp_input_set=None, prev_calc_loc=True, parents=full_relax_fw,
+        store_volumetric_data=store_volumetric_data, **common_kwargs)
+    fws.append(static_fw)    
+    if metadata is not None and all(x in metadata for x in ('phase_name', 'sublattice_configuration')):
+        # create a nicer name for the workflow
+        subl_config = ':'.join(','.join(subl_comps) for subl_comps in metadata['sublattice_configuration'])
+        wfname = f"{metadata['phase_name']}:{subl_config}:{structure.composition.reduced_formula}"
+    else:
+        wfname = f"unknown:{structure.composition.reduced_formula}:unknown"
+    wf = Workflow(fws, name=wfname, metadata=metadata)
+    return wf
+
 
 def vol_in_volumes(vol, volumes):
     for v in volumes:

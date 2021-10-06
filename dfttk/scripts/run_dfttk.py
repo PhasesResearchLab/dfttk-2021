@@ -3,7 +3,7 @@
 import argparse
 from pymatgen.ext.matproj import MPRester, Structure
 from pymatgen.io.vasp.inputs import Potcar, Incar
-from dfttk.wflows import get_wf_gibbs, get_wf_EV_bjb, get_wf_gibbs_robust, get_wf_borncharge, get_wf_elastic
+from dfttk.wflows import get_wf_gibbs, get_wf_EV_bjb, get_wf_singleV, get_wf_gibbs_robust, get_wf_borncharge, get_wf_elastic
 from dfttk.utils import recursive_glob
 from dfttk.structure_builders.parse_anrl_prototype import multi_replace
 from dfttk.scripts.querydb import get_eq_structure_by_metadata
@@ -308,6 +308,9 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}, db_file=None)
     if WORKFLOW == "eos":
         wf = get_wf_EV_bjb(structure, deformation_fraction=deformation_fraction, store_volumetric_data=store_volumetric_data,
                   num_deformations=num_deformations, override_symmetry_tolerances=override_default_vasp_params, metadata=metadata)
+    elif WORKFLOW == "singleV":
+        wf = get_wf_singleV(structure,  store_volumetric_data=store_volumetric_data, metadata=metadata, 
+            override_default_vasp_params=override_default_vasp_params)    
     elif WORKFLOW == "robust" or WORKFLOW == "get_wf_gibbs":
         wf = get_wf_gibbs_robust(structure, num_deformations=num_deformations, deformation_fraction=deformation_fraction,
                  phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, t_min=t_min, t_max=t_max, t_step=t_step,
