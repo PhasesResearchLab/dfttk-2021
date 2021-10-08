@@ -8,6 +8,7 @@ import os
 os.environ["HOME"] = str(Path.home())
 
 import numpy as np
+import copy
 from uuid import uuid4
 from copy import deepcopy
 from fireworks import Workflow, Firework
@@ -23,6 +24,29 @@ from dfttk.elasticity.elastic import get_wf_elastic_constant
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import sys
 
+
+from pymatgen.core import Structure
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+
+
+def scale_lattice_vector(structure, factor: float, axisa=False, axisb=False, axisc=True,):
+        """
+        Performs a scaling of the lattice vectors so that angles are preserved
+        axisx(x=a,b,c) = True:
+            x lattice scale.
+        Args:
+            factor (float): scaling factor.
+        """
+        struct = copy.deepcopy(structure).as_dict()
+        matrix = np.array(struct['lattice']['matrix'])
+        if axisa:
+            matrix[0] *= factor
+        if axisb:
+            matrix[1] *= factor
+        if axisc:
+            matrix[2] *= factor
+        struct['lattice']['matrix']=list(matrix)
+        return Structure.from_dict(struct)
 
 def _get_deformations(def_frac, num_def):
     if isinstance(def_frac, (list, tuple)):
@@ -76,7 +100,7 @@ def get_wf_EV_bjb(structure, deformation_fraction=(-0.08, 0.12), store_volumetri
     return wf
 
 
-def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, override_default_vasp_params=None):
+def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, override_default_vasp_params=None, settings=None):
     """
     Perform single volume relaxation calculation.
 
@@ -89,16 +113,65 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
     metadata.update({'tag': tag})
     common_kwargs = {"metadata": metadata, "tag":tag,
         'override_default_vasp_params': override_default_vasp_params}
+    
+    num_deformations = settings.get('num_deformations', 1)
+    #list/tuple(min, max) or float(-max, max), the maximum amplitude of deformation, e.g. (-0.15, 0.15) means (0.95, 1.1) in volume
+    deformation_fraction = settings.get('deformation_fraction', (-0.0, +0.0))
+    deformation_scheme = settings.get('deformation_scheme', 'volume')
+    dmin = pow(1.0+min(deformation_fraction), 1./3.) - 1.0
+    dmax = pow(1.0+max(deformation_fraction), 1./3.) - 1.0
+    
+    isif = settings.get('run_isif', None)
+    if not isif:
+        isif=3
+        if num_deformations>1: 
+            if deformation_scheme=='volume': isif = 4
+            else: isif = 2
+
+    if deformation_scheme=='volume':
+        axisa=True
+        axisb=True
+        axisc=True
+    elif deformation_scheme=='a':
+        axisa=True
+        axisb=False
+        axisc=False        
+    elif deformation_scheme=='b':
+        axisa=False
+        axisb=True
+        axisc=False
+    elif deformation_scheme=='c':
+        axisa=False
+        axisb=False
+        axisc=True
+    elif deformation_scheme=='bc' or deformation_scheme=='cb':
+        axisa=False
+        axisb=True
+        axisc=True        
+    elif deformation_scheme=='ca' or deformation_scheme=='ac':
+        axisa=True
+        axisb=False
+        axisc=True
+    elif deformation_scheme=='ab' or deformation_scheme=='ba':
+        axisa=True
+        axisb=True
+        axisc=False
+
+
+    deformations = _get_deformations((dmin,dmax), num_deformations)
+
     fws = []
-    full_relax_fw = OptimizeFW(structure, isif=3, vasp_cmd=VASP_CMD, db_file=DB_FILE,
-        name='Fullrelax',
-        store_volumetric_data=store_volumetric_data, **common_kwargs)
-    fws.append(full_relax_fw)
-    static_fw = StaticFW(structure, isif=2, vasp_cmd=VASP_CMD, db_file=DB_FILE, 
-        name='Staitc',
-        vasp_input_set=None, prev_calc_loc=True, parents=full_relax_fw,
-        store_volumetric_data=store_volumetric_data, **common_kwargs)
-    fws.append(static_fw)    
+    for defo in deformations:
+        struct = scale_lattice_vector(structure, defo, axisa=axisa, axisb=axisb, axisc=axisc)
+        full_relax_fw = OptimizeFW(struct, isif=isif, vasp_cmd=VASP_CMD, db_file=DB_FILE,
+            name='Structure_relax_with_ISIF='+str(isif),
+            store_volumetric_data=store_volumetric_data, **common_kwargs)
+        fws.append(full_relax_fw)
+        static_fw = StaticFW(struct, isif=2, vasp_cmd=VASP_CMD, db_file=DB_FILE, 
+            name='Staitc',
+            vasp_input_set=None, prev_calc_loc=True, parents=full_relax_fw,
+            store_volumetric_data=store_volumetric_data, **common_kwargs)
+        fws.append(static_fw)    
     if metadata is not None and all(x in metadata for x in ('phase_name', 'sublattice_configuration')):
         # create a nicer name for the workflow
         subl_config = ':'.join(','.join(subl_comps) for subl_comps in metadata['sublattice_configuration'])
