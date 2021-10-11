@@ -741,6 +741,72 @@ class ModifyKpoints(FiretaskBase):
 
 
 @explicit_serialize
+class AppendCalculation(FiretaskBase):
+    """Continue Static/Phonon calculations
+    """
+
+    required_params = []
+    optional_params = ['db_file', 'vasp_cmd', 
+                       'parents', 'db_insert', 'tag', 'metadata', 'name', 'vasp_input_set',
+                       'phonon', 'phonon_supercell_matrix', 't_min', 't_max', 't_step', 
+                       'verbose', 'modify_incar_params', 'modify_kpoints_params', 'site_properties',
+                       'override_default_vasp_params', 
+                       'store_volumetric_data', 'settings', 'static']
+
+    def run_task(self, fw_spec):
+        db_file = db_file or DB_FILE
+        vasp_cmd = vasp_cmd or VASP_CMD
+        parents = self.get('parents', None)
+        db_insert = self.get('db_insert', None)
+        tag = self.get('tag')
+        metadata = self.get('metadata')
+        name = self.get('name', "AppendCalculation")
+        phonon = self.get('phonon', False)
+        phonon_supercell_matrix = self.get('phonon_supercell_matrix', None)
+        t_min = self.get('t_min')
+        t_max = self.get('t_max', None)
+        t_step = self.get('t_step', None)
+        modify_incar_params = self.get('modify_incar_params', None)
+        modify_kpoints_params = self.get('modify_kpoints_params', None)
+        site_properties = self.get('site_properties', None)
+        override_default_vasp_params = self.get('override_default_vasp_params', None)
+        store_volumetric_data = self.get('store_volumetric_data', False)
+        settings = self.get('settings', None)
+
+        return FWAction(detours=self.get_detour_workflow(
+            db_file, vasp_cmd, parents, db_insert, tag, metadata, name, 
+            phonon, phonon_supercell_matrix, t_min, t_max, t_step, 
+            modify_incar_params, modify_kpoints_params, site_properties,
+            override_default_vasp_params, 
+            store_volumetric_data, settings
+            ))
+
+    def get_detour_workflow(self,
+        db_file, vasp_cmd, parents, db_insert, tag, metadata, name, 
+        phonon, phonon_supercell_matrix, t_min, t_max, t_step, 
+        modify_incar_params, modify_kpoints_params, site_properties,
+        override_default_vasp_params, 
+        store_volumetric_data, settings):
+        from fireworks import Workflow
+        from .fworks import PhononFW, StaticFW
+        
+        detour_fws = []
+        inp_structure = Structure.from_file('CONTCAR')
+        if len(site_properties)>0:
+            for prop, vals in site_properties.items():
+                inp_structure.add_site_property(prop, vals)
+
+        detour_fws.append(StaticFW(inp_structure, name="static", 
+                 vasp_cmd=vasp_cmd, metadata=metadata, prev_calc_loc=False, modify_incar=modify_incar_params, 
+                 db_file=db_file, parents=parents, tag=tag, 
+                 override_default_vasp_params=override_default_vasp_params,
+                 store_volumetric_data=store_volumetric_data))
+        override_default_vasp_params = self.get('override_default_vasp_params',{})
+        user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
+        return Customizing_Workflows(detour_fws, powerups_options=user_incar_settings.get('powerups', None))
+
+
+@explicit_serialize
 class CheckRelaxation(FiretaskBase):
     """Run VASP calculations to get symmetry conserved and symmetry broken structures.
 

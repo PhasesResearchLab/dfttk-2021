@@ -182,6 +182,101 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
     return wf
 
 
+def get_wf_cloud(structure, num_deformations=7, deformation_fraction=(-0.15, 0.15), phonon=False, isif4=False,
+        phonon_supercell_matrix=None, t_min=5, t_max=2000,
+        t_step=5, vasp_cmd=None, db_file=None,
+        metadata=None, name='EV_QHA_cloud', store_volumetric_data=False, override_default_vasp_params=None, settings=None):
+    """
+    Perform cloud QHA calculation without computer dependent.
+
+    Parameters
+    ----------
+    structure : pymatgen.Structure
+    """
+    vasp_cmd = vasp_cmd or VASP_CMD
+    db_file = db_file or DB_FILE
+    metadata = metadata or {}
+    tag = metadata.get('tag', '{}'.format(str(uuid4())))
+    metadata.update({'tag': tag})
+
+    t_kwargs = {'t_min': t_min, 't_max': t_max, 't_step': t_step}
+
+    if phonon:
+        if isinstance(phonon_supercell_matrix, str):
+            if phonon_supercell_matrix=='Yphon':
+                phonon_supercell_matrix = supercell_scaling_by_Yphon(structure, 
+                                            supercellsize=phonon_supercell_matrix_max)
+            else:
+                phonon_supercell_matrix = supercell_scaling_by_atom_lat_vol(structure, min_obj=phonon_supercell_matrix_min,
+                                            max_obj=phonon_supercell_matrix_max, scale_object=phonon_supercell_matrix,
+                                            target_shape='sc', lower_search_limit=-2, upper_search_limit=2,
+                                            verbose=verbose, sc_tolerance=1e-5, optimize_sc=optimize_sc)
+    common_kwargs = {"metadata": metadata, "tag":tag}
+    a_kwargs = {
+        'override_default_vasp_params': override_default_vasp_params,
+        "static": True, "phonon":phonon, 
+        "phonon_supercell_matrix":phonon_supercell_matrix}
+
+    num_deformations = num_deformations or 1
+    #list/tuple(min, max) or float(-max, max), the maximum amplitude of deformation, e.g. (-0.15, 0.15) means (0.95, 1.1) in volume
+    deformation_fraction = deformation_fraction or (-0.0, +0.0)
+    deformation_scheme = settings.get('deformation_scheme', 'volume')
+    dmin = pow(1.0+min(deformation_fraction), 1./3.) - 1.0
+    dmax = pow(1.0+max(deformation_fraction), 1./3.) - 1.0
+    
+    isif = settings.get('run_isif', None)
+    if not isif:
+        isif=3
+        if num_deformations>1: 
+            if deformation_scheme=='volume': isif = 4
+            else: isif = 2
+
+    if deformation_scheme=='volume':
+        axisa=True
+        axisb=True
+        axisc=True
+    elif deformation_scheme=='a':
+        axisa=True
+        axisb=False
+        axisc=False        
+    elif deformation_scheme=='b':
+        axisa=False
+        axisb=True
+        axisc=False
+    elif deformation_scheme=='c':
+        axisa=False
+        axisb=False
+        axisc=True
+    elif deformation_scheme=='bc' or deformation_scheme=='cb':
+        axisa=False
+        axisb=True
+        axisc=True        
+    elif deformation_scheme=='ca' or deformation_scheme=='ac':
+        axisa=True
+        axisb=False
+        axisc=True
+    elif deformation_scheme=='ab' or deformation_scheme=='ba':
+        axisa=True
+        axisb=True
+        axisc=False
+
+
+    deformations = _get_deformations((dmin,dmax), num_deformations)
+
+    fws = []
+    for defo in deformations:
+        struct = scale_lattice_vector(structure, defo, axisa=axisa, axisb=axisb, axisc=axisc)
+        full_relax_fw = OptimizeFW(struct, isif=isif, vasp_cmd=VASP_CMD, db_file=DB_FILE,
+            name='Structure_relax_with_ISIF='+str(isif),
+            store_volumetric_data=store_volumetric_data,
+            t_kwargs=t_kwargs, a_kwargs=a_kwargs, **common_kwargs)
+        fws.append(full_relax_fw)
+
+    wfname = "{}:{}".format(structure.composition.reduced_formula, name)
+    wf = Workflow(fws, name=wfname, metadata=metadata)
+    return wf
+
+
 def vol_in_volumes(vol, volumes):
     for v in volumes:
         ncell = int(v/vol+1.e-12)

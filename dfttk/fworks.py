@@ -13,7 +13,8 @@ from atomate.vasp.firetasks.run_calc import RunVaspCustodian
 from dfttk.input_sets import RelaxSet, StaticSet, ForceConstantsSet, ATATIDSet, BornChargeSet
 from dfttk.ftasks import WriteVaspFromIOSetPrevStructure, SupercellTransformation, CalculatePhononThermalProperties, \
     CheckSymmetry, CheckRelaxation, ScaleVolumeTransformation, TransmuteStructureFile, WriteATATFromIOSet, RunATATCustodian, RunVaspCustodianNoValidate, \
-    Record_relax_running_path, Record_PreStatic_result, CheckSymmetryToDb, PhononStable, BornChargeToDb
+    Record_relax_running_path, Record_PreStatic_result, CheckSymmetryToDb, PhononStable, BornChargeToDb, \
+    AppendCalculation
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 from dfttk.run_task_ext import run_task_ext
@@ -48,7 +49,8 @@ class OptimizeFW(Firework):
                  metadata=None, override_default_vasp_params=None, db_file=None, record_path=False, 
                  prev_calc_loc=True, parents=None, db_insert=False, tag=None,
                  run_isif2=False, pass_isif4=False, force_gamma=True, store_volumetric_data=False,
-                 modify_incar=None, modify_incar_params={}, modify_kpoints_params={}, **kwargs):
+                 modify_incar=None, modify_incar_params={}, modify_kpoints_params={}, 
+                 t_kwargs=None, a_kwargs=None, **kwargs):
         metadata = metadata or {}
         tag = tag or metadata.get('tag')
         # generate a tag with a warning
@@ -102,6 +104,13 @@ class OptimizeFW(Firework):
         if db_insert:
             t.append(VaspToDb(db_file=">>db_file<<", additional_fields={"task_label": name, "metadata": metadata}, store_volumetric_data=store_volumetric_data))
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, override_symmetry_tolerances=override_symmetry_tolerances, site_properties=site_properties))
+        if a_kwargs.get("static", False):
+            t.append(AppendCalculation( 
+                name=name, vasp_input_set=None, vasp_cmd=vasp_cmd, db_file=db_file, 
+                metadata=metadata, site_properties=site_properties,
+                parents=parents, db_insert=db_insert, tag=tag,
+                store_volumetric_data=store_volumetric_data,
+                modify_incar_params=modify_incar_params, modify_kpoints_params=modify_kpoints_params, **t_kwargs, **a_kwargs, **kwargs))
         super(OptimizeFW, self).__init__(t, parents=parents, name="{}-{}".format(structure.composition.reduced_formula, name), **kwargs)
 
 
