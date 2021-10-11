@@ -106,7 +106,7 @@ class OptimizeFW(Firework):
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, override_symmetry_tolerances=override_symmetry_tolerances, site_properties=site_properties))
         if a_kwargs.get("static", False):
             t.append(AppendCalculation( 
-                name=name, vasp_input_set=None, vasp_cmd=vasp_cmd, db_file=db_file, 
+                name="AppendCalculation", vasp_input_set=None, vasp_cmd=vasp_cmd, db_file=db_file, 
                 metadata=metadata, site_properties=site_properties,
                 parents=parents, db_insert=db_insert, tag=tag,
                 store_volumetric_data=store_volumetric_data,

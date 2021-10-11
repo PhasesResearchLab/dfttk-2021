@@ -133,20 +133,20 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
         axisb=True
         axisc=True
     elif deformation_scheme=='a':
-        dmin = deformation_fraction)
-        dmax = deformation_fraction)
+        dmin = deformation_fraction
+        dmax = deformation_fraction
         axisa=True
         axisb=False
         axisc=False        
     elif deformation_scheme=='b':
-        dmin = deformation_fraction)
-        dmax = deformation_fraction)
+        dmin = deformation_fraction
+        dmax = deformation_fraction
         axisa=False
         axisb=True
         axisc=False
     elif deformation_scheme=='c':
-        dmin = deformation_fraction)
-        dmax = deformation_fraction)
+        dmin = deformation_fraction
+        dmax = deformation_fraction
         axisa=False
         axisb=False
         axisc=True
@@ -248,20 +248,20 @@ def get_wf_cloud(structure, num_deformations=7, deformation_fraction=(-0.15, 0.1
         axisb=True
         axisc=True
     elif deformation_scheme=='a':
-        dmin = deformation_fraction)
-        dmax = deformation_fraction)
+        dmin = deformation_fraction
+        dmax = deformation_fraction
         axisa=True
         axisb=False
         axisc=False        
     elif deformation_scheme=='b':
-        dmin = deformation_fraction)
-        dmax = deformation_fraction)
+        dmin = deformation_fraction
+        dmax = deformation_fraction
         axisa=False
         axisb=True
         axisc=False
     elif deformation_scheme=='c':
-        dmin = deformation_fraction)
-        dmax = deformation_fraction)
+        dmin = deformation_fraction
+        dmax = deformation_fraction
         axisa=False
         axisb=False
         axisc=True
