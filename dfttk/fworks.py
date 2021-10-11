@@ -442,7 +442,7 @@ class PhononFW(Firework):
         else:
             # write the input set first, just to get the POSCAR file in the directory
             # the other inputs will get overridden by WriteVaspFromIOSetPrevStructure
-            t.append(WriteVaspFromIOSetPrevStructure(structure=structure, vasp_input_set=vasp_input_set, site_properties=site_properties))
+            t.append(WriteVaspFromIOSetPrevStructure(structure=structure, vasp_input_set=vasp_input_set, site_properties=supercell_site_properties))
 
         t.append(SupercellTransformation(supercell_matrix=supercell_matrix))
         t.append(WriteVaspFromIOSetPrevStructure(vasp_input_set=vasp_input_set, site_properties=supercell_site_properties))
