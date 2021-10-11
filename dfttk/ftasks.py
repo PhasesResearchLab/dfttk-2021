@@ -754,8 +754,8 @@ class AppendCalculation(FiretaskBase):
                        'store_volumetric_data', 'settings', 'static']
 
     def run_task(self, fw_spec):
-        db_file = db_file or DB_FILE
-        vasp_cmd = vasp_cmd or VASP_CMD
+        db_file = self.get('db_file') or DB_FILE
+        vasp_cmd = self.get('vasp_cmd') or VASP_CMD
         parents = self.get('parents', None)
         db_insert = self.get('db_insert', None)
         tag = self.get('tag')
