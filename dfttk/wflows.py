@@ -118,8 +118,6 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
     #list/tuple(min, max) or float(-max, max), the maximum amplitude of deformation, e.g. (-0.15, 0.15) means (0.95, 1.1) in volume
     deformation_fraction = settings.get('deformation_fraction', (-0.0, +0.0))
     deformation_scheme = settings.get('deformation_scheme', 'volume')
-    dmin = pow(1.0+min(deformation_fraction), 1./3.) - 1.0
-    dmax = pow(1.0+max(deformation_fraction), 1./3.) - 1.0
     
     isif = settings.get('run_isif', None)
     if not isif:
@@ -129,30 +127,44 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
             else: isif = 2
 
     if deformation_scheme=='volume':
+        dmin = pow(1.0+min(deformation_fraction), 1./3.) - 1.0
+        dmax = pow(1.0+max(deformation_fraction), 1./3.) - 1.0
         axisa=True
         axisb=True
         axisc=True
     elif deformation_scheme=='a':
+        dmin = deformation_fraction)
+        dmax = deformation_fraction)
         axisa=True
         axisb=False
         axisc=False        
     elif deformation_scheme=='b':
+        dmin = deformation_fraction)
+        dmax = deformation_fraction)
         axisa=False
         axisb=True
         axisc=False
     elif deformation_scheme=='c':
+        dmin = deformation_fraction)
+        dmax = deformation_fraction)
         axisa=False
         axisb=False
         axisc=True
     elif deformation_scheme=='bc' or deformation_scheme=='cb':
+        dmin = pow(1.0+min(deformation_fraction), 2./3.) - 1.0
+        dmax = pow(1.0+max(deformation_fraction), 2./3.) - 1.0
         axisa=False
         axisb=True
         axisc=True        
     elif deformation_scheme=='ca' or deformation_scheme=='ac':
+        dmin = pow(1.0+min(deformation_fraction), 2./3.) - 1.0
+        dmax = pow(1.0+max(deformation_fraction), 2./3.) - 1.0
         axisa=True
         axisb=False
         axisc=True
     elif deformation_scheme=='ab' or deformation_scheme=='ba':
+        dmin = pow(1.0+min(deformation_fraction), 2./3.) - 1.0
+        dmax = pow(1.0+max(deformation_fraction), 2./3.) - 1.0
         axisa=True
         axisb=True
         axisc=False
@@ -221,8 +233,6 @@ def get_wf_cloud(structure, num_deformations=7, deformation_fraction=(-0.15, 0.1
     #list/tuple(min, max) or float(-max, max), the maximum amplitude of deformation, e.g. (-0.15, 0.15) means (0.95, 1.1) in volume
     deformation_fraction = deformation_fraction or (-0.0, +0.0)
     deformation_scheme = settings.get('deformation_scheme', 'volume')
-    dmin = pow(1.0+min(deformation_fraction), 1./3.) - 1.0
-    dmax = pow(1.0+max(deformation_fraction), 1./3.) - 1.0
     
     isif = settings.get('run_isif', None)
     if not isif:
@@ -232,30 +242,44 @@ def get_wf_cloud(structure, num_deformations=7, deformation_fraction=(-0.15, 0.1
             else: isif = 2
 
     if deformation_scheme=='volume':
+        dmin = pow(1.0+min(deformation_fraction), 1./3.) - 1.0
+        dmax = pow(1.0+max(deformation_fraction), 1./3.) - 1.0
         axisa=True
         axisb=True
         axisc=True
     elif deformation_scheme=='a':
+        dmin = deformation_fraction)
+        dmax = deformation_fraction)
         axisa=True
         axisb=False
         axisc=False        
     elif deformation_scheme=='b':
+        dmin = deformation_fraction)
+        dmax = deformation_fraction)
         axisa=False
         axisb=True
         axisc=False
     elif deformation_scheme=='c':
+        dmin = deformation_fraction)
+        dmax = deformation_fraction)
         axisa=False
         axisb=False
         axisc=True
     elif deformation_scheme=='bc' or deformation_scheme=='cb':
+        dmin = pow(1.0+min(deformation_fraction), 2./3.) - 1.0
+        dmax = pow(1.0+max(deformation_fraction), 2./3.) - 1.0
         axisa=False
         axisb=True
         axisc=True        
     elif deformation_scheme=='ca' or deformation_scheme=='ac':
+        dmin = pow(1.0+min(deformation_fraction), 2./3.) - 1.0
+        dmax = pow(1.0+max(deformation_fraction), 2./3.) - 1.0
         axisa=True
         axisb=False
         axisc=True
     elif deformation_scheme=='ab' or deformation_scheme=='ba':
+        dmin = pow(1.0+min(deformation_fraction), 2./3.) - 1.0
+        dmax = pow(1.0+max(deformation_fraction), 2./3.) - 1.0
         axisa=True
         axisb=True
         axisc=False

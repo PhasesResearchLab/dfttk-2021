@@ -796,11 +796,21 @@ class AppendCalculation(FiretaskBase):
             for prop, vals in site_properties.items():
                 inp_structure.add_site_property(prop, vals)
 
-        detour_fws.append(StaticFW(inp_structure, name="static", 
+        detour_fws.append(StaticFW(inp_structure, name="cloud-static", 
                  vasp_cmd=vasp_cmd, metadata=metadata, prev_calc_loc=False, modify_incar=modify_incar_params, 
                  db_file=db_file, parents=parents, tag=tag, 
                  override_default_vasp_params=override_default_vasp_params,
                  store_volumetric_data=store_volumetric_data))
+
+        if phonon:
+            t_kwargs = {'t_min': t_min, 't_max': t_max, 't_step': t_step}
+            common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': db_file, "metadata": metadata, "tag": tag,
+                'override_default_vasp_params': override_default_vasp_params}
+            detour_fws.append(PhononFW(inp_structure, phonon_supercell_matrix, 
+                vasp_input_set=None, 
+                name='cloud-phonon', prev_calc_loc=False,
+                parents=parents, **t_kwargs, **common_kwargs))
+
         override_default_vasp_params = self.get('override_default_vasp_params',{})
         user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
         return Customizing_Workflows(detour_fws, powerups_options=user_incar_settings.get('powerups', None))
