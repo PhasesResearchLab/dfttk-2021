@@ -70,12 +70,16 @@ class OptimizeFW(Firework):
             raise ValueError('The store_volumetric_data should be list or bool')
 
         override_default_vasp_params = override_default_vasp_params or {}
+        if len (override_default_vasp_params)==0:
+            override_default_vasp_params = a_kwargs.get("override_default_vasp_params", {})
+            
         tmp = copy.deepcopy(override_default_vasp_params)
         if isif!=4 and isif!=3:
             if 'user_incar_settings' in tmp:
                 if 'EDIFFG' in tmp['user_incar_settings']:
                     tmp['user_incar_settings'].pop('EDIFFG')
         override_symmetry_tolerances = override_symmetry_tolerances or {}
+
         vasp_input_set = vasp_input_set or RelaxSet(structure, isif=isif, force_gamma=force_gamma,
                                                        **tmp)
         site_properties = deepcopy(structure).site_properties
@@ -106,7 +110,7 @@ class OptimizeFW(Firework):
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, override_symmetry_tolerances=override_symmetry_tolerances, site_properties=site_properties))
         if a_kwargs.get("static", False):
             t.append(AppendCalculation( 
-                name="AppendCalculation", vasp_input_set=None, vasp_cmd=vasp_cmd, db_file=db_file, 
+                name="could-AppendCalculation", vasp_input_set=None, vasp_cmd=vasp_cmd, db_file=db_file, 
                 metadata=metadata, site_properties=site_properties,
                 parents=parents, db_insert=db_insert, tag=tag,
                 store_volumetric_data=store_volumetric_data,
