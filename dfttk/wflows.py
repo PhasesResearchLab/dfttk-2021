@@ -210,7 +210,7 @@ def get_wf_crosscom(structure, metadata=None, settings=None,
     #str, the vasp command, if None then find in the FWorker configuration
     vasp_cmd = settings.get('vasp_cmd', VASP_CMD)
     #dict, metadata to be included, this parameter is useful for filter the data, e.g. metadata={"phase": "BCC_A2", "tag": "AFM"}
-    metadata = settings.get('metadata', None)
+    metadata = metadata or {}
     tag = metadata.get('tag', '{}'.format(str(uuid4())))
     metadata.update({'tag': tag})
 
