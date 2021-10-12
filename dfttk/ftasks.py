@@ -773,7 +773,7 @@ class Crosscom_Calculation(FiretaskBase):
         return FWAction(detours=self.get_detour_workflow(
             db_file, vasp_cmd, db_insert, tag, metadata, name, 
             t_min, t_max, t_step, 
-            modify_incar_params, modify_kpoints_params, site_properties,
+            modify_incar_params, modify_kpoints_params,
             override_default_vasp_params,
             store_volumetric_data, settings, a_kwargs=a_kwargs)
             )
@@ -781,7 +781,7 @@ class Crosscom_Calculation(FiretaskBase):
     def get_detour_workflow(self,
         db_file, vasp_cmd, db_insert, tag, metadata, name, 
         t_min, t_max, t_step, 
-        modify_incar_params, modify_kpoints_params, site_properties,
+        modify_incar_params, modify_kpoints_params, 
         override_default_vasp_params, 
         store_volumetric_data, settings, a_kwargs=None):
         from fireworks import Workflow
