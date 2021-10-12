@@ -14,7 +14,7 @@ from dfttk.input_sets import RelaxSet, StaticSet, ForceConstantsSet, ATATIDSet, 
 from dfttk.ftasks import WriteVaspFromIOSetPrevStructure, SupercellTransformation, CalculatePhononThermalProperties, \
     CheckSymmetry, CheckRelaxation, ScaleVolumeTransformation, TransmuteStructureFile, WriteATATFromIOSet, RunATATCustodian, RunVaspCustodianNoValidate, \
     Record_relax_running_path, Record_PreStatic_result, CheckSymmetryToDb, PhononStable, BornChargeToDb, \
-    AppendCalculation
+    Crosscom_Calculation
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 from dfttk.run_task_ext import run_task_ext
@@ -109,12 +109,12 @@ class OptimizeFW(Firework):
             t.append(VaspToDb(db_file=">>db_file<<", additional_fields={"task_label": name, "metadata": metadata}, store_volumetric_data=store_volumetric_data))
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, override_symmetry_tolerances=override_symmetry_tolerances, site_properties=site_properties))
         if a_kwargs.get("static", False):
-            t.append(AppendCalculation( 
-                name="could-AppendCalculation", vasp_input_set=None, vasp_cmd=vasp_cmd, db_file=db_file, 
-                metadata=metadata, site_properties=site_properties,
-                parents=parents, db_insert=db_insert, tag=tag,
+            t.append(Crosscom_Calculation( 
+                name="Crosscom_Calculation", vasp_input_set=None, vasp_cmd=vasp_cmd, db_file=db_file, 
+                metadata=metadata, 
+                db_insert=db_insert, tag=tag,
                 store_volumetric_data=store_volumetric_data,
-                modify_incar_params=modify_incar_params, modify_kpoints_params=modify_kpoints_params, **t_kwargs, **a_kwargs, **kwargs))
+                modify_incar_params=modify_incar_params, modify_kpoints_params=modify_kpoints_params, **t_kwargs, a_kwargs=a_kwargs, **kwargs))
         super(OptimizeFW, self).__init__(t, parents=parents, name="{}-{}".format(structure.composition.reduced_formula, name), **kwargs)
 
 

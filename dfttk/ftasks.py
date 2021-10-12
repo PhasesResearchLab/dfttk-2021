@@ -741,54 +741,56 @@ class ModifyKpoints(FiretaskBase):
 
 
 @explicit_serialize
-class AppendCalculation(FiretaskBase):
+class Crosscom_Calculation(FiretaskBase):
     """Continue Static/Phonon calculations
     """
 
     required_params = []
-    optional_params = ['db_file', 'vasp_cmd', 
-                       'parents', 'db_insert', 'tag', 'metadata', 'name', 'vasp_input_set',
+    optional_params = ['db_file', 'vasp_cmd', 'a_kwargs',
+                       'db_insert', 'tag', 'metadata', 'name', 'vasp_input_set',
                        'phonon', 'phonon_supercell_matrix', 't_min', 't_max', 't_step', 
-                       'verbose', 'modify_incar_params', 'modify_kpoints_params', 'site_properties',
+                       'verbose', 'modify_incar_params', 'modify_kpoints_params', 
                        'override_default_vasp_params', 
                        'store_volumetric_data', 'settings', 'static']
 
     def run_task(self, fw_spec):
         db_file = self.get('db_file') or DB_FILE
         vasp_cmd = self.get('vasp_cmd') or VASP_CMD
-        parents = self.get('parents', None)
         db_insert = self.get('db_insert', None)
         tag = self.get('tag')
         metadata = self.get('metadata')
-        name = self.get('name', "AppendCalculation")
-        phonon = self.get('phonon', False)
-        phonon_supercell_matrix = self.get('phonon_supercell_matrix', None)
+        name = self.get('name', "Crosscom_Calculation")
         t_min = self.get('t_min')
         t_max = self.get('t_max', None)
         t_step = self.get('t_step', None)
         modify_incar_params = self.get('modify_incar_params', None)
         modify_kpoints_params = self.get('modify_kpoints_params', None)
-        site_properties = self.get('site_properties', None)
         override_default_vasp_params = self.get('override_default_vasp_params', None)
         store_volumetric_data = self.get('store_volumetric_data', False)
         settings = self.get('settings', None)
 
+
         return FWAction(detours=self.get_detour_workflow(
-            db_file, vasp_cmd, parents, db_insert, tag, metadata, name, 
-            phonon, phonon_supercell_matrix, t_min, t_max, t_step, 
+            db_file, vasp_cmd, db_insert, tag, metadata, name, 
+            t_min, t_max, t_step, 
             modify_incar_params, modify_kpoints_params, site_properties,
-            override_default_vasp_params, 
-            store_volumetric_data, settings
-            ))
+            override_default_vasp_params,
+            store_volumetric_data, settings, a_kwargs=a_kwargs)
+            )
 
     def get_detour_workflow(self,
-        db_file, vasp_cmd, parents, db_insert, tag, metadata, name, 
-        phonon, phonon_supercell_matrix, t_min, t_max, t_step, 
+        db_file, vasp_cmd, db_insert, tag, metadata, name, 
+        t_min, t_max, t_step, 
         modify_incar_params, modify_kpoints_params, site_properties,
         override_default_vasp_params, 
-        store_volumetric_data, settings):
+        store_volumetric_data, settings, a_kwargs=None):
         from fireworks import Workflow
         from .fworks import PhononFW, StaticFW
+        
+        phonon = settings.get('phonon', False)
+        phonon_supercell_matrix = a_kwargs.get('phonon_supercell_matrix', None)
+        structure=a_kwargs.get('structure', None)
+        site_properties = structure.site_properties
         
         detour_fws = []
         inp_structure = Structure.from_file('CONTCAR')
@@ -796,9 +798,9 @@ class AppendCalculation(FiretaskBase):
             for prop, vals in site_properties.items():
                 inp_structure.add_site_property(prop, vals)
 
-        detour_fws.append(StaticFW(inp_structure, name="cloud-static", 
+        detour_fws.append(StaticFW(inp_structure, name="crosscom-static", 
                  vasp_cmd=vasp_cmd, metadata=metadata, prev_calc_loc=False, modify_incar=modify_incar_params, 
-                 db_file=db_file, parents=parents, tag=tag, 
+                 db_file=db_file, tag=tag, 
                  override_default_vasp_params=override_default_vasp_params,
                  store_volumetric_data=store_volumetric_data))
 
@@ -808,10 +810,9 @@ class AppendCalculation(FiretaskBase):
                 'override_default_vasp_params': override_default_vasp_params}
             detour_fws.append(PhononFW(inp_structure, phonon_supercell_matrix, 
                 vasp_input_set=None, 
-                name='cloud-phonon', prev_calc_loc=False,
-                parents=parents, **t_kwargs, **common_kwargs))
+                name='crosscom-phonon', prev_calc_loc=False,
+                **t_kwargs, **common_kwargs))
 
-        override_default_vasp_params = self.get('override_default_vasp_params',{})
         user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
         return Customizing_Workflows(detour_fws, powerups_options=user_incar_settings.get('powerups', None))
 

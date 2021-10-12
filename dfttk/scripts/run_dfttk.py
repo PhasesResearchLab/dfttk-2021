@@ -3,7 +3,7 @@
 import argparse
 from pymatgen.ext.matproj import MPRester, Structure
 from pymatgen.io.vasp.inputs import Potcar, Incar
-from dfttk.wflows import get_wf_gibbs, get_wf_EV_bjb, get_wf_singleV, get_wf_cloud, \
+from dfttk.wflows import get_wf_gibbs, get_wf_EV_bjb, get_wf_singleV, get_wf_crosscom, \
     get_wf_gibbs_robust, get_wf_borncharge, get_wf_elastic
 from dfttk.utils import recursive_glob
 from dfttk.structure_builders.parse_anrl_prototype import multi_replace
@@ -312,12 +312,8 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}, db_file=None)
     elif WORKFLOW == "singleV":
         wf = get_wf_singleV(structure,  store_volumetric_data=store_volumetric_data, metadata=metadata, 
             override_default_vasp_params=override_default_vasp_params, settings=settings)
-    elif WORKFLOW == "cloud":
-        wf = get_wf_cloud(structure, num_deformations=num_deformations, deformation_fraction=deformation_fraction,
-            phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, t_min=t_min, t_max=t_max, t_step=t_step, 
-            metadata=metadata, name='EV_QHA_cloud',
-            override_default_vasp_params=override_default_vasp_params, 
-            store_volumetric_data=store_volumetric_data, settings=settings)     
+    elif WORKFLOW == "crosscom":
+        wf = get_wf_crosscom(structure, metadata=metadata, settings=settings)     
     elif WORKFLOW == "robust" or WORKFLOW == "get_wf_gibbs":
         wf = get_wf_gibbs_robust(structure, num_deformations=num_deformations, deformation_fraction=deformation_fraction,
                  phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, t_min=t_min, t_max=t_max, t_step=t_step,
