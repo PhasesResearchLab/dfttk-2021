@@ -768,7 +768,7 @@ class Crosscom_Calculation(FiretaskBase):
         override_default_vasp_params = self.get('override_default_vasp_params', None)
         store_volumetric_data = self.get('store_volumetric_data', False)
         settings = self.get('settings', None)
-
+        a_kwargs = self.get('a_kwargs', None)
 
         return FWAction(detours=self.get_detour_workflow(
             db_file, vasp_cmd, db_insert, tag, metadata, name, 
@@ -786,8 +786,11 @@ class Crosscom_Calculation(FiretaskBase):
         store_volumetric_data, settings, a_kwargs=None):
         from fireworks import Workflow
         from .fworks import PhononFW, StaticFW
+        settings = settings or {}
+        stable_tor = settings.get('stable_tor', 0.01)
         
         phonon = settings.get('phonon', False)
+        a_kwargs = a_kwargs or {}
         phonon_supercell_matrix = a_kwargs.get('phonon_supercell_matrix', None)
         structure=a_kwargs.get('structure', None)
         site_properties = structure.site_properties
@@ -809,10 +812,10 @@ class Crosscom_Calculation(FiretaskBase):
             common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': db_file, "metadata": metadata, "tag": tag,
                 'override_default_vasp_params': override_default_vasp_params}
             detour_fws.append(PhononFW(inp_structure, phonon_supercell_matrix, 
-                vasp_input_set=None, 
-                name='crosscom-phonon', prev_calc_loc=False,
+                name='crosscom-phonon', prev_calc_loc=False, stable_tor=stable_tor,
                 **t_kwargs, **common_kwargs))
 
+        override_default_vasp_params = override_default_vasp_params or {}
         user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
         return Customizing_Workflows(detour_fws, powerups_options=user_incar_settings.get('powerups', None))
 

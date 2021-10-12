@@ -360,7 +360,7 @@ def get_wf_crosscom(structure, metadata=None, settings=None,
         check_qha_fw = Firework(Crosscom_EVcheck_QHA(verbose=verbose, stable_tor=stable_tor,
             store_volumetric_data=store_volumetric_data, a_kwargs=a_kwargs,
             **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
-            parents=fws, name='{}-EVcheck_QHA'.format(structure.composition.reduced_formula))
+            parents=fws, name='{}-Crosscom_EVcheck_QHA'.format(structure.composition.reduced_formula))
         fws.append(check_qha_fw)
 
     wfname = "{}:{}".format(structure.composition.reduced_formula, 'EV_QHA_crosscom')
