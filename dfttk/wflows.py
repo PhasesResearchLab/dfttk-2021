@@ -319,6 +319,7 @@ def get_wf_crosscom(structure, metadata=None, settings=None, run_num = 0,
         fws.append(full_relax_fw)
     tmp = copy.deepcopy(fws)
     if not single_volume:
+        from dfttk.wflows import get_wf_crosscom
         check_qha_fw = Firework(Crosscom_EVcheck_QHA(verbose=verbose, stable_tor=stable_tor,
             run_num = run_num,
             store_volumetric_data=store_volumetric_data, a_kwargs=a_kwargs,

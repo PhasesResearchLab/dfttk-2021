@@ -15,7 +15,6 @@ from fireworks.fw_config import config_to_dict
 from monty.serialization import loadfn, dumpfn
 from dfttk.input_sets import PreStaticSet, RelaxSet, StaticSet, ForceConstantsSet
 from dfttk.fworks import OptimizeFW, StaticFW, PhononFW
-from dfttk.wflows import get_wf_crosscom
 from dfttk.ftasks import QHAAnalysis
 from dfttk.analysis.quasiharmonic import Quasiharmonic
 from dfttk.scripts.assign_fworker_name import Customizing_Workflows
