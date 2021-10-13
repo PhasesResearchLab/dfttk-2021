@@ -115,6 +115,7 @@ class OptimizeFW(Firework):
                 metadata=metadata, 
                 db_insert=db_insert, tag=tag,
                 store_volumetric_data=store_volumetric_data,
+                override_default_vasp_params=override_default_vasp_params,
                 modify_incar_params=modify_incar_params, modify_kpoints_params=modify_kpoints_params, **t_kwargs, a_kwargs=a_kwargs, **kwargs))
         super(OptimizeFW, self).__init__(t, parents=parents, name="{}-{}".format(structure.composition.reduced_formula, name), **kwargs)
 
