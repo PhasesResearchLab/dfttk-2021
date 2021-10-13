@@ -748,7 +748,7 @@ class Crosscom_Calculation(FiretaskBase):
     required_params = []
     optional_params = ['db_file', 'vasp_cmd', 'a_kwargs',
                        'db_insert', 'tag', 'metadata', 'name', 'vasp_input_set',
-                       'phonon', 'phonon_supercell_matrix', 't_min', 't_max', 't_step', 
+                       't_min', 't_max', 't_step', 
                        'verbose', 'modify_incar_params', 'modify_kpoints_params', 
                        'override_default_vasp_params', 
                        'store_volumetric_data', 'static']

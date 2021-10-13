@@ -100,6 +100,54 @@ def get_wf_EV_bjb(structure, deformation_fraction=(-0.08, 0.12), store_volumetri
     return wf
 
 
+
+
+def get_constrain(deformation_scheme):
+    if deformation_scheme=='volume':
+        dmin = pow(1.0+min(new_deformation_fraction), 1./3.) - 1.0
+        dmax = pow(1.0+max(new_deformation_fraction), 1./3.) - 1.0
+        axisa=True
+        axisb=True
+        axisc=True
+    elif deformation_scheme=='a':
+        dmin = min(new_deformation_fraction)
+        dmax = max(new_deformation_fraction)
+        axisa=True
+        axisb=False
+        axisc=False        
+    elif deformation_scheme=='b':
+        dmin = min(new_deformation_fraction)
+        dmax = max(new_deformation_fraction)
+        axisa=False
+        axisb=True
+        axisc=False
+    elif deformation_scheme=='c':
+        dmin = min(new_deformation_fraction)
+        dmax = max(new_deformation_fraction)
+        axisa=False
+        axisb=False
+        axisc=True
+    elif deformation_scheme=='bc' or deformation_scheme=='cb':
+        dmin = pow(1.0+min(new_deformation_fraction), 0.5) - 1.0
+        dmax = pow(1.0+max(new_deformation_fraction), 0.5) - 1.0
+        axisa=False
+        axisb=True
+        axisc=True        
+    elif deformation_scheme=='ca' or deformation_scheme=='ac':
+        dmin = pow(1.0+min(new_deformation_fraction), 0.5) - 1.0
+        dmax = pow(1.0+max(new_deformation_fraction), 0.5) - 1.0
+        axisa=True
+        axisb=False
+        axisc=True
+    elif deformation_scheme=='ab' or deformation_scheme=='ba':
+        dmin = pow(1.0+min(new_deformation_fraction), 0.5) - 1.0
+        dmax = pow(1.0+max(new_deformation_fraction), 0.5) - 1.0
+        axisa=True
+        axisb=True
+        axisc=False
+    return axisa, axisb, axisc, dmin, dmax
+
+
 def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, override_default_vasp_params=None, settings=None):
     """
     Perform single volume relaxation calculation.
@@ -126,50 +174,7 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
             if deformation_scheme=='volume': isif = 4
             else: isif = 2
 
-    if deformation_scheme=='volume':
-        dmin = pow(1.0+min(deformation_fraction), 1./3.) - 1.0
-        dmax = pow(1.0+max(deformation_fraction), 1./3.) - 1.0
-        axisa=True
-        axisb=True
-        axisc=True
-    elif deformation_scheme=='a':
-        dmin = deformation_fraction
-        dmax = deformation_fraction
-        axisa=True
-        axisb=False
-        axisc=False        
-    elif deformation_scheme=='b':
-        dmin = deformation_fraction
-        dmax = deformation_fraction
-        axisa=False
-        axisb=True
-        axisc=False
-    elif deformation_scheme=='c':
-        dmin = deformation_fraction
-        dmax = deformation_fraction
-        axisa=False
-        axisb=False
-        axisc=True
-    elif deformation_scheme=='bc' or deformation_scheme=='cb':
-        dmin = pow(1.0+min(deformation_fraction), 2./3.) - 1.0
-        dmax = pow(1.0+max(deformation_fraction), 2./3.) - 1.0
-        axisa=False
-        axisb=True
-        axisc=True        
-    elif deformation_scheme=='ca' or deformation_scheme=='ac':
-        dmin = pow(1.0+min(deformation_fraction), 2./3.) - 1.0
-        dmax = pow(1.0+max(deformation_fraction), 2./3.) - 1.0
-        axisa=True
-        axisb=False
-        axisc=True
-    elif deformation_scheme=='ab' or deformation_scheme=='ba':
-        dmin = pow(1.0+min(deformation_fraction), 2./3.) - 1.0
-        dmax = pow(1.0+max(deformation_fraction), 2./3.) - 1.0
-        axisa=True
-        axisb=True
-        axisc=False
-
-
+    axisa, axisb, axisc, dmin, dmax = get_constrain(deformation_scheme) 
     deformations = _get_deformations((dmin,dmax), num_deformations)
 
     fws = []
@@ -214,11 +219,12 @@ def get_wf_crosscom(structure, metadata=None, settings=None,
     tag = metadata.get('tag', '{}'.format(str(uuid4())))
     metadata.update({'tag': tag})
 
-    #int, the number of initial deformations, e.g. 7
-    num_deformations = settings.get('num_deformations', 8)
     #list/tuple(min, max) or float(-max, max), the maximum amplitude of deformation, e.g. (-0.15, 0.15) means (0.95, 1.1) in volume
     deformation_fraction = settings.get('deformation_fraction', (-0.15, 0.20))
-
+    #int, the number of initial deformations, e.g. 7
+    num_deformations = settings.get('num_deformations', 8)
+    if num_deformations==1:
+        deformation_fraction[1] = deformation_fraction[0]
     settings = settings or {}
     #bool, run phonon(True) or not(False)
     phonon = settings.get('phonon', False)
@@ -302,52 +308,9 @@ def get_wf_crosscom(structure, metadata=None, settings=None,
     a_kwargs = {"structure":structure, "settings":settings, "eos_kwargs":eos_kwargs,
         "static": True, "phonon":phonon, "phonon_supercell_matrix":phonon_supercell_matrix}
 
-    if deformation_scheme=='volume':
-        dmin = pow(1.0+min(new_deformation_fraction), 1./3.) - 1.0
-        dmax = pow(1.0+max(new_deformation_fraction), 1./3.) - 1.0
-        axisa=True
-        axisb=True
-        axisc=True
-    elif deformation_scheme=='a':
-        dmin = new_deformation_fraction
-        dmax = new_deformation_fraction
-        axisa=True
-        axisb=False
-        axisc=False        
-    elif deformation_scheme=='b':
-        dmin = new_deformation_fraction
-        dmax = new_deformation_fraction
-        axisa=False
-        axisb=True
-        axisc=False
-    elif deformation_scheme=='c':
-        dmin = new_deformation_fraction
-        dmax = new_deformation_fraction
-        axisa=False
-        axisb=False
-        axisc=True
-    elif deformation_scheme=='bc' or deformation_scheme=='cb':
-        dmin = pow(1.0+min(new_deformation_fraction), 2./3.) - 1.0
-        dmax = pow(1.0+max(new_deformation_fraction), 2./3.) - 1.0
-        axisa=False
-        axisb=True
-        axisc=True        
-    elif deformation_scheme=='ca' or deformation_scheme=='ac':
-        dmin = pow(1.0+min(new_deformation_fraction), 2./3.) - 1.0
-        dmax = pow(1.0+max(new_deformation_fraction), 2./3.) - 1.0
-        axisa=True
-        axisb=False
-        axisc=True
-    elif deformation_scheme=='ab' or deformation_scheme=='ba':
-        dmin = pow(1.0+min(new_deformation_fraction), 2./3.) - 1.0
-        dmax = pow(1.0+max(new_deformation_fraction), 2./3.) - 1.0
-        axisa=True
-        axisb=True
-        axisc=False
 
-
+    axisa, axisb, axisc, dmin, dmax = get_constrain(deformation_scheme) 
     deformations = _get_deformations((dmin,dmax), new_num_deformations)
-
 
     fws = []
     for defo in deformations:
@@ -357,11 +320,12 @@ def get_wf_crosscom(structure, metadata=None, settings=None,
             store_volumetric_data=store_volumetric_data,
             t_kwargs=t_kwargs, a_kwargs=a_kwargs, **common_kwargs)
         fws.append(full_relax_fw)
+    tmp = copy.deepcopy(fws)
     if not single_volume:
         check_qha_fw = Firework(Crosscom_EVcheck_QHA(verbose=verbose, stable_tor=stable_tor,
             store_volumetric_data=store_volumetric_data, a_kwargs=a_kwargs,
             **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
-            parents=fws, name='{}-Crosscom_EVcheck_QHA'.format(structure.composition.reduced_formula))
+            parents=tmp, name='{}-Crosscom_EVcheck_QHA'.format(structure.composition.reduced_formula))
         fws.append(check_qha_fw)
 
     wfname = "{}:{}".format(structure.composition.reduced_formula, 'EV_QHA_crosscom')

@@ -343,6 +343,21 @@ class StaticSet(DictSet):
         elif uis['ISPIN']==1:
             if 'MAGMON' in uis.keys(): uis.pop['MAGMOM']
             if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
+        
+        if 'Static_settings' in uis:
+            static = uis['Static_settings']
+            for ff in static:
+                if ff.lower()=='prec':
+                    if 'ENCUT' in new_config['INCAR']:
+                        new_config['INCAR'].pop('ENCUT')
+                    new_config['INCAR'].update({ff:static.get(ff)})
+                elif ff=='KPAR':
+                    new_config['INCAR'].update({ff:static.get(ff)})
+                elif ff=='grid_density':
+                    new_config['KPOINTS'].update({ff:static.get(ff)})
+                elif ff=='k_mesh':
+                    kpoints = Kpoints(kpts=static.get(ff))
+                    new_config['KPOINTS'] = kpoints
 
         new_config['INCAR'].update(uis)
         pot = self.kwargs.get('user_potcar_functional', None)
