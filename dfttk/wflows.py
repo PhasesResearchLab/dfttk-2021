@@ -100,9 +100,7 @@ def get_wf_EV_bjb(structure, deformation_fraction=(-0.08, 0.12), store_volumetri
     return wf
 
 
-
-
-def get_constrain(deformation_scheme):
+def get_constrain(deformation_scheme, new_deformation_fraction):
     if deformation_scheme=='volume':
         dmin = pow(1.0+min(new_deformation_fraction), 1./3.) - 1.0
         dmax = pow(1.0+max(new_deformation_fraction), 1./3.) - 1.0
@@ -174,7 +172,7 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
             if deformation_scheme=='volume': isif = 4
             else: isif = 2
 
-    axisa, axisb, axisc, dmin, dmax = get_constrain(deformation_scheme) 
+    axisa, axisb, axisc, dmin, dmax = get_constrain(deformation_scheme, deformation_fraction) 
     deformations = _get_deformations((dmin,dmax), num_deformations)
 
     fws = []
@@ -309,7 +307,7 @@ def get_wf_crosscom(structure, metadata=None, settings=None,
         "static": True, "phonon":phonon, "phonon_supercell_matrix":phonon_supercell_matrix}
 
 
-    axisa, axisb, axisc, dmin, dmax = get_constrain(deformation_scheme) 
+    axisa, axisb, axisc, dmin, dmax = get_constrain(deformation_scheme, new_deformation_fraction) 
     deformations = _get_deformations((dmin,dmax), new_num_deformations)
 
     fws = []
