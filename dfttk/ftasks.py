@@ -763,7 +763,7 @@ class Crosscom_Calculation(FiretaskBase):
         t_min = self.get('t_min', None)
         t_max = self.get('t_max', None)
         t_step = self.get('t_step', None)
-        modify_incar_params = self.get('modify_incar_params', {}})
+        modify_incar_params = self.get('modify_incar_params', {})
         modify_kpoints_params = self.get('modify_kpoints_params', {})
         override_default_vasp_params = self.get('override_default_vasp_params', {})
         store_volumetric_data = self.get('store_volumetric_data', False)
