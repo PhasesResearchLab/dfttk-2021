@@ -635,7 +635,7 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
         phonon_supercell_matrix = a_kwargs.get('phonon_supercell_matrix', None)
         settings = a_kwargs.get('settings', None)
         structure = a_kwargs.get('structure', None)
-        site_properties = structures.ite_properties
+        site_properties = structure.site_properties
 
         modify_kpoints_params = self.get('modify_kpoints_params', {})
         verbose = self.get('verbose', False)
