@@ -603,8 +603,8 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
     optional_params = ['tag', 'metadata', 'deformations', 'eos_tolerance', 'threshold',
                        'del_limited', 'vol_spacing', 't_min', 't_max', 't_step', 
                        'verbose', 'modify_incar_params', 'run_num','modify_kpoints_params', 
-                       'override_default_vasp_params', 'db_file', 'vasp_cmd',
-                       'force_phonon', 'stable_tor', 'store_volumetric_data','a_kwargs', 'test']
+                       'override_default_vasp_params', 'db_file', 'vasp_cmd', 'site_properties',
+                       'stable_tor', 'store_volumetric_data', 'a_kwargs', 'test']
 
     def run_task(self, fw_spec):
         '''
@@ -618,9 +618,9 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
         vol_spacing: the maximum ratio step between two volumes, larger step will be inserted points to calculate;
         '''
         # Get the parameters from the object
-        max_run = 10
+        max_run = 16
         db_file = env_chk(self.get('db_file', DB_FILE), fw_spec) #always concrete db_fiel
-        vasp_cmd = ">>vasp_cmd<<" #chould change for user to provide the change
+        vasp_cmd = env_chk(self.get('vasp_cmd', VASP_CMD), fw_spec) #chould change for user to provide the change
         deformations = self.get('deformations', [])
         run_num = self.get('run_num', 0)
         eos_tolerance = self.get('eos_tolerance', 0.005)
@@ -630,13 +630,15 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
         t_min = self.get('t_min', 5)
         t_max = self.get('t_max', 2000)
         t_step = self.get('t_step', 5)
-        phonon = self.get('phonon', False)
-        force_phonon = self.get('force_phonon', False)
-        phonon_supercell_matrix = self.get('phonon_supercell_matrix', None)
-        verbose = self.get('verbose', False)
-        modify_kpoints_params = self.get('modify_kpoints_params', {})
-        site_properties = self.get('site_properties', None)
+        a_kwargs = self.get('a_kwargs', {})
+        phonon = a_kwargs.get('phonon', False)
+        phonon_supercell_matrix = a_kwargs.get('phonon_supercell_matrix', None)
+        settings = a_kwargs.get('settings', None)
+        structure = a_kwargs.get('structure', None)
+        site_properties = structures.ite_properties
 
+        modify_kpoints_params = self.get('modify_kpoints_params', {})
+        verbose = self.get('verbose', False)
         modify_incar_params = self.get('modify_incar_params', {})
         powerups_options=modify_incar_params.get('powerups', None)
 
@@ -644,20 +646,11 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
         user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
         powerups_options=user_incar_settings.get('powerups', powerups_options)
 
-        override_symmetry_tolerances = self.get('override_symmetry_tolerances', {})
         store_volumetric_data = self.get('store_volumetric_data', False)
 
         stable_tor = self.get('stable_tor', 0.01)
-        force_phonon = self.get('force_phonon', False)
         test = self.get('test', False)
 
-        relax_structure = self.get('structure') or fw_spec.get('structure', None)
-        relax_scheme = self.get('relax_scheme') or fw_spec.get('relax_scheme', [2])
-        relax_phonon = fw_spec.get('relax_phonon', False)
-
-        #Only set phonon=True and ISIF=4 passed, then run phonon
-        if not force_phonon:
-            phonon = phonon and relax_phonon
 
         metadata = self.get('metadata', {})
         tag = self.get('tag', metadata.get('tag', None))
@@ -680,11 +673,6 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
             if not consistent_check_db(db_file, tag):
                 print('Please check DB, DFTTK running ended!')
                 return
-
-        if relax_structure is not None:
-            structure = deepcopy(relax_structure)
-        else:
-            raise ValueError('Not structure in spec, please provide structure as input')
 
         if site_properties:
             for pkey in site_properties:
@@ -714,61 +702,16 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
                 EVcheck_result['append'] = (vol_adds).tolist()
                 # Marked as adopted in db
                 mark_adopted(tag, db_file, volume, phonon=phonon)
+                
             lpad = LaunchPad.auto_load()
-            fws = []
             if len(vol_adds) > 0:      # VASP calculations need to append
                 if run_num < max_run:
                     # Do VASP and check again
                     print('Appending the volumes of : %s to calculate in VASP!' %(vol_adds).tolist())
-                    calcs = []
-                    #vis_relax = RelaxSet(structure)
-                    #vis_static = StaticSet(structure)
-                    #isif2 = 5 if 'infdet' in relax_path else 4
-                    for vol_add in vol_adds:
-                        struct = deepcopy(structure)
-                        struct.scale_lattice(structure.volume * vol_add)
-
-                        relax_Crosscom_EVcheck_QHA_fw = None
-                        for isif_i in relax_scheme:
-                            #record_path=record_path
-                            relax_fw = OptimizeFW(struct, isif=isif_i, store_volumetric_data=store_volumetric_data,
-                                 name="relax_Vol{:.3f}".format(vol_add), vasp_input_set=None, job_type="normal",
-                                 override_symmetry_tolerances=override_symmetry_tolerances,
-                                 prev_calc_loc=True, Crosscom_EVcheck_QHA=relax_Crosscom_EVcheck_QHA_fw, db_insert=False, force_gamma=True,
-                                 modify_incar={}, **vasp_kwargs, **common_kwargs)
-                            relax_parents_fw = deepcopy(relax_fw)
-                            fws.append(relax_fw)
-                            calcs.append(relax_fw)
-
-                        static_fw = StaticFW(struct, isif=relax_scheme[-1], name='static_Vol{:.3f}'.format(vol_add),
-                                        vasp_input_set=None, prev_calc_loc=True, parents=relax_parents_fw,
-                                        store_volumetric_data=store_volumetric_data, 
-                                        **common_kwargs)
-                        fws.append(static_fw)
-                        calcs.append(static_fw)
-
-                        if phonon:
-                            #visphonon = ForceConstantsSet(struct)
-                            phonon_fw = PhononFW(struct, phonon_supercell_matrix, vasp_input_set=None, stable_tor=stable_tor,
-                                                 name='structure_{:.3f}-phonon'.format(vol_add), prev_calc_loc=True,
-                                                 parents=static_fw, **t_kwargs, **common_kwargs)
-                            fws.append(phonon_fw)
-                            calcs.append(phonon_fw)
-                    check_result = Firework(EVcheck_QHA(structure=relax_structure, relax_scheme=relax_scheme, store_volumetric_data=store_volumetric_data,
-                                                        run_num=run_num, verbose=verbose, site_properties=site_properties, stable_tor=stable_tor,
-                                                        phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, force_phonon=force_phonon,
-                                                        **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
-                                            parents=calcs, name='{}-EVcheck_QHA'.format(structure.composition.reduced_formula))
-                    fws.append(check_result)
-                    strname = "{}:{}".format(structure.composition.reduced_formula, 'EV_QHA_Append')
-                    wfs = Workflow(fws, name = strname, metadata=metadata)
-
-                    if modify_incar_params != {}:
-                        from dfttk.utils import add_modify_incar_by_FWname
-                        add_modify_incar_by_FWname(wfs, modify_incar_params = modify_incar_params)
-                    if modify_kpoints_params != {}:
-                        from dfttk.utils import add_modify_kpoints_by_FWname
-                        add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
+                    wfs = get_wf_crosscom(structure, run_num = run_num,
+                        new_num_deformations = len(vol_adds),
+                        new_deformation_fraction = (min(vol_adds)-1.0, max(vol_adds)-1.0),
+                        metadata=metadata, settings=settings) 
                     wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
                     if not test: lpad.add_wf(wfs)
                 else:
@@ -778,18 +721,7 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
                 debye_fw = Firework(QHAAnalysis(phonon=phonon, t_min=t_min, t_max=t_max, t_step=t_step, db_file=self.get('db_file', DB_FILE), tag=tag, metadata=metadata),
                                     name="{}-qha_analysis".format(structure.composition.reduced_formula))
                 fws.append(debye_fw)
-                '''
-                # Debye
-                debye_fw = Firework(QHAAnalysis(phonon=False, t_min=t_min, t_max=t_max, t_step=t_step, db_file=db_file, tag=tag, metadata=metadata),
-                                    name="{}-qha_analysis-Debye".format(structure.composition.reduced_formula))
-                fws.append(debye_fw)
-                if phonon:
-                    phonon_supercell_matrix = self.get('phonon_supercell_matrix')
-                    # do a Debye run Staticore the phonon, so they can be done in stages.
-                    phonon_fw = Firework(QHAAnalysis(phonon=True, t_min=t_min, t_max=t_max, t_step=t_step, db_file=db_file, tag=tag,
-                                                     metadata=metadata), parents=debye_fw, name="{}-qha_analysis-phonon".format(structure.composition.reduced_formula))
-                    fws.append(phonon_fw)
-                '''
+
                 strname = "{}:{}".format(structure.composition.reduced_formula, 'QHA')
                 wfs = Workflow(fws, name = strname, metadata=metadata)
                 wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
@@ -891,20 +823,6 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
 
         # Check minimum spacing
         volumer = [vol_i / vol_orig for vol_i in volumer]
-        """
-        decimals = 4
-        for m in range(len(volumer) - 1):
-            vol_space_m = volumer[m + 1] - volumer[m]
-            if np.around(vol_space_m, decimals) > np.around(vol_spacing, decimals):
-                vol = np.linspace(volumer[m], volumer[m + 1], math.ceil(vol_space_m / vol_spacing) + 1).tolist()
-                print('Additional volume({}) is appended for the volume space({}) is larger than specified({})'.format(vol[1:-1], vol_space_m, vol_spacing))
-                result.append(vol[1:-1])
-                #result.extend(vol[1:-1])
-        """
-
-        # To check (and extend) deformation coverage
-        # To make sure that coverage extension smaller than interpolation spacing
-        vol_spacing = vol_spacing * 0.98
 
         qha = Quasiharmonic(energy, volume, structure, dos_objects=dos_objects, F_vib=None,
                             t_min=t_min, t_max=t_max, t_step=t_step, poisson=0.363615, bp2gru=2./3.)
@@ -940,28 +858,6 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
         print('Evaluated MIN volume is %.3f;' %vol_min)
         print('Evaluated MAX volume is %.3f;' %vol_max)
 
-        """
-        vol_max = vol_max / vol_orig
-        vol_min = vol_min / vol_orig
-        counter = 1
-        # Using max_append for reducing unnecessary calculations because of rough fitting
-        max_append = 1 if phonon else 2
-        # Over coverage ratio set to 1.01 as following
-        if volumer[-1] * 1.01 < vol_max:
-            print('The current maximum volume is smaller than maximum volume evaluated by quasiharmonic analysis')
-            result.append(volumer[-1] + vol_spacing)
-            # counter is set to limit calculation times when exception occurs
-            while (counter < max_append) and (result[-1] < vol_max):
-                result.append(result[-1] + vol_spacing)
-                counter += 1
-        counter = 1
-        if volumer[0] * 0.99 > vol_min:
-            print('The current minimum volume is larger than minimum volume evaluated by quasiharmonic analysis')
-            result.append(volumer[0] - vol_spacing)
-            while (counter < max_append) and (result[-1] > vol_min):
-                result.append(result[-1] - vol_spacing)
-                counter += 1
-        """
         val, idx = min((val, idx) for (idx, val) in enumerate(energy))
         nV = len(energy)
         nV_addL = 3

@@ -108,6 +108,7 @@ class OptimizeFW(Firework):
         if db_insert:
             t.append(VaspToDb(db_file=">>db_file<<", additional_fields={"task_label": name, "metadata": metadata}, store_volumetric_data=store_volumetric_data))
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, override_symmetry_tolerances=override_symmetry_tolerances, site_properties=site_properties))
+        a_kwargs = a_kwargs or {}
         if a_kwargs.get("static", False):
             t.append(Crosscom_Calculation( 
                 name="Crosscom_Calculation", vasp_input_set=None, vasp_cmd=vasp_cmd, db_file=db_file, 

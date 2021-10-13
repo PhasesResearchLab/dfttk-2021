@@ -174,7 +174,6 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
 
     axisa, axisb, axisc, dmin, dmax = get_constrain(deformation_scheme, deformation_fraction) 
     deformations = _get_deformations((dmin,dmax), num_deformations)
-
     fws = []
     for defo in deformations:
         struct = scale_lattice_vector(structure, defo, axisa=axisa, axisb=axisb, axisc=axisc)
@@ -197,7 +196,7 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
     return wf
 
 
-def get_wf_crosscom(structure, metadata=None, settings=None, 
+def get_wf_crosscom(structure, metadata=None, settings=None, run_num = 0,
         new_num_deformations=None, new_deformation_fraction=None):
     """
     Perform cross computer QHA calculation without computer dependent.
@@ -321,6 +320,7 @@ def get_wf_crosscom(structure, metadata=None, settings=None,
     tmp = copy.deepcopy(fws)
     if not single_volume:
         check_qha_fw = Firework(Crosscom_EVcheck_QHA(verbose=verbose, stable_tor=stable_tor,
+            run_num = run_num,
             store_volumetric_data=store_volumetric_data, a_kwargs=a_kwargs,
             **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
             parents=tmp, name='{}-Crosscom_EVcheck_QHA'.format(structure.composition.reduced_formula))
@@ -328,6 +328,8 @@ def get_wf_crosscom(structure, metadata=None, settings=None,
 
     wfname = "{}:{}".format(structure.composition.reduced_formula, 'EV_QHA_crosscom')
     wf = Workflow(fws, name=wfname, metadata=metadata)
+    add_modify_incar_by_FWname(wf, modify_incar_params = modify_incar_params)
+    add_modify_kpoints_by_FWname(wf, modify_kpoints_params = modify_kpoints_params)
     return wf
 
 
