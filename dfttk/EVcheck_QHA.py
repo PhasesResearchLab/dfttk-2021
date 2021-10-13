@@ -708,6 +708,7 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
                 if run_num < max_run:
                     # Do VASP and check again
                     print('Appending the volumes of : %s to calculate in VASP!' %(vol_adds).tolist())
+                    from dfttk.wflows import get_wf_crosscom
                     wfs = get_wf_crosscom(structure, run_num = run_num,
                         new_num_deformations = len(vol_adds),
                         new_deformation_fraction = (min(vol_adds)-1.0, max(vol_adds)-1.0),
