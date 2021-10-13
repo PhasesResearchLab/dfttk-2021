@@ -178,7 +178,7 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
     for defo in deformations:
         struct = scale_lattice_vector(structure, defo, axisa=axisa, axisb=axisb, axisc=axisc)
         full_relax_fw = OptimizeFW(struct, isif=isif, vasp_cmd=VASP_CMD, db_file=DB_FILE,
-            name='Structure_relax_with_ISIF='+str(isif),
+            name='Relax_with_ISIF='+str(isif)+'_and_defo={:5.3f}'.format(defo),
             store_volumetric_data=store_volumetric_data, **common_kwargs)
         fws.append(full_relax_fw)
         static_fw = StaticFW(struct, isif=2, vasp_cmd=VASP_CMD, db_file=DB_FILE, 
@@ -313,7 +313,7 @@ def get_wf_crosscom(structure, metadata=None, settings=None, run_num = 0,
     for defo in deformations:
         struct = scale_lattice_vector(structure, defo, axisa=axisa, axisb=axisb, axisc=axisc)
         full_relax_fw = OptimizeFW(struct, isif=isif, 
-            name='Structure_relax_with_ISIF='+str(isif),
+            name='Relax_with_ISIF='+str(isif)+'_and_defo={:5.3f}'.format(defo),
             store_volumetric_data=store_volumetric_data,
             t_kwargs=t_kwargs, a_kwargs=a_kwargs, **common_kwargs)
         fws.append(full_relax_fw)
