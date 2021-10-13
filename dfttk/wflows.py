@@ -219,6 +219,7 @@ def get_wf_crosscom(structure, metadata=None, settings=None,
     #list/tuple(min, max) or float(-max, max), the maximum amplitude of deformation, e.g. (-0.15, 0.15) means (0.95, 1.1) in volume
     deformation_fraction = settings.get('deformation_fraction', (-0.15, 0.20))
 
+    settings = settings or {}
     #bool, run phonon(True) or not(False)
     phonon = settings.get('phonon', False)
     #list(3x3), the supercell matrix for phonon, e.g. [[2.0, 0, 0], [0, 2.0, 0], [0, 0, 2.0]]

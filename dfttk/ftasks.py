@@ -751,7 +751,7 @@ class Crosscom_Calculation(FiretaskBase):
                        'phonon', 'phonon_supercell_matrix', 't_min', 't_max', 't_step', 
                        'verbose', 'modify_incar_params', 'modify_kpoints_params', 
                        'override_default_vasp_params', 
-                       'store_volumetric_data', 'settings', 'static']
+                       'store_volumetric_data', 'static']
 
     def run_task(self, fw_spec):
         db_file = self.get('db_file') or DB_FILE
@@ -760,22 +760,21 @@ class Crosscom_Calculation(FiretaskBase):
         tag = self.get('tag')
         metadata = self.get('metadata')
         name = self.get('name', "Crosscom_Calculation")
-        t_min = self.get('t_min')
+        t_min = self.get('t_min', None)
         t_max = self.get('t_max', None)
         t_step = self.get('t_step', None)
-        modify_incar_params = self.get('modify_incar_params', None)
-        modify_kpoints_params = self.get('modify_kpoints_params', None)
-        override_default_vasp_params = self.get('override_default_vasp_params', None)
+        modify_incar_params = self.get('modify_incar_params', {}})
+        modify_kpoints_params = self.get('modify_kpoints_params', {})
+        override_default_vasp_params = self.get('override_default_vasp_params', {})
         store_volumetric_data = self.get('store_volumetric_data', False)
-        settings = self.get('settings', None)
-        a_kwargs = self.get('a_kwargs', None)
+        a_kwargs = self.get('a_kwargs', {})
 
         return FWAction(detours=self.get_detour_workflow(
             db_file, vasp_cmd, db_insert, tag, metadata, name, 
             t_min, t_max, t_step, 
             modify_incar_params, modify_kpoints_params,
             override_default_vasp_params,
-            store_volumetric_data, settings, a_kwargs=a_kwargs)
+            store_volumetric_data, a_kwargs=a_kwargs)
             )
 
     def get_detour_workflow(self,
@@ -783,14 +782,14 @@ class Crosscom_Calculation(FiretaskBase):
         t_min, t_max, t_step, 
         modify_incar_params, modify_kpoints_params, 
         override_default_vasp_params, 
-        store_volumetric_data, settings, a_kwargs=None):
+        store_volumetric_data, a_kwargs=None):
         from fireworks import Workflow
         from .fworks import PhononFW, StaticFW
-        settings = settings or {}
+        a_kwargs = a_kwargs or {}
+        settings = a_kwargs.get('settings', {})
         stable_tor = settings.get('stable_tor', 0.01)
         
         phonon = settings.get('phonon', False)
-        a_kwargs = a_kwargs or {}
         phonon_supercell_matrix = a_kwargs.get('phonon_supercell_matrix', None)
         structure=a_kwargs.get('structure', None)
         site_properties = structure.site_properties
