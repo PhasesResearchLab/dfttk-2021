@@ -139,6 +139,7 @@ The solution is to make the best use of `ISIF <https://cms.mpi.univie.ac.at/vasp
     recipes.rst
     faq.rst
     Acknowledgements.rst
+    References.rst
 
 
 Indices and tables
