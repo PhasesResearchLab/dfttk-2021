@@ -573,6 +573,7 @@ class EVcheck_QHA(FiretaskBase):
             vol_spacing = volumer[-1] - volumer[-2]
             for i in range(idx+1+nV_addR-nV):
                 result.append(volumer[-1] + (i+1)*vol_spacing)
+        raise ValueError('************* {}'.format(results))
         return(np.array(result))
 
     def check_fit(self, volumes, energies):
