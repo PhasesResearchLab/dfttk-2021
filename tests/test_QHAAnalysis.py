@@ -102,6 +102,7 @@ def test_check_points_2():
     vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)
     EV, POSCAR, INCAR = get_rec_from_metatag(vasp_db, tag, test=True)
     structure = Structure.from_str(POSCAR, fmt='POSCAR')
+    #proc = Crosscom_EVcheck_QHA(db_file=db_file, metadata={'tag':tag}, structure=structure, deformations = np.linspace(0.94,1.06,7), test=True)
     proc = Crosscom_EVcheck_QHA(db_file=db_file, metadata={'tag':tag}, structure=structure, deformations = np.linspace(0.94,1.06,7), test=True)
     proc.run_task({})
     #assert False
