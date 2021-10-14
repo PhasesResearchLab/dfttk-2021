@@ -115,7 +115,7 @@ def test_EVcheck_QHA_2():
 
 @pytest.mark.get_static_calculations
 def test_get_static_calculations():
-    tag = '0267947f-b5a0-4993-8b5e-58f9dfb4e362'
+    tag = '8e7b216d-c6b6-4da4-905e-e7afd44195aa'
     vasp_db = VaspCalcDb.from_db_file(db_file=db_file, admin = True)
     volumes, energies, dos_objs, _ = get_static_calculations(vasp_db,tag)
     #print(volumes, energies)

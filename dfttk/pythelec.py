@@ -931,8 +931,8 @@ def get_static_calculations(vasp_db, tag):
             _dos_objs.append(vasp_db.get_dos(calc['task_id']))
 
     tvolumes = np.array(sorted(volumes))
-    if len(tvolumes)>1:
-        dvolumes = tvolumes[1:-1] - tvolumes[0:-2]
+    if len(tvolumes)>=3:
+        dvolumes = tvolumes[1:] - tvolumes[0:-1]
         dvolumes = sorted(dvolumes)
         if abs(dvolumes[-1]-dvolumes[-2]) > 0.01*dvolumes[-1]:
             #adding useful contraint calculations if not calculated statically

@@ -100,50 +100,45 @@ def get_wf_EV_bjb(structure, deformation_fraction=(-0.08, 0.12), store_volumetri
     return wf
 
 
-def get_constrain(deformation_scheme, new_deformation_fraction):
+def get_constrain(deformation_scheme, new_deformation_fraction, new_num_deformations):
+    deformations = _get_deformations(new_deformation_fraction, new_num_deformations)
+    print("xxxxxxxxx", deformations)
     if deformation_scheme=='volume':
-        dmin = pow(1.0+min(new_deformation_fraction), 1./3.) - 1.0
-        dmax = pow(1.0+max(new_deformation_fraction), 1./3.) - 1.0
+        ppp = 1./3.
         axisa=True
         axisb=True
         axisc=True
     elif deformation_scheme=='a':
-        dmin = min(new_deformation_fraction)
-        dmax = max(new_deformation_fraction)
+        ppp = 1.
         axisa=True
         axisb=False
         axisc=False        
     elif deformation_scheme=='b':
-        dmin = min(new_deformation_fraction)
-        dmax = max(new_deformation_fraction)
+        ppp = 1.
         axisa=False
         axisb=True
         axisc=False
     elif deformation_scheme=='c':
-        dmin = min(new_deformation_fraction)
-        dmax = max(new_deformation_fraction)
+        ppp = 1.
         axisa=False
         axisb=False
         axisc=True
     elif deformation_scheme=='bc' or deformation_scheme=='cb':
-        dmin = pow(1.0+min(new_deformation_fraction), 0.5) - 1.0
-        dmax = pow(1.0+max(new_deformation_fraction), 0.5) - 1.0
+        ppp = 0.5
         axisa=False
         axisb=True
         axisc=True        
     elif deformation_scheme=='ca' or deformation_scheme=='ac':
-        dmin = pow(1.0+min(new_deformation_fraction), 0.5) - 1.0
-        dmax = pow(1.0+max(new_deformation_fraction), 0.5) - 1.0
+        ppp = 0.5
         axisa=True
         axisb=False
         axisc=True
     elif deformation_scheme=='ab' or deformation_scheme=='ba':
-        dmin = pow(1.0+min(new_deformation_fraction), 0.5) - 1.0
-        dmax = pow(1.0+max(new_deformation_fraction), 0.5) - 1.0
+        ppp = 0.5
         axisa=True
         axisb=True
         axisc=False
-    return axisa, axisb, axisc, dmin, dmax
+    return axisa, axisb, axisc, pow(deformations,ppp)
 
 
 def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, override_default_vasp_params=None, settings=None):
@@ -172,8 +167,8 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
             if deformation_scheme=='volume': isif = 4
             else: isif = 2
 
-    axisa, axisb, axisc, dmin, dmax = get_constrain(deformation_scheme, deformation_fraction) 
-    deformations = _get_deformations((dmin,dmax), num_deformations)
+    axisa, axisb, axisc, deformations = get_constrain(deformation_scheme, deformation_fraction, num_deformations) 
+
     fws = []
     for defo in deformations:
         struct = scale_lattice_vector(structure, defo, axisa=axisa, axisb=axisb, axisc=axisc)
@@ -306,8 +301,7 @@ def get_wf_crosscom(structure, metadata=None, settings=None, run_num = 0,
         "static": True, "phonon":phonon, "phonon_supercell_matrix":phonon_supercell_matrix}
 
 
-    axisa, axisb, axisc, dmin, dmax = get_constrain(deformation_scheme, new_deformation_fraction) 
-    deformations = _get_deformations((dmin,dmax), new_num_deformations)
+    axisa, axisb, axisc, deformations = get_constrain(deformation_scheme, new_deformation_fraction, num_deformations) 
 
     fws = []
     for defo in deformations:
