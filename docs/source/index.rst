@@ -38,15 +38,15 @@ Y. Wang, M. Q. Liao, B. J. Bocklund, P. Gao, S. L. Shang, H. J. Kim, A. M. Beese
 
    @article{Bocklund2019ESPEI,
             archivePrefix = {arXiv},
-            arxivId = {1902.01269},
-            author = {Bocklund, Brandon and Otis, Richard and Egorov, Aleksei and Obaied, Abdulmonem and Roslyakova, Irina and Liu, Zi-Kui},
-            doi = {10.1557/mrc.2019.59},
-            eprint = {1902.01269},
-            issn = {2159-6859},
-            journal = {MRS Communications},
-            month = {jun},
-            pages = {1--10},
-            title = {{ESPEI for efficient thermodynamic database development, modification, and uncertainty quantification: application to Cu–Mg}},
+            arxivId = {2107.03966},
+            author = {Yi Wang, Mingqing Liao, Brandon J. Bocklund, Peng Gao, Shun-Li Shang, Hojong Kim, Allison M. Beese, Long-Qing Chen, Zi-Kui Liu},
+            doi = {10.1016/j.calphad.2021.102355},
+            eprint = {2107.03966},
+            issn = {0364-5916},
+            journal = {CALPHAD},
+            month = {december},
+            pages = {102355},
+            title = {{DFTTK: Density functional theory toolkit for high-throughput lattice dynamics calculations}},
             year = {2019}
    }
 
@@ -163,8 +163,6 @@ The solution is to make the best use of `ISIF <https://cms.mpi.univie.ac.at/vasp
     recipes.rst
     faq.rst
     Acknowledgements.rst
-    References.rst
-
 
 Indices and tables
 ==================
@@ -172,3 +170,18 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+References
+----------
+
+.. [Wang2021] Wang *et al.*, CALPHAD 75 (2021) 102355. doi:`10.1016/j.calphad.2021.102355 <https://doi.org/10.1016/j.calphad.2021.102355>`_
+.. [Bocklund2019] Bocklund *et al.*, MRS Communications 9(2) (2019) 1–10. doi:`10.1557/mrc.2019.59 <https://doi.org/10.1557/mrc.2019.59>`_
+.. [Coughanowr1991] Coughanowr *et al.*, Assessment of the Cu-Mg system. Zeitschrift f{ü}r Met. 82, 574–581 (1991).
+.. [Dinsdale1991] Dinsdale, Calphad 15(4) (1991) 317-425, doi:`10.1016/0364-5916(91)90030-N <https://doi.org/10.1016/0364-5916(91)90030-N>`_
+.. [Lukas2007] Lukas, Fries, and Sundman, Computational Thermodynamics: The Calphad Method. (Cambridge University Press, 2007). doi:`10.1017/CBO9780511804137 <https://doi.org/10.1017/CBO9780511804137>`_
+.. [Otis2016] Otis, Ph.D. Dissertation, The Pennsylvania State University (2016). https://etda.libraries.psu.edu/catalog/s1784k73d
+.. [Otis2017] Otis *et al.*, JOM 69 (2017) doi:`10.1007/s11837-017-2318-6 <http://doi.org/10.1007/s11837-017-2318-6>`_
+.. [Roslyakova2016] Roslyakova *et al.*, Calphad 55 (2016) 165–180. doi:`10.1016/j.calphad.2016.09.001 <https://doi.org/10.1016/j.calphad.2016.09.001>`_
+.. [Shang2010] Shang, Wang, and Liu, Magnes. Technol. 2010 617-622 (2010).
+.. [Zhou2007] Zhou *et al.*, J. Phase Equilibria Diffus. 28, 158–166 (2007). doi:`10.1007/s11669-007-9022-0 <https://doi.org/10.1007/s11669-007-9022-0>`_
+.. [Zuo1993] Zuo and Chang, Zeitschrift f{ü}r Met. 84, 662–667 (1993).
