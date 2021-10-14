@@ -102,7 +102,6 @@ def get_wf_EV_bjb(structure, deformation_fraction=(-0.08, 0.12), store_volumetri
 
 def get_constrain(deformation_scheme, new_deformation_fraction, new_num_deformations):
     deformations = _get_deformations(new_deformation_fraction, new_num_deformations)
-    print("xxxxxxxxx", deformations)
     if deformation_scheme=='volume':
         ppp = 1./3.
         axisa=True

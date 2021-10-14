@@ -297,8 +297,8 @@ def get_rec_from_metatag(vasp_db,m, test=False):
         else: pressures.append(None)
         if not gapfound: gapfound = float(gap) > 0.0
     tvolumes = np.array(sorted(volumes))
-    if len(tvolumes)>1:
-        dvolumes = tvolumes[1:-1] - tvolumes[0:-2]
+    if len(tvolumes)>=3:
+        dvolumes = tvolumes[1:] - tvolumes[0:-1]
         dvolumes = sorted(dvolumes)
         if abs(dvolumes[-1]-dvolumes[-2]) > 0.01*dvolumes[-1]:
             all_static_calculations = vasp_db.collection.\
