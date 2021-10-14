@@ -18,6 +18,29 @@
     :height: 300px
     :figclass: align-right
 
+Citing DFTTK
+------------
+
+If you use DFTTK for work presented in a publication, we ask that you cite the following publication:
+
+Y. Wang, M. Q. Liao, B. J. Bocklund, P. Gao, S. L. Shang, H. J. Kim, A. M. Beese, L. Q. Chen, and Z. K. Liu, DFTTK: Density functional theory toolkit for high-throughput lattice dynamics calculations, CALPHAD 75 (2021) 102355. doi:`10.1016/j.calphad.2021.102355 <https://doi.org/10.1016/j.calphad.2021.102355>`_.
+
+::
+
+   @article{Bocklund2019ESPEI,
+            archivePrefix = {arXiv},
+            arxivId = {1902.01269},
+            author = {Bocklund, Brandon and Otis, Richard and Egorov, Aleksei and Obaied, Abdulmonem and Roslyakova, Irina and Liu, Zi-Kui},
+            doi = {10.1557/mrc.2019.59},
+            eprint = {1902.01269},
+            issn = {2159-6859},
+            journal = {MRS Communications},
+            month = {jun},
+            pages = {1--10},
+            title = {{ESPEI for efficient thermodynamic database development, modification, and uncertainty quantification: application to Cu–Mg}},
+            year = {2019}
+   }
+   
 Project Goal
 ------------
 
