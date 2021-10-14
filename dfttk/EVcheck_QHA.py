@@ -81,8 +81,8 @@ def check_deformations_in_volumes(deformations, volumes, orig_vol=None):
     if orig_vol is None:
         orig_vol = (max(volumes) + min(volumes))/2.
     result = []
-    min_vol = min(volumes) / orig_vol
-    max_vol = max(volumes) / orig_vol
+    min_vol = min(volumes) / orig_vol*(1.0-1.0e-6)
+    max_vol = max(volumes) / orig_vol*(1.0+1.0e-6)
     for deformation in deformations:
         if deformation < min_vol or deformation > max_vol:
             result.append(deformation)
@@ -620,8 +620,14 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
         '''
         # Get the parameters from the object
         max_run = 16
-        db_file = env_chk(self.get('db_file', DB_FILE), fw_spec) #always concrete db_fiel
-        vasp_cmd = env_chk(self.get('vasp_cmd', VASP_CMD), fw_spec) #chould change for user to provide the change
+        test = self.get('test', False)
+        if test:
+            db_file = self.get('db_file', DB_FILE)
+            vasp_cmd = self.get('vasp_cmd', VASP_CMD)
+        else:
+            db_file = env_chk(self.get('db_file', DB_FILE), fw_spec) #always concrete db_fiel
+            vasp_cmd = env_chk(self.get('vasp_cmd', VASP_CMD), fw_spec) #chould change for user to provide the change
+
         deformations = self.get('deformations', [])
         run_num = self.get('run_num', 0)
         eos_tolerance = self.get('eos_tolerance', 0.005)
@@ -648,22 +654,13 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
         powerups_options=user_incar_settings.get('powerups', powerups_options)
 
         store_volumetric_data = self.get('store_volumetric_data', False)
-
         stable_tor = self.get('stable_tor', 0.01)
-        test = self.get('test', False)
-
 
         metadata = self.get('metadata', {})
         tag = self.get('tag', metadata.get('tag', None))
         if tag is None:
             tag = str(uuid4())
             metadata['tag'] = tag
-
-        common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': self.get('db_file', DB_FILE), "metadata": metadata, "tag": tag,
-                         'override_default_vasp_params': override_default_vasp_params,}
-        vasp_kwargs = {'modify_incar_params': modify_incar_params, 'modify_kpoints_params': modify_kpoints_params}
-        t_kwargs = {'t_min': t_min, 't_max': t_max, 't_step': t_step}
-        eos_kwargs = {'vol_spacing': vol_spacing, 'eos_tolerance': eos_tolerance, 'threshold': 14}
 
         run_num += 1
 
@@ -680,62 +677,34 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
                 structure.add_site_property(pkey, site_properties[pkey])
         # get original EV curve
         volumes, energies, dos_objs = self.get_orig_EV(db_file, tag)
-        vol_adds = check_deformations_in_volumes(deformations, volumes, structure.volume)
-        if (len(vol_adds)) == 0:
-            self.check_points(db_file, metadata, eos_tolerance, threshold, del_limited, volumes, energies, verbose)
-        else:
-            self.correct = True
-            self.error = 1e10
-
-        EVcheck_result = init_evcheck_result(append_run_num=run_num, correct=self.correct, volumes=volumes,
-                         energies=energies, eos_tolerance=eos_tolerance, threshold=threshold, vol_spacing=vol_spacing,
-                         error=self.error, metadata=metadata)
-
-        if self.correct:
-            vol_orig = structure.volume
-            if (len(vol_adds)) == 0:
-                volume, energy, dos_obj = gen_volenergdos(self.points, volumes, energies, dos_objs)
-                vol_adds = self.check_vol_coverage(volume, vol_spacing, vol_orig, run_num,
-                                                   energy, structure, dos_obj, phonon,
-                                                   db_file, tag, t_min, t_max, t_step,
-                                                   EVcheck_result)   # Normalized to 1
-                EVcheck_result['selected'] = volume
-                EVcheck_result['append'] = (vol_adds).tolist()
-                # Marked as adopted in db
-                mark_adopted(tag, db_file, volume, phonon=phonon)
+        vol_orig = structure.volume
+        vol_adds = self.check_vol_coverage(volumes, energies, vol_orig)
+        # Marked as adopted in db
+        mark_adopted(tag, db_file, volumes, phonon=phonon)
                 
-            lpad = LaunchPad.auto_load()
-            if len(vol_adds) > 0:      # VASP calculations need to append
-                if run_num < max_run:
-                    # Do VASP and check again
-                    print('Appending the volumes of : %s to calculate in VASP!' %(vol_adds).tolist())
-                    from dfttk.wflows import get_wf_crosscom
-                    wfs = get_wf_crosscom(structure, run_num = run_num,
-                        new_num_deformations = len(vol_adds),
-                        new_deformation_fraction = (min(vol_adds)-1.0, max(vol_adds)-1.0),
-                        metadata=metadata, settings=settings) 
-                    wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
-                    if not test: lpad.add_wf(wfs)
-                else:
-                    too_many_run_error()
-            else:  # No need to do more VASP calculation, QHA could be running
-                print('Success in Volumes-Energies checking, enter QHA ...')
-                debye_fw = Firework(QHAAnalysis(phonon=phonon, t_min=t_min, t_max=t_max, t_step=t_step, db_file=self.get('db_file', DB_FILE), tag=tag, metadata=metadata),
-                                    name="{}-qha_analysis".format(structure.composition.reduced_formula))
-                fws.append(debye_fw)
-
-                strname = "{}:{}".format(structure.composition.reduced_formula, 'QHA')
-                wfs = Workflow(fws, name = strname, metadata=metadata)
+        lpad = LaunchPad.auto_load()
+        if len(vol_adds) > 0:      # VASP calculations need to append
+            if run_num < max_run:
+                # Do VASP and check again
+                print('Appending the volumes of : %s to calculate in VASP!' %(vol_adds).tolist())
+                from dfttk.wflows import get_wf_crosscom
+                wfs = get_wf_crosscom(structure, run_num = run_num,
+                    new_num_deformations = len(vol_adds),
+                    new_deformation_fraction = (min(vol_adds)-1.0, max(vol_adds)-1.0),
+                    metadata=metadata, settings=settings) 
                 wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
                 if not test: lpad.add_wf(wfs)
-        else:   # failure to meet the tolerance
-            if len(volumes) == 0: #self.error == 1e10:   # Bad initial running set
-                pass_result_error()
-            else:                      # fitting fails
-                tol_error()
-        import json
-        with open('EV_check_summary.json', 'w') as fp:
-            json.dump(EVcheck_result, fp, indent=4)
+        else:  # No need to do more VASP calculation, QHA could be running
+            print('Success in Volumes-Energies checking, enter QHA ...')
+            debye_fw = Firework(QHAAnalysis(phonon=phonon, t_min=t_min, t_max=t_max, t_step=t_step, db_file=self.get('db_file', DB_FILE), tag=tag, metadata=metadata),
+                name="{}-qha_analysis".format(structure.composition.reduced_formula))
+            fws=[debye_fw]
+
+            strname = "{}:{}".format(structure.composition.reduced_formula, 'QHA')
+            wfs = Workflow(fws, name = strname, metadata=metadata)
+            wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
+            if not test: lpad.add_wf(wfs)
+
 
     def get_orig_EV(self, db_file, tag):
         vasp_db = VaspCalcDb.from_db_file(db_file=db_file, admin = True)
@@ -745,120 +714,13 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
         print('%s Energies = %s' %(len(energies), energies))
         return(list(volumes), list(energies), dos_objs)
 
-    def check_points(self, db_file, metadata, eos_tolerance, threshold, del_limited, volumes, energies, verbose = False):
-        """
-        Check the existing points if they reached the tolerance,
-        if reached, update self.correct as True
-        if not, reduce the point to 4
-        """
-        self.correct = False
-        self.error = 1e11
-        error = 1e10
-        num = np.arange(len(volumes))
-        comb = num
-        limit = len(volumes) * del_limited
 
-        # For len(num) > threshold case, do a whole number fitting to pass numbers delete if met tolerance
-        for i in range(1):     # To avoid the codes after except running, ?
-            if (len(num) > threshold):
-                try:
-                    self.check_fit(volumes, energies)
-                except:
-                    if verbose:
-                        print('Fitting error in: ', comb, '. If you can not achieve QHA result, try to run far negative deformations.')
-                    break
-                temperror = eosfit_stderr(self.eos_fit, volumes, energies)
-                error = update_err(temperror=temperror, error=error, verbose=verbose, ind=comb)
-
-        # Decrease the quantity of large results
-        while (error > eos_tolerance) and (len(num) > limit) and (len(num) > threshold):
-            volume, energy = gen_volenergdos(num, volumes, energies)
-            try:
-                self.check_fit(volume, energy)
-            except:
-                if verbose:
-                    print('Fetal error in Fitting : ', num)         # Seldom
-                break
-            fit_value = self.eos_fit.func(volume)
-            errors = abs(fit_value - energy)
-            num = sort_x_by_y(num, errors)
-            errors = sorted(errors)
-            for m in range(min(len(errors) - threshold, 1)):
-                errors.pop(-1)
-                num.pop(-1)
-            temperror = cal_stderr(errors)
-            error, comb = update_err(temperror=temperror, error=error, verbose=verbose, ind=comb, temp_ind=num)
-
-        # combinations
-        len_comb = len(comb)
-        if (error > eos_tolerance) and (len_comb <= threshold):
-            comb_source = comb
-            while (error > eos_tolerance) and (len_comb >= 4):
-                print('Combinations in "%s"...' %len_comb)
-                combination = combinations(comb_source, len_comb)
-                for combs in combination:
-                    print(volumes)
-                    print(energies)
-                    volume, energy = gen_volenergdos(combs, volumes, energies)
-                    try:
-                        self.check_fit(volume, energy)
-                    except:
-                        if verbose:
-                            print('Fitting error in: ', combs, '. If you can not achieve QHA result, try to run far negative deformations.')
-                        continue
-                    temperror = eosfit_stderr(self.eos_fit, volume, energy)
-                    error, comb = update_err(temperror=temperror, error=error, verbose=verbose, ind=comb, temp_ind=combs)
-                len_comb -= 1
-
-        print('Minimum error = %s' %error, comb)
-        if error <= eos_tolerance:
-            self.correct = True
-        comb = list(comb)
-        comb.sort()
-        self.points = comb
-        self.error = error
-
-    def check_vol_coverage(self, volume, vol_spacing, vol_orig, run_num, energy, structure,
-        dos_objects, phonon, db_file, tag, t_min, t_max, t_step, EVcheck_result):
+    def check_vol_coverage(self, volume, energy, vol_orig, ):
         result = []
         volumer = volume.copy()
-
         # Check minimum spacing
         volumer = [vol_i / vol_orig for vol_i in volumer]
-
-        qha = Quasiharmonic(energy, volume, structure, dos_objects=dos_objects, F_vib=None,
-                            t_min=t_min, t_max=t_max, t_step=t_step, poisson=0.363615, bp2gru=2./3.)
-        vol_max = np.nanmax(qha.optimum_volumes)
-        vol_min = np.nanmin(qha.optimum_volumes)
-        EVcheck_result['debye'] = qha.get_summary_dict()
-        EVcheck_result['debye']['temperatures'] = EVcheck_result['debye']['temperatures'].tolist()
-        if phonon:
-            # get the vibrational properties from the FW spec
-            # TODO: add a stable check in Quasiharmonic
-            vasp_db = VaspCalcDb.from_db_file(db_file = db_file, admin=True)
-            phonon_calculations = list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))
-            #vol_vol = [calc['volume'] for calc in phonon_calculations]  # these are just used for sorting and will be thrown away
-            #vol_f_vib = [calc['F_vib'] for calc in phonon_calculations]
-            vol_vol = []
-            vol_f_vib = []
-            for calc in phonon_calculations:
-                if calc['volume'] in vol_vol: continue
-                if calc['volume'] not in volume: continue
-                vol_vol.append(calc['volume'])
-                vol_f_vib.append(calc['F_vib'])
-            # sort them order of the unit cell volumes
-            vol_f_vib = sort_x_by_y(vol_f_vib, vol_vol)
-            f_vib = np.vstack(vol_f_vib)
-            qha_phonon = Quasiharmonic(energy, volume, structure, dos_objects=dos_objects, F_vib=f_vib,
-                                t_min=t_min, t_max=t_max, t_step=t_step, poisson=0.363615, bp2gru=2./3.)
-            vol_max = max(np.nanmax(qha_phonon.optimum_volumes), vol_max)
-            vol_min = min(np.nanmax(qha_phonon.optimum_volumes), vol_min)
-            EVcheck_result['phonon'] = qha_phonon.get_summary_dict()
-            EVcheck_result['phonon']['temperatures'] = EVcheck_result['phonon']['temperatures'].tolist()
-        EVcheck_result['MIN_volume_Evaluated'] = '%.3f' %vol_min
-        EVcheck_result['MAX_volume_Evaluated'] = '%.3f' %vol_max
-        print('Evaluated MIN volume is %.3f;' %vol_min)
-        print('Evaluated MAX volume is %.3f;' %vol_max)
+        print('Finished volumes of : %s to calculate in VASP!' % volumer)
 
         val, idx = min((val, idx) for (idx, val) in enumerate(energy))
         nV = len(energy)
@@ -873,10 +735,6 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
             for i in range(idx+1+nV_addR-nV):
                 result.append(volumer[-1] + (i+1)*vol_spacing)
         return(np.array(result))
-
-    def check_fit(self, volumes, energies):
-        eos = EOS('vinet')
-        self.eos_fit = eos.fit(volumes, energies)
 
 
 @explicit_serialize
