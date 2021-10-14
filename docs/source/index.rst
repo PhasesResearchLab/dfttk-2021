@@ -36,7 +36,7 @@ Y. Wang, M. Q. Liao, B. J. Bocklund, P. Gao, S. L. Shang, H. J. Kim, A. M. Beese
 
 ::
 
-   @article{Bocklund2019ESPEI,
+   @article{Wang2021DFTTK,
             archivePrefix = {arXiv},
             arxivId = {2107.03966},
             author = {Yi Wang, Mingqing Liao, Brandon J. Bocklund, Peng Gao, Shun-Li Shang, Hojong Kim, Allison M. Beese, Long-Qing Chen, Zi-Kui Liu},
