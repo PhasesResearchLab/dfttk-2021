@@ -164,14 +164,12 @@ The solution is to make the best use of `ISIF <https://cms.mpi.univie.ac.at/vasp
     faq.rst
     Acknowledgements.rst
 
-.. only:: html
+Indices and tables
+==================
 
-   Indices and tables
-   ------------------
-
-   * :ref:`genindex`
-   * :ref:`modindex`
-   * :ref:`search`
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
 
 References
 ----------
