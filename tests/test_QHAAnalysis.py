@@ -120,10 +120,6 @@ direct
 
 @pytest.mark.check_points_3
 def test_check_points_3():
-    tag = '19c9e217-4159-4bfe-9c3a-940fb40e023e'
-    tag = 'd054780c-f051-4450-a611-d374d41d1884'
-    tag = 'ed85a69b-4054-41d4-a724-7373934cdcc6'
-    tag = '67783198-6d5a-40c2-8d49-4f03e50ac130'
     settings = {'deformation_fraction': [-0.05, 0.05], 'num_deformations': 3, 'deformation_scheme': 'volume', 'run_isif': 4, 'phonon': True, 'phonon_supercell_matrix': [[-2, 2, 2], [2, -2, 2], [2, 2, -2]], 'override_default_vasp_params': {'user_incar_settings': {'EDIFF_PER_ATOM': 1e-07, 'Relax_settings': {'PREC': 'HIGH', 'grid_density': 1000}, 'Static_settings': {'PREC': 'HIGH', 'grid_density': 1000}}, 'user_kpoints_settings': {'grid_density': 1000}}, 'metadata': {'tag': '67783198-6d5a-40c2-8d49-4f03e50ac130'}}
 
     ################ PARAMETERS FOR WF #############################
@@ -144,7 +140,6 @@ def test_check_points_3():
     num_deformations = settings.get('num_deformations', 8)
     if num_deformations==1:
         deformation_fraction[1] = deformation_fraction[0]
-    settings = settings or {}
     #bool, run phonon(True) or not(False)
     phonon = settings.get('phonon', False)
     #list(3x3), the supercell matrix for phonon, e.g. [[2.0, 0, 0], [0, 2.0, 0], [0, 0, 2.0]]
@@ -152,8 +147,6 @@ def test_check_points_3():
     phonon_supercell_matrix_min = settings.get('phonon_supercell_matrix_min', None)
     phonon_supercell_matrix_max = settings.get('phonon_supercell_matrix_max', None)
     optimize_sc = settings.get('optimize_sc', False)
-    #run phonon always, no matter ISIF=4 passed or not
-    force_phonon  = settings.get('force_phonon', False)
     #The tolerance for phonon stable
     stable_tor = settings.get('stable_tor', 0.01)
     #float, the mimimum of temperature in QHA process, e.g. 5
@@ -202,17 +195,6 @@ def test_check_points_3():
     _deformations = _get_deformations(deformation_fraction, num_deformations)
     if num_deformations > 1: vol_spacing = _deformations[1]-_deformations[0]
     else: vol_spacing=0.05
-
-    deformation_scheme = settings.get('deformation_scheme', 'volume')
-    single_volume = settings.get('single_volume', False)
-
-
-    isif = settings.get('run_isif', None)
-    if not isif:
-        isif=3
-        if num_deformations>1: 
-            if deformation_scheme=='volume': isif = 4
-            else: isif = 2
 
     structure = Structure.from_str(POSCAR_STR, fmt='POSCAR')
     t_kwargs = {'t_min': t_min, 't_max': t_max, 't_step': t_step}

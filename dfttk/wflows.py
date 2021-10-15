@@ -100,8 +100,7 @@ def get_wf_EV_bjb(structure, deformation_fraction=(-0.08, 0.12), store_volumetri
     return wf
 
 
-def get_constrain(deformation_scheme, new_deformation_fraction, new_num_deformations):
-    deformations = _get_deformations(new_deformation_fraction, new_num_deformations)
+def get_constrain(deformation_scheme, new_deformation_fraction):
     if deformation_scheme=='volume':
         ppp = 1./3.
         axisa=True
@@ -137,7 +136,7 @@ def get_constrain(deformation_scheme, new_deformation_fraction, new_num_deformat
         axisa=True
         axisb=True
         axisc=False
-    return axisa, axisb, axisc, pow(deformations,ppp)
+    return axisa, axisb, axisc, pow(np.array(new_deformation_fraction),ppp)
 
 
 def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, override_default_vasp_params=None, settings=None):
@@ -158,7 +157,8 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
     #list/tuple(min, max) or float(-max, max), the maximum amplitude of deformation, e.g. (-0.15, 0.15) means (0.95, 1.1) in volume
     deformation_fraction = settings.get('deformation_fraction', (-0.0, +0.0))
     deformation_scheme = settings.get('deformation_scheme', 'volume')
-    
+    new_deformation_fraction = _get_deformations(deformation_fraction, num_deformations)
+
     isif = settings.get('run_isif', None)
     if not isif:
         isif=3
@@ -166,10 +166,10 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
             if deformation_scheme=='volume': isif = 4
             else: isif = 2
 
-    axisa, axisb, axisc, deformations = get_constrain(deformation_scheme, deformation_fraction, num_deformations) 
+    axisa, axisb, axisc, new_deformations = get_constrain(deformation_scheme, new_deformation_fraction) 
 
     fws = []
-    for defo in deformations:
+    for defo in new_deformations:
         struct = scale_lattice_vector(structure, defo, axisa=axisa, axisb=axisb, axisc=axisc)
         full_relax_fw = OptimizeFW(struct, isif=isif, vasp_cmd=VASP_CMD, db_file=DB_FILE,
             name='Relax_with_ISIF='+str(isif)+'_and_defo={:5.3f}'.format(defo),
@@ -191,7 +191,7 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
 
 
 def get_wf_crosscom(structure, metadata=None, settings=None, run_num = 0,
-        new_num_deformations=None, new_deformation_fraction=None):
+        new_deformation_fraction=None):
     """
     Perform cross computer QHA calculation without computer dependent.
 
@@ -272,13 +272,12 @@ def get_wf_crosscom(structure, metadata=None, settings=None, run_num = 0,
                                             target_shape='sc', lower_search_limit=-2, upper_search_limit=2,
                                             verbose=verbose, sc_tolerance=1e-5, optimize_sc=optimize_sc)
 
-    _deformations = _get_deformations(deformation_fraction, num_deformations)
-    if num_deformations > 1: vol_spacing = _deformations[1]-_deformations[0]
+    deformations = _get_deformations(deformation_fraction, num_deformations)
+    if num_deformations > 1: vol_spacing = deformations[1]-deformations[0]
     else: vol_spacing=0.05
 
     if new_deformation_fraction is None:
-        new_deformation_fraction = copy.deepcopy(deformation_fraction)
-        new_num_deformations = num_deformations
+        new_deformation_fraction = copy.deepcopy(deformations)
 
     deformation_scheme = settings.get('deformation_scheme', 'volume')
     single_volume = settings.get('single_volume', False)
@@ -295,15 +294,15 @@ def get_wf_crosscom(structure, metadata=None, settings=None, run_num = 0,
     common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': db_file, "metadata": metadata, "tag": tag,
                      'override_default_vasp_params': override_default_vasp_params}
     vasp_kwargs = {'modify_incar_params': modify_incar_params, 'modify_kpoints_params': modify_kpoints_params}
-    eos_kwargs = {'deformations': _deformations, 'vol_spacing': vol_spacing, 'eos_tolerance': eos_tolerance, 'threshold': 14}
+    eos_kwargs = {'deformations': deformations, 'vol_spacing': vol_spacing, 'eos_tolerance': eos_tolerance, 'threshold': 14}
     a_kwargs = {"structure":structure, "settings":settings, "eos_kwargs":eos_kwargs,
         "static": True, "phonon":phonon, "phonon_supercell_matrix":phonon_supercell_matrix}
 
 
-    axisa, axisb, axisc, deformations = get_constrain(deformation_scheme, new_deformation_fraction, num_deformations) 
+    axisa, axisb, axisc, new_deformations = get_constrain(deformation_scheme, new_deformation_fraction) 
 
     fws = []
-    for defo in deformations:
+    for defo in new_deformations:
         struct = scale_lattice_vector(structure, defo, axisa=axisa, axisb=axisb, axisc=axisc)
         full_relax_fw = OptimizeFW(struct, isif=isif, 
             name='Relax_with_ISIF='+str(isif)+'_and_defo={:5.3f}'.format(defo),
