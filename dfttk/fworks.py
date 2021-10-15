@@ -50,7 +50,7 @@ class OptimizeFW(Firework):
                  prev_calc_loc=True, parents=None, db_insert=False, tag=None,
                  run_isif2=False, pass_isif4=False, force_gamma=True, store_volumetric_data=False,
                  modify_incar=None, modify_incar_params={}, modify_kpoints_params={}, 
-                 t_kwargs=None, a_kwargs=None, **kwargs):
+                 t_kwargs=None, a_kwargs=None, defo=1.0, **kwargs):
         metadata = metadata or {}
         tag = tag or metadata.get('tag')
         # generate a tag with a warning
@@ -111,7 +111,7 @@ class OptimizeFW(Firework):
         a_kwargs = a_kwargs or {}
         if a_kwargs.get("static", False):
             t.append(Crosscom_Calculation( 
-                name="Crosscom_Calculation", vasp_input_set=None, vasp_cmd=vasp_cmd, db_file=db_file, 
+                name="Crosscom_Calculation", vasp_input_set=None, vasp_cmd=vasp_cmd, db_file=db_file, defo=defo,
                 metadata=metadata, 
                 db_insert=db_insert, tag=tag,
                 store_volumetric_data=store_volumetric_data,

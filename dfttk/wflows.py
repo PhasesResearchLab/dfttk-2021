@@ -307,7 +307,7 @@ def get_wf_crosscom(structure, metadata=None, settings=None, run_num = 0,
         full_relax_fw = OptimizeFW(struct, isif=isif, 
             name='Relax_with_ISIF='+str(isif)+'_and_defo={:5.3f}'.format(defo),
             store_volumetric_data=store_volumetric_data,
-            t_kwargs=t_kwargs, a_kwargs=a_kwargs, **common_kwargs)
+            t_kwargs=t_kwargs, a_kwargs=a_kwargs, **common_kwargs, defo=defo)
         fws.append(full_relax_fw)
     tmp = copy.deepcopy(fws)
     if not single_volume:

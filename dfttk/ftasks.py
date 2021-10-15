@@ -751,7 +751,7 @@ class Crosscom_Calculation(FiretaskBase):
                        't_min', 't_max', 't_step', 
                        'verbose', 'modify_incar_params', 'modify_kpoints_params', 
                        'override_default_vasp_params', 
-                       'store_volumetric_data', 'static']
+                       'store_volumetric_data', 'static', 'defo']
 
     def run_task(self, fw_spec):
         db_file = self.get('db_file') or DB_FILE
@@ -768,13 +768,14 @@ class Crosscom_Calculation(FiretaskBase):
         override_default_vasp_params = self.get('override_default_vasp_params', {})
         store_volumetric_data = self.get('store_volumetric_data', False)
         a_kwargs = self.get('a_kwargs', {})
+        defo = self.get('defo', 1.0)
 
         return FWAction(detours=self.get_detour_workflow(
             db_file, vasp_cmd, db_insert, tag, metadata, name, 
             t_min, t_max, t_step, 
             modify_incar_params, modify_kpoints_params,
             override_default_vasp_params,
-            store_volumetric_data, a_kwargs=a_kwargs)
+            store_volumetric_data, a_kwargs=a_kwargs, defo=defo)
             )
 
     def get_detour_workflow(self,
@@ -782,7 +783,7 @@ class Crosscom_Calculation(FiretaskBase):
         t_min, t_max, t_step, 
         modify_incar_params, modify_kpoints_params, 
         override_default_vasp_params, 
-        store_volumetric_data, a_kwargs=None):
+        store_volumetric_data, a_kwargs=None, defo=1.0):
         from fireworks import Workflow
         from .fworks import PhononFW, StaticFW
         a_kwargs = a_kwargs or {}
@@ -800,7 +801,7 @@ class Crosscom_Calculation(FiretaskBase):
             for prop, vals in site_properties.items():
                 inp_structure.add_site_property(prop, vals)
 
-        detour_fws.append(StaticFW(inp_structure, name="crosscom-static", 
+        detour_fws.append(StaticFW(inp_structure, name="crosscom-static"+'-defo={:5.3f}'.format(defo), 
                  vasp_cmd=vasp_cmd, metadata=metadata, prev_calc_loc=False, modify_incar=modify_incar_params, 
                  db_file=db_file, tag=tag, 
                  override_default_vasp_params=override_default_vasp_params,
@@ -811,7 +812,8 @@ class Crosscom_Calculation(FiretaskBase):
             common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': db_file, "metadata": metadata, "tag": tag,
                 'override_default_vasp_params': override_default_vasp_params}
             detour_fws.append(PhononFW(inp_structure, phonon_supercell_matrix, 
-                name='crosscom-phonon', prev_calc_loc=False, stable_tor=stable_tor,
+                name='crosscom-phonon'+'-defo={:5.3f}'.format(defo), 
+                prev_calc_loc=False, stable_tor=stable_tor,
                 **t_kwargs, **common_kwargs))
 
         override_default_vasp_params = override_default_vasp_params or {}
