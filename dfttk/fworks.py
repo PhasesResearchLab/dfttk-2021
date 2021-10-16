@@ -50,7 +50,7 @@ class OptimizeFW(Firework):
                  prev_calc_loc=True, parents=None, db_insert=False, tag=None,
                  run_isif2=False, pass_isif4=False, force_gamma=True, store_volumetric_data=False,
                  modify_incar=None, modify_incar_params={}, modify_kpoints_params={}, 
-                 t_kwargs=None, a_kwargs=None, defo=1.0, **kwargs):
+                 t_kwargs=None, a_kwargs={}, defo=1.0, **kwargs):
         metadata = metadata or {}
         tag = tag or metadata.get('tag')
         # generate a tag with a warning
@@ -70,8 +70,10 @@ class OptimizeFW(Firework):
             raise ValueError('The store_volumetric_data should be list or bool')
 
         override_default_vasp_params = override_default_vasp_params or {}
+        """
         if len (override_default_vasp_params)==0:
             override_default_vasp_params = a_kwargs.get("override_default_vasp_params", {})
+        """
             
         tmp = copy.deepcopy(override_default_vasp_params)
         if isif!=4 and isif!=3:
@@ -81,7 +83,7 @@ class OptimizeFW(Firework):
         override_symmetry_tolerances = override_symmetry_tolerances or {}
 
         vasp_input_set = vasp_input_set or RelaxSet(structure, isif=isif, force_gamma=force_gamma,
-                                                       **tmp)
+                                            a_kwargs=a_kwargs, **tmp)
         site_properties = deepcopy(structure).site_properties
 
         t = []
@@ -108,7 +110,6 @@ class OptimizeFW(Firework):
         if db_insert:
             t.append(VaspToDb(db_file=">>db_file<<", additional_fields={"task_label": name, "metadata": metadata}, store_volumetric_data=store_volumetric_data))
         t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, override_symmetry_tolerances=override_symmetry_tolerances, site_properties=site_properties))
-        a_kwargs = a_kwargs or {}
         if a_kwargs.get("static", False):
             t.append(Crosscom_Calculation( 
                 name="Crosscom_Calculation", vasp_input_set=None, vasp_cmd=vasp_cmd, db_file=db_file, defo=defo,
@@ -116,7 +117,8 @@ class OptimizeFW(Firework):
                 db_insert=db_insert, tag=tag,
                 store_volumetric_data=store_volumetric_data,
                 override_default_vasp_params=override_default_vasp_params,
-                modify_incar_params=modify_incar_params, modify_kpoints_params=modify_kpoints_params, **t_kwargs, a_kwargs=a_kwargs, **kwargs))
+                modify_incar_params=modify_incar_params, modify_kpoints_params=modify_kpoints_params, **t_kwargs, 
+                a_kwargs=a_kwargs, **kwargs))
         super(OptimizeFW, self).__init__(t, parents=parents, name="{}-{}".format(structure.composition.reduced_formula, name), **kwargs)
 
 
@@ -147,7 +149,8 @@ class RobustOptimizeFW(Firework):
                  override_symmetry_tolerances=None, job_type="normal", vasp_input_set=None,
                  vasp_cmd="vasp", metadata=None, override_default_vasp_params=None, db_file=None,
                  prev_calc_loc=True, parents=None, db_insert=False, tag=None, modify_incar_params={},
-                 modify_kpoints_params={}, energy_with_isif={}, store_volumetric_data=False, 
+                 modify_kpoints_params={}, energy_with_isif={}, store_volumetric_data=False,
+                 a_kwargs={}, 
                  **kwargs):
         metadata = metadata or {}
         tag = tag or metadata.get('tag')
@@ -174,7 +177,7 @@ class RobustOptimizeFW(Firework):
                     tmp['user_incar_settings'].pop('EDIFFG')
                     
         override_symmetry_tolerances = override_symmetry_tolerances or {}
-        vasp_input_set = vasp_input_set or RelaxSet(structure, isif=isif, **tmp)
+        vasp_input_set = vasp_input_set or RelaxSet(structure, isif=isif, a_kwargs=a_kwargs, **tmp)
         site_properties = deepcopy(structure).site_properties
 
         t = []
@@ -198,6 +201,7 @@ class RobustOptimizeFW(Firework):
         t.append(CheckRelaxation(db_file=">>db_file<<", metadata=metadata, tag=tag, isif4=isif4, level=level, energy_with_isif=energy_with_isif,
                                  common_kwargs=common_kwargs, relax_kwargs=relax_kwargs, static_kwargs=static_kwargs, site_properties=site_properties,
                                  store_volumetric_data=store_volumetric_data, 
+                                 a_kwargs=a_kwargs,
                                  **override_symmetry_tolerances))
         super().__init__(t, parents=parents, name="{}-{}".format(structure.composition.reduced_formula, name), **kwargs)
 
@@ -232,7 +236,8 @@ class StaticFW(Firework):
     def __init__(self, structure, isif=2, scale_lattice=None, name="static", vasp_input_set=None, 
                  vasp_cmd="vasp", metadata=None, prev_calc_loc=True, Prestatic=False, modify_incar=None, 
                  db_file=None, parents=None, tag=None, override_default_vasp_params=None,
-                 store_volumetric_data=False, **kwargs):
+                 store_volumetric_data=False, 
+                 a_kwargs={}, **kwargs):
 
         # TODO: @computron - I really don't like how you need to set the structure even for
         # prev_calc_loc jobs. Sometimes it makes appending new FWs to an existing workflow
@@ -256,7 +261,7 @@ class StaticFW(Firework):
 
         override_default_vasp_params = override_default_vasp_params or {}
         self.override_default_vasp_params = override_default_vasp_params
-        vasp_input_set = vasp_input_set or StaticSet(structure, isif=isif, **override_default_vasp_params)
+        vasp_input_set = vasp_input_set or StaticSet(structure, isif=isif, a_kwargs=a_kwargs, **override_default_vasp_params)
         self.vasp_input_set = vasp_input_set
         site_properties = deepcopy(structure).site_properties
         # Avoids delivery (prev_calc_loc == '' (instead by True))
@@ -325,7 +330,9 @@ class InflectionDetectionFW(Firework):
 
     """
     def __init__(self, structure, name="infdet", input_set=None, metadata=None, prev_calc_loc=True,
-                 db_file=None, parents=None, continuation=False, run_isif2=False, pass_isif4=False, **kwargs):
+                 db_file=None, parents=None, continuation=False, run_isif2=False, pass_isif4=False, 
+                 a_kwargs={},
+                 **kwargs):
         metadata = metadata or {}
         input_set = input_set or ATATIDSet(structure)
 
@@ -399,6 +406,7 @@ class PhononFW(Firework):
                  name="phonon", vasp_input_set=None, override_default_vasp_params=None,
                  vasp_cmd="vasp", metadata=None, tag=None, qpoint_mesh=(50, 50, 50),
                  prev_calc_loc=True, db_file=None, parents=None, stable_tor=0.01,
+                 a_kwargs={},
                  **kwargs):
 
         metadata = metadata or {}
@@ -432,7 +440,7 @@ class PhononFW(Firework):
         supercell_structure = deepcopy(structure)
         supercell_structure.make_supercell(supercell_matrix)
         supercell_site_properties = deepcopy(supercell_structure.site_properties)
-        vasp_input_set = vasp_input_set or ForceConstantsSet(supercell_structure, **tmp)
+        vasp_input_set = vasp_input_set or ForceConstantsSet(supercell_structure, a_kwargs=a_kwargs, **tmp)
 
         t = []
 
@@ -489,7 +497,8 @@ class BornChargeFW(Firework):
     """
     def __init__(self, structure, isif=2, scale_lattice=None, name="born charge", vasp_input_set=None,
                  vasp_cmd="vasp", metadata=None, override_default_vasp_params=None, tag=None,
-                 prev_calc_loc=True, modify_incar=None, db_file=None, parents=None, **kwargs):
+                 prev_calc_loc=True, modify_incar=None, db_file=None, parents=None, 
+                 a_kwargs={}, **kwargs):
 
         metadata = metadata or {}
         tag = tag or metadata.get('tag')
@@ -500,7 +509,7 @@ class BornChargeFW(Firework):
 
         override_default_vasp_params = override_default_vasp_params or {}
 
-        vasp_input_set = vasp_input_set or BornChargeSet(structure, isif=isif, **override_default_vasp_params)
+        vasp_input_set = vasp_input_set or BornChargeSet(structure, isif=isif, a_kwargs=a_kwargs, **override_default_vasp_params)
         site_properties = deepcopy(structure).site_properties
 
         # Avoids delivery (prev_calc_loc == '' (instead by True))

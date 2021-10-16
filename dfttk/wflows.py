@@ -56,6 +56,7 @@ def _get_deformations(def_frac, num_def):
 
 
 def get_wf_EV_bjb(structure, deformation_fraction=(-0.08, 0.12), store_volumetric_data=False,
+                  settings={},
                   num_deformations=11, override_symmetry_tolerances=None, metadata=None):
     """
     Perform an E-V curve, robustly relaxating all structures on the curve.
@@ -82,13 +83,14 @@ def get_wf_EV_bjb(structure, deformation_fraction=(-0.08, 0.12), store_volumetri
 
     """
     deformations = _get_deformations(deformation_fraction, num_deformations)*structure.volume
+    a_kwargs = {"settings":settings}
 
     fws = []
     for defo in deformations:
         struct = deepcopy(structure)
         struct.scale_lattice(defo)
         full_relax_fw = RobustOptimizeFW(struct, isif=5, vasp_cmd=VASP_CMD, db_file=DB_FILE,
-                                         store_volumetric_data=store_volumetric_data)
+            a_kwargs = a_kwargs, store_volumetric_data=store_volumetric_data)
         fws.append(full_relax_fw)
     if metadata is not None and all(x in metadata for x in ('phase_name', 'sublattice_configuration')):
         # create a nicer name for the workflow
@@ -139,7 +141,7 @@ def get_constrain(deformation_scheme, new_deformation_fraction):
     return axisa, axisb, axisc, pow(np.array(new_deformation_fraction),ppp)
 
 
-def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, override_default_vasp_params=None, settings=None):
+def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, override_default_vasp_params=None, settings={}):
     """
     Perform single volume relaxation calculation.
 
@@ -167,16 +169,17 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
             else: isif = 2
 
     axisa, axisb, axisc, new_deformations = get_constrain(deformation_scheme, new_deformation_fraction) 
-
+    a_kwargs = {"settings":settings}
     fws = []
     for defo in new_deformations:
         struct = scale_lattice_vector(structure, defo, axisa=axisa, axisb=axisb, axisc=axisc)
         full_relax_fw = OptimizeFW(struct, isif=isif, vasp_cmd=VASP_CMD, db_file=DB_FILE,
             name='Relax_with_ISIF='+str(isif)+'_and_defo={:5.3f}'.format(defo),
+            a_kwargs = a_kwargs,
             store_volumetric_data=store_volumetric_data, **common_kwargs)
         fws.append(full_relax_fw)
         static_fw = StaticFW(struct, isif=2, vasp_cmd=VASP_CMD, db_file=DB_FILE, 
-            name='Staitc',
+            name='Staitc', a_kwargs = a_kwargs,
             vasp_input_set=None, prev_calc_loc=True, parents=full_relax_fw,
             store_volumetric_data=store_volumetric_data, **common_kwargs)
         fws.append(static_fw)    
@@ -190,7 +193,7 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
     return wf
 
 
-def get_wf_crosscom(structure, metadata=None, settings=None, run_num = 0,
+def get_wf_crosscom(structure, metadata=None, settings={}, run_num = 0,
         new_deformation_fraction=None):
     """
     Perform cross computer QHA calculation without computer dependent.
@@ -216,7 +219,6 @@ def get_wf_crosscom(structure, metadata=None, settings=None, run_num = 0,
     num_deformations = settings.get('num_deformations', 8)
     if num_deformations==1:
         deformation_fraction[1] = deformation_fraction[0]
-    settings = settings or {}
     #bool, run phonon(True) or not(False)
     phonon = settings.get('phonon', False)
     #list(3x3), the supercell matrix for phonon, e.g. [[2.0, 0, 0], [0, 2.0, 0], [0, 0, 2.0]]
@@ -245,6 +247,7 @@ def get_wf_crosscom(structure, metadata=None, settings=None, run_num = 0,
     #dict, dict of class ModifyIncar with keywords in Workflow name. e.g.
     modify_incar_params = settings.get('modify_incar_params', {})
 
+    """
     #check if fworker_name is assigned
     powerups = settings.get('powerups', {})
     if len(powerups)>0:
@@ -252,6 +255,7 @@ def get_wf_crosscom(structure, metadata=None, settings=None, run_num = 0,
             override_default_vasp_params.update({'user_incar_settings':{}})
         override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
         modify_incar_params.update({'powerups':powerups})
+    """
     
     #dict, dict of class ModifyKpoints with keywords in Workflow name, similar with modify_incar_params
     modify_kpoints_params = settings.get('modify_kpoints_params', {})
@@ -334,7 +338,8 @@ def vol_in_volumes(vol, volumes):
 
 def get_wf_elastic(structure=None, metadata=None, tag=None, vasp_cmd=None, db_file=None, name="elastic",
                    vasp_input_set=None, override_default_vasp_params=None, strain_states=None, stencils=None,
-                   analysis=True, sym_reduce=False, order=2, conventional=False, **kwargs):
+                   analysis=True, sym_reduce=False, order=2, conventional=False, 
+                   settings={}, **kwargs):
     '''
     Parameter
     ---------
@@ -366,6 +371,7 @@ def get_wf_elastic(structure=None, metadata=None, tag=None, vasp_cmd=None, db_fi
     db_file = db_file or DB_FILE
 
     override_default_vasp_params = override_default_vasp_params or {}
+    a_kwargs={'settings':settings}
 
     metadata = metadata or {}
     tag = metadata.get('tag', '{}'.format(str(uuid4())))
@@ -424,7 +430,7 @@ def get_wf_elastic(structure=None, metadata=None, tag=None, vasp_cmd=None, db_fi
                 override_default_vasp_params['user_incar_settings'].update({'SIGMA': 0.05})
             print(vasp_input_set.CONFIG['INCAR'])
             """
-            vasp_input_set = vasp_input_set or ElasticSet(structure=_struct, **override_default_vasp_params)
+            vasp_input_set = vasp_input_set or ElasticSet(structure=_struct, a_kwargs=a_kwargs, **override_default_vasp_params)
 
             wf_elastic = get_wf_elastic_constant(struct, metadata, strain_states=strain_states, stencils=stencils,
                                 db_file=db_file, conventional=conventional, order=order, vasp_input_set=vasp_input_set,
@@ -445,7 +451,8 @@ def get_wf_elastic(structure=None, metadata=None, tag=None, vasp_cmd=None, db_fi
 
 def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name="born charge",
                       vasp_input_set=None,vasp_cmd=None, override_default_vasp_params=None,
-                      tag=None, modify_incar=None, **kwargs):
+                      tag=None, modify_incar=None, 
+                      settings={}, **kwargs):
     '''
     The born charge work flow
 
@@ -506,7 +513,7 @@ def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name=
             struct_energy_bandgap[0][0].composition.reduced_formula, " with tag:", tag, "\n")
     else: bandgap=False
 
-
+    a_kwargs={'settings':settings}
     fws = []
     if bandgap:
         if override_default_vasp_params is None: override_default_vasp_params = {}
@@ -525,7 +532,7 @@ def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name=
                 fw = BornChargeFW(structure, isif=isif, name="{}-{:.3f}".format(name, structure.volume),
                                   vasp_cmd=vasp_cmd, metadata=metadata, modify_incar=modify_incar,
                                   override_default_vasp_params=override_default_vasp_params, tag=tag,
-                                  prev_calc_loc=False, db_file=db_file, **kwargs)
+                                  prev_calc_loc=False, db_file=db_file, a_kwargs=a_kwargs, **kwargs)
                 fws.append(fw)
     else:
         if structure is None:
@@ -534,7 +541,7 @@ def get_wf_borncharge(structure=None, metadata=None, db_file=None, isif=2, name=
             fw = BornChargeFW(structure, isif=isif, name="{}-{:.3f}".format(name, structure.volume),
                               vasp_cmd=vasp_cmd, metadata=metadata, modify_incar=modify_incar,
                               override_default_vasp_params=override_default_vasp_params, tag=tag,
-                              prev_calc_loc=False, db_file=db_file, **kwargs)
+                              prev_calc_loc=False, db_file=db_file, a_kwargs=a_kwargs, **kwargs)
             fws.append(fw)
     if not fws:
         raise ValueError('The system is metal or no static result under given metadata in the mongodb')
@@ -563,6 +570,7 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
                         metadata=None, name='EV_QHA', override_default_vasp_params=None, modify_incar_params={},
                         modify_kpoints_params={}, verbose=False, level=1, phonon_supercell_matrix_min=60,
                         phonon_supercell_matrix_max=120, optimize_sc=False, force_phonon=False, stable_tor=0.01,
+                        settings={}, 
                         store_volumetric_data=False):
     """
     E - V
@@ -641,11 +649,12 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
     vasp_kwargs = {'modify_incar_params': modify_incar_params, 'modify_kpoints_params': modify_kpoints_params}
     t_kwargs = {'t_min': t_min, 't_max': t_max, 't_step': t_step}
     eos_kwargs = {'deformations': deformations, 'vol_spacing': vol_spacing, 'eos_tolerance': eos_tolerance, 'threshold': 14}
+    a_kwargs = {'settings':settings}
 
     fws = []
 
     robust_opt_fw = RobustOptimizeFW(structure, prev_calc_loc=False, name='Full relax', store_volumetric_data=store_volumetric_data,
-        **robust_opt_kwargs, **vasp_kwargs, **common_kwargs)
+        a_kwargs=a_kwargs, **robust_opt_kwargs, **vasp_kwargs, **common_kwargs)
     fws.append(robust_opt_fw)
     check_qha_parent = []
 
@@ -664,7 +673,7 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
             raise ValueError('Current phonon_supercell_matrix({}) is not correct.'.format(phonon_supercell_matrix))
         phonon_wf = PhononFW(structure, phonon_supercell_matrix, parents=robust_opt_fw, prev_calc_loc='static',
                              name='structure_{:.3f}-phonon'.format(structure.volume), stable_tor=stable_tor,
-                             **t_kwargs, **common_kwargs)
+                             a_kwargs=a_kwargs, **t_kwargs, **common_kwargs)
         fws.append(phonon_wf)
         check_qha_parent.append(phonon_wf)
 
@@ -675,7 +684,7 @@ def get_wf_gibbs_robust(structure, num_deformations=7, deformation_fraction=(-0.
     check_qha_fw = Firework(EVcheck_QHA(site_properties=site_properties,verbose=verbose, stable_tor=stable_tor,
                                         phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, force_phonon=force_phonon,
                                         override_symmetry_tolerances=override_symmetry_tolerances, store_volumetric_data=store_volumetric_data,
-                                        **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
+                                        a_kwargs=a_kwargs, **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
                             parents=check_qha_parent, name='{}-EVcheck_QHA'.format(structure.composition.reduced_formula))
     fws.append(check_qha_fw)
 
@@ -692,6 +701,7 @@ def get_wf_gibbs(structure, num_deformations=7, deformation_fraction=(-0.1, 0.1)
                  t_min=5, t_max=2000, t_step=5, tolerance = 0.01, volume_spacing_min = 0.03,
                  vasp_cmd=None, db_file=None, metadata=None, name='EV_QHA', symmetry_tolerance = 0.05,
                  passinitrun=False, relax_path='', modify_incar_params={},
+                 settings={}, 
                  modify_kpoints_params={}, verbose=False, store_volumetric_data=False):
     """
     E - V
@@ -812,6 +822,7 @@ def get_wf_gibbs_SQS(structure, num_deformations=7, deformation_fraction=(-0.1, 
                  t_min=5, t_max=2000, t_step=5, tolerance = 0.01, volume_spacing_min = 0.03,
                  vasp_cmd=None, db_file=None, metadata=None, name='EV_QHA', symmetry_tolerance = 0.05,
                  passinitrun=False, relax_path='', modify_incar_params={},
+                 settings={}, 
                  modify_kpoints_params={}, verbose=False, store_volumetric_data=False):
     """
     E - V
@@ -892,6 +903,7 @@ def get_wf_gibbs_SQS(structure, num_deformations=7, deformation_fraction=(-0.1, 
             vis_PreStatic = PreStaticSet(structure1)
             prestatic = StaticFW(structure=structure1, scale_lattice=deformation, name='VR_%.3f-PreStatic' %deformation,
                                prev_calc_loc=False, vasp_input_set=vis_PreStatic, vasp_cmd=vasp_cmd, db_file=db_file,
+                               a_kwargs={'settings':settings},
                                metadata=metadata, Prestatic=True, store_volumetric_data=store_volumetric_data)
 
             fws.append(prestatic)
@@ -901,6 +913,7 @@ def get_wf_gibbs_SQS(structure, num_deformations=7, deformation_fraction=(-0.1, 
                                         tolerance = tolerance, threshold = 14, vol_spacing = vol_spacing, vasp_cmd = vasp_cmd, run_isif2=run_isif2,
                                         metadata = metadata, t_min=t_min, t_max=t_max, t_step=t_step, phonon = phonon, symmetry_tolerance = symmetry_tolerance,
                                         phonon_supercell_matrix = phonon_supercell_matrix, verbose = verbose, pass_isif4=pass_isif4,
+                                        a_kwargs={'settings':settings},
                                         modify_incar_params=modify_incar_params, modify_kpoints_params = modify_kpoints_params),
                             parents=prestatic_calcs, name='%s-PreEV_check' %structure.composition.reduced_formula)
     fws.append(check_result)

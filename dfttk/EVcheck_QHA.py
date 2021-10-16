@@ -203,7 +203,7 @@ class EVcheck_QHA(FiretaskBase):
                        'del_limited', 'vol_spacing', 't_min', 't_max', 't_step', 'phonon', 'phonon_supercell_matrix',
                        'verbose', 'modify_incar_params', 'run_num','modify_kpoints_params', 'site_properties',
                        'override_symmetry_tolerances', 'override_default_vasp_params', 'db_file', 'vasp_cmd',
-                       'force_phonon', 'stable_tor', 'store_volumetric_data','test']
+                       'force_phonon', 'stable_tor', 'store_volumetric_data', 'a_kwargs', 'test']
 
     def run_task(self, fw_spec):
         '''
@@ -237,11 +237,14 @@ class EVcheck_QHA(FiretaskBase):
         site_properties = self.get('site_properties', None)
 
         modify_incar_params = self.get('modify_incar_params', {})
-        powerups_options=modify_incar_params.get('powerups', None)
+        #powerups_options=modify_incar_params.get('powerups', None)
 
         override_default_vasp_params = self.get('override_default_vasp_params', {})
-        user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
-        powerups_options=user_incar_settings.get('powerups', powerups_options)
+        #user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
+        #powerups_options=user_incar_settings.get('powerups', powerups_options)
+        a_kwargs = self.get('a_kwargs', {})
+        settings = a_kwargs.get('settings', None)
+
 
         override_symmetry_tolerances = self.get('override_symmetry_tolerances', {})
         store_volumetric_data = self.get('store_volumetric_data', False)
@@ -334,7 +337,7 @@ class EVcheck_QHA(FiretaskBase):
                                  name="relax_Vol{:.3f}".format(vol_add), vasp_input_set=None, job_type="normal",
                                  override_symmetry_tolerances=override_symmetry_tolerances,
                                  prev_calc_loc=True, parents=relax_parents_fw, db_insert=False, force_gamma=True,
-                                 modify_incar={}, **vasp_kwargs, **common_kwargs)
+                                 modify_incar={}, **vasp_kwargs, a_kwargs=a_kwargs, **common_kwargs)
                             relax_parents_fw = deepcopy(relax_fw)
                             fws.append(relax_fw)
                             calcs.append(relax_fw)
@@ -342,7 +345,7 @@ class EVcheck_QHA(FiretaskBase):
                         static_fw = StaticFW(struct, isif=relax_scheme[-1], name='static_Vol{:.3f}'.format(vol_add),
                                         vasp_input_set=None, prev_calc_loc=True, parents=relax_parents_fw,
                                         store_volumetric_data=store_volumetric_data, 
-                                        **common_kwargs)
+                                        a_kwargs=a_kwargs, **common_kwargs)
                         fws.append(static_fw)
                         calcs.append(static_fw)
 
@@ -350,12 +353,13 @@ class EVcheck_QHA(FiretaskBase):
                             #visphonon = ForceConstantsSet(struct)
                             phonon_fw = PhononFW(struct, phonon_supercell_matrix, vasp_input_set=None, stable_tor=stable_tor,
                                                  name='structure_{:.3f}-phonon'.format(vol_add), prev_calc_loc=True,
-                                                 parents=static_fw, **t_kwargs, **common_kwargs)
+                                                 parents=static_fw, **t_kwargs, a_kwargs=a_kwargs, **common_kwargs)
                             fws.append(phonon_fw)
                             calcs.append(phonon_fw)
                     check_result = Firework(EVcheck_QHA(structure=relax_structure, relax_scheme=relax_scheme, store_volumetric_data=store_volumetric_data,
                                                         run_num=run_num, verbose=verbose, site_properties=site_properties, stable_tor=stable_tor,
                                                         phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, force_phonon=force_phonon,
+                                                        a_kwargs = a_kwargs,
                                                         **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
                                             parents=calcs, name='{}-EVcheck_QHA'.format(structure.composition.reduced_formula))
                     fws.append(check_result)
@@ -368,7 +372,7 @@ class EVcheck_QHA(FiretaskBase):
                     if modify_kpoints_params != {}:
                         from dfttk.utils import add_modify_kpoints_by_FWname
                         add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
-                    wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
+                    wfs=Customizing_Workflows(wfs,powerups_options = settings.get('powerups',None))
                     if not test: lpad.add_wf(wfs)
                 else:
                     too_many_run_error()
@@ -391,7 +395,7 @@ class EVcheck_QHA(FiretaskBase):
                 '''
                 strname = "{}:{}".format(structure.composition.reduced_formula, 'QHA')
                 wfs = Workflow(fws, name = strname, metadata=metadata)
-                wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
+                wfs=Customizing_Workflows(wfs,powerups_options = settings.get('powerups',None))
                 if not test: lpad.add_wf(wfs)
         else:   # failure to meet the tolerance
             if len(volumes) == 0: #self.error == 1e10:   # Bad initial running set
@@ -646,12 +650,14 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
 
         modify_kpoints_params = self.get('modify_kpoints_params', {})
         verbose = self.get('verbose', False)
+        """
         modify_incar_params = self.get('modify_incar_params', {})
         powerups_options=modify_incar_params.get('powerups', None)
+        """
 
         override_default_vasp_params = self.get('override_default_vasp_params', {})
-        user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
-        powerups_options=user_incar_settings.get('powerups', powerups_options)
+        #user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
+        #powerups_options=user_incar_settings.get('powerups', powerups_options)
 
         store_volumetric_data = self.get('store_volumetric_data', False)
         stable_tor = self.get('stable_tor', 0.01)
@@ -691,7 +697,7 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
                 wfs = get_wf_crosscom(structure, run_num = run_num,
                     new_deformation_fraction = vol_adds,
                     metadata=metadata, settings=settings) 
-                wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
+                wfs=Customizing_Workflows(wfs,powerups_options = settings.get('powerups', None))
                 if not test: lpad.add_wf(wfs)
         else:  # No need to do more VASP calculation, QHA could be running
             print('Success in Volumes-Energies checking, enter QHA ...')
@@ -701,7 +707,7 @@ class Crosscom_EVcheck_QHA(FiretaskBase):
 
             strname = "{}:{}".format(structure.composition.reduced_formula, 'QHA')
             wfs = Workflow(fws, name = strname, metadata=metadata)
-            wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
+            wfs=Customizing_Workflows(wfs,powerups_options = settings.get('powerups', None))
             if not test: lpad.add_wf(wfs)
 
 
@@ -755,7 +761,7 @@ class PreEV_check(FiretaskBase):
     optional_params = ['deformations', 'relax_path', 'run_num', 'tolerance', 'threshold', 'del_limited', 'vol_spacing', 't_min',
                        't_max', 't_step', 'phonon', 'phonon_supercell_matrix', 'verbose', 'modify_incar_params', 'structure',
                        'modify_kpoints_params', 'symmetry_tolerance', 'run_isif2', 'pass_isif4', 'site_properties',
-                       'store_volumetric_data']
+                       'store_volumetric_data', 'a_kwargs']
 
     def run_task(self, fw_spec):
         '''
@@ -789,12 +795,13 @@ class PreEV_check(FiretaskBase):
         verbose = self.get('verbose') or False
         modify_incar_params = self.get('modify_incar_params') or {}
         modify_kpoints_params = self.get('modify_kpoints_params') or {}
-        powerups_options=modify_incar_params.get('powerups', None)
         symmetry_tolerance = self.get('symmetry_tolerance') or None
         run_isif2 = self.get('run_isif2') or None
         pass_isif4 = self.get('pass_isif4') or False
         site_properties = self.get('site_properties') or None
         store_volumetric_data = self.get('store_volumetric_data', False)
+        a_kwargs = self.get('a_kwargs', {})
+        settings = a_kwargs.get('settings', None)
         run_num += 1
 
         volumes, energies = self.get_orig_EV_structure(db_file, tag)
@@ -831,7 +838,7 @@ class PreEV_check(FiretaskBase):
                     for vol_add in vol_adds:
                         prestatic = StaticFW(structure=structure, job_type='normal', name='VR_%.3f-PreStatic' %vol_add,
                                            prev_calc_loc=False, vasp_input_set=vis_prestatic, vasp_cmd=">>vasp_cmd<<", db_file=self.get('db_file', DB_FILE),
-                                           metadata=metadata, Prestatic=True)
+                                           metadata=metadata, a_kwargs=a_kwargs, Prestatic=True)
                         fws.append(prestatic)
                         prestatic_calcs.append(prestatic)
 
@@ -839,7 +846,8 @@ class PreEV_check(FiretaskBase):
                                                         tolerance = tolerance, threshold = 14, vol_spacing = vol_spacing, vasp_cmd = ">>vasp_cmd<<", pass_isif4=pass_isif4,
                                                         metadata = metadata, t_min=t_min, t_max=t_max, t_step=t_step, phonon = phonon, symmetry_tolerance = symmetry_tolerance,
                                                         phonon_supercell_matrix = phonon_supercell_matrix, verbose = verbose, site_properties=site_properties,
-                                                        modify_incar_params=modify_incar_params, modify_kpoints_params = modify_kpoints_params),
+                                                        modify_incar_params=modify_incar_params, modify_kpoints_params = modify_kpoints_params,
+                                                        a_kwargs=a_kwargs),
                                             parents=prestatic_calcs, name='%s-PreEV_check%s' %(structure.composition.reduced_formula, run_num))
                     fws.append(check_result)
                     strname = "{}:{}".format(structure.composition.reduced_formula, 'PreEV_check')
@@ -850,7 +858,7 @@ class PreEV_check(FiretaskBase):
                     if modify_kpoints_params != {}:
                         from dfttk.utils import add_modify_kpoints_by_FWname
                         add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
-                    wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
+                    wfs=Customizing_Workflows(wfs,powerups_options = settings.get('powerups', None))
                     lpad.add_wf(wfs)
                 else:
                     too_many_run_error()
@@ -863,6 +871,7 @@ class PreEV_check(FiretaskBase):
                                                prev_calc_loc=False, vasp_input_set=vis_relax, vasp_cmd=">>vasp_cmd<<", db_file=self.get('db_file', DB_FILE),
                                                metadata=metadata, record_path = True, modify_incar = {'ISIF': 2}, run_isif2=run_isif2, pass_isif4=pass_isif4,
                                                modify_incar_params=modify_incar_params, modify_kpoints_params = modify_kpoints_params,
+                                               a_kwargs=a_kwargs, 
                                                spec={'_preserve_fworker': True}, store_volumetric_data=store_volumetric_data)
                     fws.append(ps2_relax_fw)
                 else:
@@ -873,6 +882,7 @@ class PreEV_check(FiretaskBase):
                                                     metadata = metadata, t_min = t_min, t_max = t_max, t_step = t_step, phonon = phonon, deformations =deformations,
                                                     phonon_supercell_matrix = phonon_supercell_matrix, symmetry_tolerance = symmetry_tolerance,
                                                     modify_incar_params = modify_incar_params, verbose = verbose, pass_isif4=pass_isif4,
+                                                    a_kwargs=a_kwargs, 
                                                     modify_kpoints_params = modify_kpoints_params, site_properties=site_properties),
                                         parents = ps2_relax_fw, name='%s-EVcheck_QHA' %structure.composition.reduced_formula, store_volumetric_data=store_volumetric_data)
                 fws.append(check_result)
@@ -884,7 +894,7 @@ class PreEV_check(FiretaskBase):
                 if modify_kpoints_params != {}:
                     from dfttk.utils import add_modify_kpoints_by_FWname
                     add_modify_kpoints_by_FWname(wfs, modify_kpoints_params = modify_kpoints_params)
-                wfs=Customizing_Workflows(wfs,powerups_options = powerups_options)
+                wfs=Customizing_Workflows(wfs,powerups_options = settings.get('powerups', None))
                 lpad.add_wf(wfs)
         else:   # failure to meet the tolerance
             if len(volumes) == 0: #self.error == 1e10:   # Bad initial running set

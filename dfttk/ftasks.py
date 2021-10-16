@@ -33,7 +33,7 @@ from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 from pymatgen.core import __version__ as pymatgen_ver
 from dfttk.pythelec import get_static_calculations
-from dfttk.scripts.assign_fworker_name import Customizing_Workflows, get_powerups_options
+from dfttk.scripts.assign_fworker_name import Customizing_Workflows
 
 def extend_calc_locs(name, fw_spec):
     """
@@ -767,15 +767,13 @@ class Crosscom_Calculation(FiretaskBase):
         modify_kpoints_params = self.get('modify_kpoints_params', {})
         override_default_vasp_params = self.get('override_default_vasp_params', {})
         store_volumetric_data = self.get('store_volumetric_data', False)
-        a_kwargs = self.get('a_kwargs', {})
-        defo = self.get('defo', 1.0)
 
         return FWAction(detours=self.get_detour_workflow(
             db_file, vasp_cmd, db_insert, tag, metadata, name, 
             t_min, t_max, t_step, 
             modify_incar_params, modify_kpoints_params,
             override_default_vasp_params,
-            store_volumetric_data, a_kwargs=a_kwargs, defo=defo)
+            store_volumetric_data)
             )
 
     def get_detour_workflow(self,
@@ -783,10 +781,10 @@ class Crosscom_Calculation(FiretaskBase):
         t_min, t_max, t_step, 
         modify_incar_params, modify_kpoints_params, 
         override_default_vasp_params, 
-        store_volumetric_data, a_kwargs=None, defo=1.0):
+        store_volumetric_data):
         from fireworks import Workflow
         from .fworks import PhononFW, StaticFW
-        a_kwargs = a_kwargs or {}
+        a_kwargs = self.get('a_kwargs',{})
         settings = a_kwargs.get('settings', {})
         stable_tor = settings.get('stable_tor', 0.01)
         
@@ -801,9 +799,10 @@ class Crosscom_Calculation(FiretaskBase):
             for prop, vals in site_properties.items():
                 inp_structure.add_site_property(prop, vals)
 
-        detour_fws.append(StaticFW(inp_structure, name="crosscom-static"+'-defo={:5.3f}'.format(defo), 
+        detour_fws.append(StaticFW(inp_structure, name="crosscom-static"+'-defo={:5.3f}'.format(self.get('defo',1.0)), 
                  vasp_cmd=vasp_cmd, metadata=metadata, prev_calc_loc=False, modify_incar=modify_incar_params, 
                  db_file=db_file, tag=tag, 
+                 a_kwargs=a_kwargs,
                  override_default_vasp_params=override_default_vasp_params,
                  store_volumetric_data=store_volumetric_data))
 
@@ -812,13 +811,15 @@ class Crosscom_Calculation(FiretaskBase):
             common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': db_file, "metadata": metadata, "tag": tag,
                 'override_default_vasp_params': override_default_vasp_params}
             detour_fws.append(PhononFW(inp_structure, phonon_supercell_matrix, 
-                name='crosscom-phonon'+'-defo={:5.3f}'.format(defo), 
+                name='crosscom-phonon'+'-defo={:5.3f}'.format(self.get('defo',1.0)), 
                 prev_calc_loc=False, stable_tor=stable_tor,
+                a_kwargs=a_kwargs,
                 **t_kwargs, **common_kwargs))
-
+        """
         override_default_vasp_params = override_default_vasp_params or {}
         user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
-        return Customizing_Workflows(detour_fws, powerups_options=user_incar_settings.get('powerups', None))
+        """
+        return Customizing_Workflows(detour_fws, powerups_options=settings.get('powerups', None))
 
 
 @explicit_serialize
@@ -887,7 +888,8 @@ class CheckRelaxation(FiretaskBase):
 
     required_params = ["db_file", "tag", "common_kwargs"]
     optional_params = ["metadata", "tol_energy", "tol_strain", "tol_bond", 'level', 'isif4',  "energy_with_isif",
-                       "static_kwargs", "relax_kwargs", 'store_volumetric_data', 'site_properties']
+                       "static_kwargs", "relax_kwargs", 'store_volumetric_data', 
+                       'a_kwargs', 'site_properties']
 
     def run_task(self, fw_spec):
         self.db_file = env_chk(self.get("db_file"), fw_spec)
@@ -1011,6 +1013,8 @@ class CheckRelaxation(FiretaskBase):
         
         symmetry_options = self.symmetry_options
         static_kwargs = self.get('static_kwargs', {})
+        a_kwargs = self.get('a_kwargs', {})
+        settings = a_kwargs.get('settings', {})
 
         # Assume the data for the current step is already in the database
         db = VaspCalcDb.from_db_file(self.db_file, admin=True).db['relaxations']
@@ -1030,17 +1034,21 @@ class CheckRelaxation(FiretaskBase):
                 md['symmetry_type'] = step["symmetry_type"]
                 common_copy["metadata"] = md
                 detour_fws.append(StaticFW(inp_structure, isif=step['isif'], store_volumetric_data=self.store_volumetric_data,
-                                           **static_kwargs, **common_copy))
+                        a_kwargs=a_kwargs,
+                        **static_kwargs, **common_copy))
             elif job_type == "relax":
                 detour_fws.append(RobustOptimizeFW(inp_structure, isif=step["isif"], energy_with_isif=energy_with_isif,
-                                override_symmetry_tolerances=symmetry_options, store_volumetric_data=self.store_volumetric_data, **self["common_kwargs"]))
+                                override_symmetry_tolerances=symmetry_options, store_volumetric_data=self.store_volumetric_data, 
+                                a_kwargs=a_kwargs, **self["common_kwargs"]))
             else:
                 raise ValueError(f"Unknown job_type {job_type} for step {step}.")
+        """
         common_kwargs = self.get('common_kwargs',{})
         override_default_vasp_params = common_kwargs.get('override_default_vasp_params',{})
         user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
         #user_incar_settings = common_kwargs.get('modify_incar_params',{})
-        return Customizing_Workflows(detour_fws, powerups_options=user_incar_settings.get('powerups', None))
+        """
+        return Customizing_Workflows(detour_fws, powerups_options=settings.get('powerups', None))
 
 
 @explicit_serialize

@@ -98,7 +98,7 @@ class RelaxSet(DictSet):
     CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
     CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
-    def __init__(self, structure, volume_relax=False, isif=None, **kwargs):
+    def __init__(self, structure, volume_relax=False, isif=None, a_kwargs={}, **kwargs):
         """If volume relax is True, will do volume only, ISIF 7"""
         self.kwargs = copy.deepcopy(kwargs)
         self.volume_relax = volume_relax
@@ -125,9 +125,9 @@ class RelaxSet(DictSet):
         elif uis['ISPIN']==1:
             if 'MAGMON' in uis.keys(): uis.pop['MAGMOM']
             if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
-
-        if 'Relax_settings' in uis:
-            relax = uis['Relax_settings']
+        settings = a_kwargs.get('settings', {})
+        relax = settings.get('Relax_settings', None) or uis.get('Relax_settings', None)
+        if relax:
             for ff in relax:
                 if ff.lower()=='prec':
                     if 'ENCUT' in new_config['INCAR']:
@@ -180,7 +180,7 @@ class PreStaticSet(DictSet):
     CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
     CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, structure, a_kwargs={}, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
         old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol']
         for k in old_kwargs:
@@ -249,7 +249,7 @@ class ForceConstantsSet(DictSet):
     CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
     CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, structure, a_kwargs={}, **kwargs):
         self.kwargs = copy.deepcopy(kwargs)
         uis = copy.deepcopy(self.kwargs.get('user_incar_settings', {}))
         new_config = copy.deepcopy(ForceConstantsSet.CONFIG)
@@ -279,10 +279,10 @@ class ForceConstantsSet(DictSet):
             kpoints = Kpoints(kpts=[[3,3,3],])
             new_config['KPOINTS'] = kpoints
         pot = self.kwargs.get('user_potcar_functional', None)
-        if pot:
+        if pot: 
             new_config['POTCAR_FUNCTIONAL'] = pot
         super(ForceConstantsSet, self).__init__(
-            structure, new_config, sort_structure=False, **self.kwargs)
+            structure, new_config, sort_structure=False, force_gamma=True, **self.kwargs)
 
 
 class StaticSet(DictSet):
@@ -316,7 +316,7 @@ class StaticSet(DictSet):
     CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
     CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
-    def __init__(self, structure, isif=2, **kwargs):
+    def __init__(self, structure, isif=2, a_kwargs={}, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
         self.isif = isif
         
@@ -343,9 +343,10 @@ class StaticSet(DictSet):
         elif uis['ISPIN']==1:
             if 'MAGMON' in uis.keys(): uis.pop['MAGMOM']
             if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
-        
-        if 'Static_settings' in uis:
-            static = uis['Static_settings']
+
+        settings = a_kwargs.get('settings', {})
+        static = settings.get('Static_settings', None) or uis.get('Static_settings', None)
+        if static:
             for ff in static:
                 if ff.lower()=='prec':
                     if 'ENCUT' in new_config['INCAR']:
@@ -435,7 +436,7 @@ class ForcesSet(DictSet):
     CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
     CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, structure, a_kwargs={}, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
         old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol']
         for k in old_kwargs:
@@ -482,7 +483,7 @@ class BornChargeSet(DictSet):
     CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
     CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
-    def __init__(self, structure, isif=2, **kwargs):
+    def __init__(self, structure, isif=2, a_kwargs={}, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
         self.isif = isif
 
@@ -568,7 +569,7 @@ class ElasticSet(DictSet):
     CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
     CONFIG['POTCAR'].update(POTCAR_UPDATES)
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, structure, a_kwargs={}, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
         
         uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
