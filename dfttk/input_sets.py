@@ -103,6 +103,7 @@ class RelaxSet(DictSet):
         self.kwargs = copy.deepcopy(kwargs)
         self.volume_relax = volume_relax
         self.isif = isif
+        self.a_kwargs = a_kwargs
         uis = copy.deepcopy(self.kwargs.get('user_incar_settings', {}))
         new_config = copy.deepcopy(RelaxSet.CONFIG)
         if self.volume_relax and self.isif is not None:
@@ -125,20 +126,20 @@ class RelaxSet(DictSet):
         elif uis['ISPIN']==1:
             if 'MAGMON' in uis.keys(): uis.pop['MAGMOM']
             if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
-        settings = a_kwargs.get('settings', {})
-        relax = settings.get('Relax_settings', None) or uis.get('Relax_settings', None)
-        if relax:
-            for ff in relax:
+        settings = self.a_kwargs.get('settings', {})
+        new_vasp_settings = settings.get('Relax_settings', None) or uis.get('Relax_settings', None)
+        if new_vasp_settings:
+            for ff in new_vasp_settings:
                 if ff.lower()=='prec':
                     if 'ENCUT' in new_config['INCAR']:
                         new_config['INCAR'].pop('ENCUT')
-                    new_config['INCAR'].update({ff:relax.get(ff)})
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='KPAR':
-                    new_config['INCAR'].update({ff:relax.get(ff)})
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='grid_density':
-                    new_config['KPOINTS'].update({ff:relax.get(ff)})
+                    new_config['KPOINTS'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='k_mesh':
-                    kpoints = Kpoints(kpts=relax.get(ff))
+                    kpoints = Kpoints(kpts=new_vasp_settings.get(ff))
                     new_config['KPOINTS'] = kpoints
         #print (new_config)
 
@@ -251,6 +252,8 @@ class ForceConstantsSet(DictSet):
 
     def __init__(self, structure, a_kwargs={}, **kwargs):
         self.kwargs = copy.deepcopy(kwargs)
+        self.a_kwargs = a_kwargs
+
         uis = copy.deepcopy(self.kwargs.get('user_incar_settings', {}))
         new_config = copy.deepcopy(ForceConstantsSet.CONFIG)
         if 'ISPIN' not in uis:
@@ -268,6 +271,7 @@ class ForceConstantsSet(DictSet):
 
         new_config['INCAR'].update(uis)
         from pymatgen.io.vasp.inputs import Kpoints
+        """
         user_kpoints_settings = kwargs.get('user_kpoints_settings', {})
         grid_density = user_kpoints_settings.get('grid_density') or None
         if grid_density is not None:
@@ -275,6 +279,22 @@ class ForceConstantsSet(DictSet):
             new_config['INCAR'].update({'PREC': 'High'})
             kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
             new_config['KPOINTS'] = kpoints
+        """
+        settings = self.a_kwargs.get('settings', {})
+        new_vasp_settings = settings.get('Forceconstant_settings', None) or uis.get('Forceconstant_settings', None)
+        if new_vasp_settings:
+            for ff in new_vasp_settings:
+                if ff.lower()=='prec':
+                    if 'ENCUT' in new_config['INCAR']:
+                        new_config['INCAR'].pop('ENCUT')
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
+                elif ff=='KPAR':
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
+                elif ff=='grid_density':
+                    new_config['KPOINTS'].update({ff:new_vasp_settings.get(ff)})
+                elif ff=='k_mesh':
+                    kpoints = Kpoints(kpts=new_vasp_settings.get(ff))
+                    new_config['KPOINTS'] = kpoints
         else:
             kpoints = Kpoints(kpts=[[3,3,3],])
             new_config['KPOINTS'] = kpoints
@@ -319,7 +339,8 @@ class StaticSet(DictSet):
     def __init__(self, structure, isif=2, a_kwargs={}, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
         self.isif = isif
-        
+        self.a_kwargs = a_kwargs
+
         old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol']
         for k in old_kwargs:
             try:
@@ -344,20 +365,20 @@ class StaticSet(DictSet):
             if 'MAGMON' in uis.keys(): uis.pop['MAGMOM']
             if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
 
-        settings = a_kwargs.get('settings', {})
-        static = settings.get('Static_settings', None) or uis.get('Static_settings', None)
-        if static:
-            for ff in static:
+        settings = self.a_kwargs.get('settings', {})
+        new_vasp_settings = settings.get('Static_settings', None) or uis.get('Static_settings', None)
+        if new_vasp_settings:
+            for ff in new_vasp_settings:
                 if ff.lower()=='prec':
                     if 'ENCUT' in new_config['INCAR']:
                         new_config['INCAR'].pop('ENCUT')
-                    new_config['INCAR'].update({ff:static.get(ff)})
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='KPAR':
-                    new_config['INCAR'].update({ff:static.get(ff)})
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='grid_density':
-                    new_config['KPOINTS'].update({ff:static.get(ff)})
+                    new_config['KPOINTS'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='k_mesh':
-                    kpoints = Kpoints(kpts=static.get(ff))
+                    kpoints = Kpoints(kpts=new_vasp_settings.get(ff))
                     new_config['KPOINTS'] = kpoints
 
         new_config['INCAR'].update(uis)
@@ -571,7 +592,8 @@ class ElasticSet(DictSet):
 
     def __init__(self, structure, a_kwargs={}, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
-        
+        self.a_kwargs = a_kwargs
+
         uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
         new_config = copy.deepcopy(ElasticSet.CONFIG)
         if metal_check(structure): grid_density = 15625
@@ -632,22 +654,23 @@ class ElasticSet(DictSet):
         kpoints = Kpoints(kpts=[[31,31,31],])
         new_config['KPOINTS'] = kpoints
 
-        if 'Relax_settings' in uis:
-            relax = uis['Relax_settings']
-            for ff in relax:
+        from pymatgen.io.vasp.inputs import Kpoints
+        settings = self.a_kwargs.get('settings', {})
+        new_vasp_settings = settings.get('Elastic_settings', None) or uis.get('Elastic_settings', None)
+        if new_vasp_settings:
+            for ff in new_vasp_settings:
                 if ff.lower()=='prec':
                     if 'ENCUT' in new_config['INCAR']:
                         new_config['INCAR'].pop('ENCUT')
-                    new_config['INCAR'].update({ff:relax.get(ff)})
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='KPAR':
-                    new_config['INCAR'].update({ff:relax.get(ff)})
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='grid_density':
-                    new_config['KPOINTS'].update({ff:relax.get(ff)})
+                    new_config['KPOINTS'].update({ff:new_vasp_settings.get(ff)})
                     #kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
                 elif ff=='k_mesh':
-                    kpoints = Kpoints(kpts=relax.get(ff))
+                    kpoints = Kpoints(kpts=new_vasp_settings.get(ff))
                     new_config['KPOINTS'] = kpoints
-        from pymatgen.io.vasp.inputs import Kpoints
 
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:

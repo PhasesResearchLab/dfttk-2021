@@ -306,6 +306,7 @@ def get_wf_crosscom(structure, metadata=None, settings={}, run_num = 0,
     axisa, axisb, axisc, new_deformations = get_constrain(deformation_scheme, new_deformation_fraction) 
 
     fws = []
+    parents_com = []
     for defo in new_deformations:
         struct = scale_lattice_vector(structure, defo, axisa=axisa, axisb=axisb, axisc=axisc)
         full_relax_fw = OptimizeFW(struct, isif=isif, 
@@ -313,13 +314,14 @@ def get_wf_crosscom(structure, metadata=None, settings={}, run_num = 0,
             store_volumetric_data=store_volumetric_data,
             t_kwargs=t_kwargs, a_kwargs=a_kwargs, **common_kwargs, defo=defo)
         fws.append(full_relax_fw)
-    tmp = copy.deepcopy(fws)
+        parents_com.append(full_relax_fw)
+
     if not single_volume:
         check_qha_fw = Firework(Crosscom_EVcheck_QHA(verbose=verbose, stable_tor=stable_tor,
             run_num = run_num,
             store_volumetric_data=store_volumetric_data, a_kwargs=a_kwargs,
             **eos_kwargs, **vasp_kwargs, **t_kwargs, **common_kwargs),
-            parents=tmp, name='{}-Crosscom_EVcheck_QHA'.format(structure.composition.reduced_formula))
+            parents=parents_com, name='{}-Crosscom_EVcheck_QHA'.format(structure.composition.reduced_formula))
         fws.append(check_qha_fw)
 
     wfname = "{}:{}".format(structure.composition.reduced_formula, 'EV_QHA_crosscom')

@@ -324,7 +324,7 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}, db_file=None)
                  override_default_vasp_params=override_default_vasp_params, modify_incar_params=modify_incar_params,
                  modify_kpoints_params=modify_kpoints_params, verbose=verbose, phonon_supercell_matrix_min=phonon_supercell_matrix_min,
                  phonon_supercell_matrix_max=phonon_supercell_matrix_max, optimize_sc=optimize_sc, level=level,
-                 force_phonon=force_phonon, stable_tor=stable_tor, store_volumetric_data=store_volumetric_data'
+                 force_phonon=force_phonon, stable_tor=stable_tor, store_volumetric_data=store_volumetric_data,
                  settings=settings)
     elif WORKFLOW == "born":
         wf = get_wf_borncharge(structure=structure, metadata=metadata, db_file=db_file, isif=2, name="born charge",
