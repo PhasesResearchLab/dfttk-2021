@@ -488,7 +488,7 @@ class BornChargeSet(DictSet):
         #"LCALCEPS": True,  #For Born Effective Charge
         "LRPA": False,
         'EDIFF_PER_ATOM': 1e-6,
-        'ENCUT': 520,  # MP compatibility
+        #'ENCUT': 520,  # MP compatibility
         'ISMEAR': 0,
         "NSW": 0,
         "LORBIT": 11,
@@ -499,6 +499,7 @@ class BornChargeSet(DictSet):
         "LCHARG": False,
         "LWAVE": False,
         "ICHARG": 2,
+        "PREC": "High"
     })
 
     CONFIG['POTCAR_FUNCTIONAL'] = 'PBE'
@@ -540,6 +541,7 @@ class BornChargeSet(DictSet):
             if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
 
         for key in uis.keys():
+            if key == 'ENCUT': continue
             if key not in new_config['INCAR']:
                 if key in {'NELM', 'EDIFF', 'NEDOS', 'KPOINT_BSE'} : continue
                 new_config['INCAR'][key] = uis[key]
@@ -568,7 +570,7 @@ class ElasticSet(DictSet):
     #    'EDIFF_PER_ATOM': 1e-6,
     CONFIG['INCAR'] = {
         'EDIFF': 1e-6,
-        'ENCUT': 520,  # MP compatibility
+        #'ENCUT': 520,  # MP compatibility
         'ISMEAR': -5,
         "IBRION": 2,
         'LREAL': False,
@@ -600,10 +602,7 @@ class ElasticSet(DictSet):
         else: grid_density = 8000
         user_kpoints_settings = kwargs.get('user_kpoints_settings', {})
         grid_density = user_kpoints_settings.get('grid_density') or grid_density
-        """
-        old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', \
-            'user_potcar_functional', 'user_incar_settings']
-        """
+
         old_kwargs = ['prev_incar', 'prev_kpoints', 'grid_density', 'lepsilon', 'lcalcpol', \
             'user_incar_settings', 'user_kpoints_settings']
 
@@ -628,6 +627,7 @@ class ElasticSet(DictSet):
             if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
 
         for key in uis.keys():
+            if key == 'ENCUT': continue
             if key not in new_config['INCAR']:
                 if key in {'NELM', 'EDIFF', 'NEDOS', 'KPOINT_BSE'} : continue
                 new_config['INCAR'][key] = uis[key]
@@ -637,14 +637,15 @@ class ElasticSet(DictSet):
                 new_config['INCAR'][key] = uis[key]
             elif key == 'SIGMA':
                 new_config['INCAR'][key] = uis[key]
-            elif key == 'ENCUT':
-                new_config['INCAR'][key] = uis[key]
+
 
         #avoid conflict betwwen HIHG and ENCUT
+        """
         for key in uis.keys():
             if key == 'PREC':
                 new_config['INCAR'][key] = uis[key]
                 if 'ENCUT' in new_config['INCAR'] : new_config['INCAR'].pop('ENCUT')
+        """
     
         if 'SIGMA' in new_config['INCAR'] and 'ISMEAR' in new_config['INCAR'] :
             if new_config['INCAR']['ISMEAR'] == -5:
