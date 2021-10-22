@@ -183,12 +183,7 @@ def get_wf_singleV(structure, store_volumetric_data=False, metadata=None, overri
             vasp_input_set=None, prev_calc_loc=True, parents=full_relax_fw,
             store_volumetric_data=store_volumetric_data, **common_kwargs)
         fws.append(static_fw)    
-    if metadata is not None and all(x in metadata for x in ('phase_name', 'sublattice_configuration')):
-        # create a nicer name for the workflow
-        subl_config = ':'.join(','.join(subl_comps) for subl_comps in metadata['sublattice_configuration'])
-        wfname = f"{metadata['phase_name']}:{subl_config}:{structure.composition.reduced_formula}"
-    else:
-        wfname = f"unknown:{structure.composition.reduced_formula}:unknown"
+    wfname = "{}:{}".format(structure.composition.reduced_formula, 'singleV')
     wf = Workflow(fws, name=wfname, metadata=metadata)
     return wf
 
