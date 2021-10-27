@@ -507,6 +507,7 @@ class BornChargeSet(DictSet):
 
     def __init__(self, structure, isif=2, a_kwargs={}, **kwargs):
         # pop the old kwargs, backwards compatibility from the complex StaticSet
+        self.a_kwargs = a_kwargs
         self.isif = isif
 
         uis = copy.deepcopy(kwargs.get('user_incar_settings', {}))
@@ -555,6 +556,25 @@ class BornChargeSet(DictSet):
         if 'SIGMA' in new_config['INCAR'] and 'ISMEAR' in new_config['INCAR'] :
             if new_config['INCAR']['ISMEAR'] == -5:
                 new_config['INCAR'].pop('SIGMA')
+
+        from pymatgen.io.vasp.inputs import Kpoints
+        settings = self.a_kwargs.get('settings', {})
+        new_vasp_settings = settings.get('Born_settings', None) or uis.get('Born_settings', None)
+        if new_vasp_settings:
+            for ff in new_vasp_settings:
+                if ff.lower()=='prec':
+                    if 'ENCUT' in new_config['INCAR']:
+                        new_config['INCAR'].pop('ENCUT')
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
+                elif ff=='KPAR':
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
+                elif ff=='grid_density':
+                    new_config['KPOINTS'].update({ff:new_vasp_settings.get(ff)})
+                    #kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
+                elif ff=='k_mesh':
+                    kpoints = Kpoints(kpts=new_vasp_settings.get(ff))
+                    new_config['KPOINTS'] = kpoints
+
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:
             new_config['POTCAR_FUNCTIONAL'] = pot
