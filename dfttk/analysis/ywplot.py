@@ -642,10 +642,11 @@ class thermoplot:
             self.ax.plot(self.x, self.y, fillstyle='none', marker='o', markersize=12,
                 color='k', linestyle='None', label=self._label)
         xnew = np.linspace(min(self.x)*0.95,max(self.x)*1.05, 300)
-        from dfttk.pythelec import BMvol4, BMvol, alt_curve_fit
-        f2, pcov = alt_curve_fit(BMvol4, self.x, self.y)
-        ynew = BMvol(xnew, f2)
-        self.ax.plot(xnew,ynew,'-',linewidth=1,color='b', label="BMvol4")
+        if len(self.x)>=4:
+            from dfttk.pythelec import BMvol4, BMvol, alt_curve_fit
+            f2, pcov = alt_curve_fit(BMvol4, self.x, self.y)
+            ynew = BMvol(xnew, f2)
+            self.ax.plot(xnew,ynew,'-',linewidth=1,color='b', label="BMvol4")
 
 
     def plot_Helmholtz_energy_v0(self):
