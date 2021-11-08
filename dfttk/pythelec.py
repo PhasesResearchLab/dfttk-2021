@@ -1436,6 +1436,8 @@ class thelecMDB():
             except:
                 if self.static_vasp_version[0:1] >= '6':
                     self.force_constant_factor = 0.004091649655126895
+                else:
+                    self.force_constant_factor = 1.0
 
             if i['volume'] not in self.volumes: continue
             voldir = self.get_superfij(i, phdir)
@@ -1658,7 +1660,7 @@ class thelecMDB():
         for i in vasp_version:
             v = i['calcs_reversed'][0]['vasp_version']
             if self.static_vasp_version is None: self.static_vasp_version = v
-            elif v[0:1]!=self.static_vasp_version[0:1]:
+            elif v[0:3]!=self.static_vasp_version[0:3]:
                 print("\n***********FETAL messing up calculation! please remove:", self.tag, "\n")
         if self.static_vasp_version is not None:
             print("\nvasp version for the static calculation is:", self.static_vasp_version, " for ", self.tag, "\n")

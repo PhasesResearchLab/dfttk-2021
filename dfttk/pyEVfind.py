@@ -191,8 +191,8 @@ class EVfindMDB ():
             if not os.path.exists(folder): os.mkdir(folder)
             self.num_Born = 0
             self.get_data(folder, EV, mm)
-            sys.stdout.write('{}, static: {:>2}, natoms: {:>3}, Born: {}, {}\n'.format(metadata, \
-                count[i], EV['natoms'], self.num_Born, phases[i]))
+            sys.stdout.write('{}, static: {:>2}, natoms: {:>3}, phonon: {:>2}, Born: {}, {}\n'.format(metadata, \
+                count[i], EV['natoms'], self.num_phonon, self.num_Born, phases[i]))
             with open (os.path.join(folder,'POSCAR'), 'w') as fp:
                 fp.write(POSCAR)
             readme = {}
@@ -259,15 +259,35 @@ class EVfindMDB ():
             os.mkdir(phdir)
 
         self.num_Born = self.get_dielecfij(phdir, tag)
+        vasp_version = list(self.vasp_db.db['tasks'].find({'$and':[ {'metadata.tag': tag}, { 'calcs_reversed': { '$exists': True } }]}))
+        self.static_vasp_version = None
+        for i in vasp_version:
+            v = i['calcs_reversed'][0]['vasp_version']
+            #print ("xxxxxxxx", v)
+            if self.static_vasp_version is None: self.static_vasp_version = v
+            """
+            elif v[0:3]!=self.static_vasp_version[0:3]:
+                print("\n***********FETAL messing up calculation! please remove:", tag, "\n")
+            """
+        """
+        if self.static_vasp_version is not None:
+            print("\nvasp version for the static calculation is:", self.static_vasp_version, " for ", tag, "\n")
+        """
+        
+        self.num_phonon = 0
         for i in (self.vasp_db).db['phonon'].find({'metadata.tag': tag}):
             try:
                 self.force_constant_factor = i['force_constant_factor']
             except:
                 if self.static_vasp_version[0:1] >= '6':
                     self.force_constant_factor = 0.004091649655126895
+                else:
+                    self.force_constant_factor = 1.0
 
             if i['volume'] not in EV['volumes']: continue
+            self.num_phonon += 1
             voldir = self.get_superfij(i, phdir, EV['volumes'], EV['energies'])
+
 
 
     def get_superfij(self,i, phdir, volumes, energies):
