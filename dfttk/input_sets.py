@@ -134,14 +134,13 @@ class RelaxSet(DictSet):
                     if 'ENCUT' in new_config['INCAR']:
                         new_config['INCAR'].pop('ENCUT')
                     new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
-                elif ff=='KPAR':
-                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='grid_density':
                     new_config['KPOINTS'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='k_mesh':
                     kpoints = Kpoints(kpts=new_vasp_settings.get(ff))
                     new_config['KPOINTS'] = kpoints
-        #print (new_config)
+                else:
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
 
         new_config['INCAR'].update(uis)
         pot = self.kwargs.get('user_potcar_functional', None)
@@ -288,13 +287,13 @@ class ForceConstantsSet(DictSet):
                     if 'ENCUT' in new_config['INCAR']:
                         new_config['INCAR'].pop('ENCUT')
                     new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
-                elif ff=='KPAR':
-                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='grid_density':
                     new_config['KPOINTS'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='k_mesh':
                     kpoints = Kpoints(kpts=new_vasp_settings.get(ff))
                     new_config['KPOINTS'] = kpoints
+                else:
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
         else:
             kpoints = Kpoints(kpts=[[3,3,3],])
             new_config['KPOINTS'] = kpoints
@@ -373,13 +372,13 @@ class StaticSet(DictSet):
                     if 'ENCUT' in new_config['INCAR']:
                         new_config['INCAR'].pop('ENCUT')
                     new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
-                elif ff=='KPAR':
-                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='grid_density':
                     new_config['KPOINTS'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='k_mesh':
                     kpoints = Kpoints(kpts=new_vasp_settings.get(ff))
                     new_config['KPOINTS'] = kpoints
+                else:
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
 
         new_config['INCAR'].update(uis)
         pot = self.kwargs.get('user_potcar_functional', None)
@@ -566,14 +565,13 @@ class BornChargeSet(DictSet):
                     if 'ENCUT' in new_config['INCAR']:
                         new_config['INCAR'].pop('ENCUT')
                     new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
-                elif ff=='KPAR':
-                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='grid_density':
                     new_config['KPOINTS'].update({ff:new_vasp_settings.get(ff)})
-                    #kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
                 elif ff=='k_mesh':
                     kpoints = Kpoints(kpts=new_vasp_settings.get(ff))
                     new_config['KPOINTS'] = kpoints
+                else:
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
 
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:
@@ -684,14 +682,13 @@ class ElasticSet(DictSet):
                     if 'ENCUT' in new_config['INCAR']:
                         new_config['INCAR'].pop('ENCUT')
                     new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
-                elif ff=='KPAR':
-                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='grid_density':
                     new_config['KPOINTS'].update({ff:new_vasp_settings.get(ff)})
-                    #kpoints = Kpoints.automatic_gamma_density(structure, grid_density)
                 elif ff=='k_mesh':
                     kpoints = Kpoints(kpts=new_vasp_settings.get(ff))
                     new_config['KPOINTS'] = kpoints
+                else:
+                    new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
 
         pot = self.kwargs.get('user_potcar_functional', None)
         if pot:
