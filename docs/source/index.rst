@@ -161,7 +161,7 @@ The solution is to make the best use of `ISIF <https://cms.mpi.univie.ac.at/vasp
     CONTRIBUTING.rst
     RELEASING.rst
     recipes.rst
-    faq.rst
+    faq.rstt
     Acknowledgements.rst
 
 Indices and tables
