@@ -1462,7 +1462,7 @@ class thelecMDB():
                 if self.debug:
                     _nqwave = "-nqwave "+ str(1.e4)
                 #md = "Yphon -tranI 2 -DebCut 0.5 " +_nqwave+ " <superfij.out"
-                cmd = "Yphon -DebCut 0.5 " +_nqwave+ " <superfij.out"
+                cmd = "Yphon -DebCut 0.5 -thr2 0.001 " +_nqwave+ " <superfij.out"
                 if has_Born: cmd += " -Born dielecfij.out"
                 print(cmd, " at ", voldir)
                 output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -1522,7 +1522,7 @@ class thelecMDB():
                 _nqwave = ""
                 if self.debug:
                     _nqwave = "-nqwave "+ str(1.e4)
-                cmd = "Yphon -tranI 2 -DebCut 0.5 " +_nqwave+ " <superfij.out"
+                cmd = "Yphon -tranI 2 -DebCut 0.5 -thr2 0.001 " +_nqwave+ " <superfij.out"
                 print(cmd, " at ", dir)
                 output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
