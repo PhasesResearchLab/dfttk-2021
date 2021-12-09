@@ -71,6 +71,23 @@ Following are the steps of adding API key number on DFTTK.
     a reason that was not caught and handled by Custodian. Check the output files in the 
     launch directory and see if there are any errors in the VASP output or stdout/stderr.
 
+atomate issue
+=============
+
+    atomate not compatible with pymongo >=4.0, you can sovle it by::
+
+    pip uninstall pymongo
+
+    pip install pymongo==3.11.3
+
+    pip uninstall maggma
+
+    pip install maggma==0.26.0
+
+fireworks issue
+===============
+
+    fireworks>=1.9.5 requires UTF-8 for for Windows, you should turn it on Windows setting (system locale) 
 
 pymatgen 2021 issue
 ===================

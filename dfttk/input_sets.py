@@ -683,7 +683,7 @@ class ElasticSet(DictSet):
                         new_config['INCAR'].pop('ENCUT')
                     new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='grid_density':
-                    new_config['KPOINTS'].update({ff:new_vasp_settings.get(ff)})
+                    new_config['KPOINTS']={ff:new_vasp_settings.get(ff)}
                 elif ff=='k_mesh':
                     kpoints = Kpoints(kpts=new_vasp_settings.get(ff))
                     new_config['KPOINTS'] = kpoints
