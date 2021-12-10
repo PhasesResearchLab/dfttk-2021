@@ -585,6 +585,12 @@ class ElasticSet(DictSet):
     Kpoints have a 6000 reciprocal density default.
     """
     CONFIG = _load_yaml_config("MPRelaxSet")
+
+    CONFIG['KPOINTS'].update({
+        'grid_density': 8000,
+    })
+    CONFIG['KPOINTS'].pop('reciprocal_density')  # to be explicit
+
     #    'EDIFF_PER_ATOM': 1e-6,
     CONFIG['INCAR'] = {
         'EDIFF': 1e-6,
@@ -668,14 +674,15 @@ class ElasticSet(DictSet):
         if 'SIGMA' in new_config['INCAR'] and 'ISMEAR' in new_config['INCAR'] :
             if new_config['INCAR']['ISMEAR'] == -5:
                 new_config['INCAR'].pop('SIGMA')
-                
-        from pymatgen.io.vasp.inputs import Kpoints
-        kpoints = Kpoints(kpts=[[31,31,31],])
-        new_config['KPOINTS'] = kpoints
 
         from pymatgen.io.vasp.inputs import Kpoints
         settings = self.a_kwargs.get('settings', {})
         new_vasp_settings = settings.get('Elastic_settings', None) or uis.get('Elastic_settings', None)
+                
+        if 'grid_density' not in new_vasp_settings:
+            kpoints = Kpoints(kpts=[[31,31,31],])
+            new_config['KPOINTS'] = kpoints
+
         if new_vasp_settings:
             for ff in new_vasp_settings:
                 if ff.lower()=='prec':
@@ -683,7 +690,7 @@ class ElasticSet(DictSet):
                         new_config['INCAR'].pop('ENCUT')
                     new_config['INCAR'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='grid_density':
-                    new_config['KPOINTS']={ff:new_vasp_settings.get(ff)}
+                    new_config['KPOINTS'].update({ff:new_vasp_settings.get(ff)})
                 elif ff=='k_mesh':
                     kpoints = Kpoints(kpts=new_vasp_settings.get(ff))
                     new_config['KPOINTS'] = kpoints
