@@ -307,7 +307,7 @@ class ElasticTensorToDb(FiretaskBase):
         if vasp_input_set:
             from pymatgen.io.vasp.inputs import Kpoints
             d['vasp_input_set_all'] = vasp_input_set.config
-            if isinstance(new_config['KPOINTS'], Kpoints):
+            if isinstance(vasp_input_set.config['KPOINTS'], Kpoints):
                 d['vasp_input_set'] = {'INCAR':vasp_input_set.config['INCAR'], \
                 'KPOINTS':vasp_input_set.config['KPOINTS'].as_dict()}
             else:
