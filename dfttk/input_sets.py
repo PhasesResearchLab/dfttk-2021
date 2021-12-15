@@ -103,7 +103,21 @@ class RelaxSet(DictSet):
         self.kwargs = copy.deepcopy(kwargs)
         self.volume_relax = volume_relax
         self.isif = isif
-        self.a_kwargs = a_kwargs
+        self.a_kwargs = copy.deepcopy(a_kwargs)
+            
+        if isif>4:
+            if 'user_incar_settings' in self.kwargs:
+                if 'EDIFFG' in self.kwargs['user_incar_settings']:
+                    self.kwargs['user_incar_settings'].pop('EDIFFG')
+
+            if 'settings' in self.a_kwargs:
+                try:
+                    for _key in self.a_kwargs['settings']:
+                        if 'EDIFFG' in self.a_kwargs['settings'][_key]:
+                            self.a_kwargs['settings'][_key].pop('EDIFFG')
+                except:
+                    pass
+
         uis = copy.deepcopy(self.kwargs.get('user_incar_settings', {}))
         new_config = copy.deepcopy(RelaxSet.CONFIG)
         if self.volume_relax and self.isif is not None:
@@ -126,6 +140,7 @@ class RelaxSet(DictSet):
         elif uis['ISPIN']==1:
             if 'MAGMON' in uis.keys(): uis.pop['MAGMOM']
             if 'MAGMON' in new_config['INCAR']: new_config['INCAR'].pop['MAGMOM']
+
         settings = self.a_kwargs.get('settings', {})
         new_vasp_settings = settings.get('Relax_settings', None) or uis.get('Relax_settings', None)
         if new_vasp_settings:
