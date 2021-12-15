@@ -77,17 +77,21 @@ class OptimizeFW(Firework):
             
         tmp = copy.deepcopy(override_default_vasp_params)
         if isif>4:
-            for _key in tmp:
-                if 'EDIFFG' in tmp[_key]:
-                    tmp[_key].pop('EDIFFG')
             if 'user_incar_settings' in tmp:
                 if 'EDIFFG' in tmp['user_incar_settings']:
                     tmp['user_incar_settings'].pop('EDIFFG')
 
+        tmp_a_kwargs = copy.deepcopy(a_kwargs)
+        if isif>4:
+            if 'settings' in tmp_a_kwargs:
+                for _key in tmp_a_kwargs['settings']:
+                    if 'EDIFFG' in tmp_a_kwargs['settings'][_key]:
+                        tmp_a_kwargs['settings'][_key].pop('EDIFFG')
+
         override_symmetry_tolerances = override_symmetry_tolerances or {}
 
         vasp_input_set = vasp_input_set or RelaxSet(structure, isif=isif, force_gamma=force_gamma,
-                                            a_kwargs=a_kwargs, **tmp)
+                                            a_kwargs=tmp_a_kwargs, **tmp)
         site_properties = deepcopy(structure).site_properties
 
         t = []
