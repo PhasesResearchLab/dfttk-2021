@@ -105,7 +105,11 @@ class RelaxSet(DictSet):
         self.isif = isif
         self.a_kwargs = copy.deepcopy(a_kwargs)
             
-        if isif>4:
+        if self.volume_relax and self.isif is not None:
+            raise ValueError("isif cannot have a value while volume_relax is True.")
+    
+        no_position_relax = self.isif is None or self.isif>4
+        if self.volume_relax or no_position_relax:
             if 'user_incar_settings' in self.kwargs:
                 if 'EDIFFG' in self.kwargs['user_incar_settings']:
                     self.kwargs['user_incar_settings'].pop('EDIFFG')
@@ -120,11 +124,9 @@ class RelaxSet(DictSet):
 
         uis = copy.deepcopy(self.kwargs.get('user_incar_settings', {}))
         new_config = copy.deepcopy(RelaxSet.CONFIG)
-        if self.volume_relax and self.isif is not None:
-            raise ValueError("isif cannot have a value while volume_relax is True.")
+
         if self.volume_relax:
             uis.update({'ISIF': 7})
-            #uis['ISIF'] = 7
         if self.isif is not None:
             uis.update({'ISIF': self.isif})
 
