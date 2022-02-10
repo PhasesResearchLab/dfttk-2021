@@ -695,7 +695,7 @@ class ElasticSet(DictSet):
         from pymatgen.io.vasp.inputs import Kpoints
         settings = self.a_kwargs.get('settings', {})
         new_vasp_settings = settings.get('Elastic_settings', None) or uis.get('Elastic_settings', None)
-                
+        
         if 'grid_density' not in new_vasp_settings:
             kpoints = Kpoints(kpts=[[31,31,31],])
             new_config['KPOINTS'] = kpoints

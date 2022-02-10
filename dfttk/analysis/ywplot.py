@@ -2367,19 +2367,30 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None, local=None):
     ydir = os.path.join(folder,'..')
 
   vdict = {}
+  emin = 1.0e36
   for root, dirs, files in os.walk(ydir):
     for dir in dirs:
       poscar = os.path.join(ydir,dir,'POSCAR')
+
       if os.path.exists(poscar):
         structure = Structure.from_file(poscar)
         vol = 'V{:010.6f}'.format(structure.volume)
         vdict[vol]=dir
-  try:
-    natom = len(structure.sites)
-    sa = SpacegroupAnalyzer(structure)
-    ngroup = sa.get_space_group_number()
-  except:
-    return
+        oszicar = os.path.join(ydir,dir, 'OSZICAR')
+        if not os.path.exists(poscar): continue
+        with open(oszicar,"r") as fp:
+          lines = fp.readlines()
+          for line in lines:
+            dat = [s for s in line.split() if s!=""]
+            if len(dat) < 5: continue
+            if dat[1]!="F=" or dat[3]!="E0=": continue
+            e = float(dat[4])
+            if e < emin:
+              emin = e
+              natom = len(structure.sites)
+              sa = SpacegroupAnalyzer(structure)
+              ngroup = sa.get_space_group_number()
+              print("xxxxxxxxxxxxx", ngroup)
 
   #print(natom,ngroup)
   i1 = 0
