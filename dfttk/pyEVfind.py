@@ -22,7 +22,7 @@ from atomate.vasp.database import VaspCalcDb
 from dfttk.analysis.ywutils import formula2composition, reduced_formula
 from dfttk.analysis.ywplot import myjsonout, thermoplot
 from dfttk.utils import sort_x_by_y
-from dfttk.analysis.ywutils import get_rec_from_metatag
+from dfttk.analysis.ywutils import get_rec_from_metatag, get_used_pot
 
 class EVfindMDB ():
     """
@@ -40,7 +40,9 @@ class EVfindMDB ():
     """
     def __init__(self, args, vasp_db):
         self.vasp_db = vasp_db
-        self.items = (self.vasp_db).collection.find({'adopted': True})
+        self.qhamode = args.qhamode
+        #self.items = (self.vasp_db).collection.find({'adopted': True})
+        #print(self.hit_condition)
         self.within = []
         self.containall = []
         self.containany = []
@@ -49,14 +51,53 @@ class EVfindMDB ():
         self.nV = args.nV
         self.print = args.print
         self.plot = args.plot
+        self.natoms = args.natoms
         self.findbandgap = args.findbandgap
+        self.metatag = args.metatag
         if args.within is not None: self.within, tmp = formula2composition(args.within)
         if args.containall is not None: self.containall, tmp = formula2composition(args.containall)
         if args.containany is not None: self.containany, tmp = formula2composition(args.containany)
         if args.excludeall is not None: self.excludeall, tmp = formula2composition(args.excludeall)
+        if args.excludeany is not None: self.excludeany, tmp = formula2composition(args.excludeany)
 
-    def skipby(self, phase):
-        els,tmp = formula2composition(phase.split('_')[0])
+        search_condition = [{'output.structure.lattice.volume': {'$exists': True}}, {'metadata': {'$exists': True}}]
+        if len(self.containall)!=0:
+            search_condition.append({"elements":{"$all":self.containall}})
+        if len(self.containany)!=0:
+            search_condition.append({"elements":{"$in":self.containany}})
+        if len(self.excludeany)!=0:
+            search_condition.append({"elements":{"$nin":self.excludeany}})
+        #print (search_condition)
+        self.items = (self.vasp_db).collection.find({'$and':search_condition},\
+            {'metadata':1, 'output':1, 'input':1, 'orig_inputs':1, 'elements':1})
+
+        scondition = []
+        if len(search_condition) > 1:
+            metadata_list =  (self.vasp_db).collection.find({'$and':search_condition},{'metadata':1})
+            metadata_list = list(set([i['metadata']['tag'] for i in metadata_list]))
+            metadata_list = [{'tag':i} for i in metadata_list]
+            scondition.append({"metadata":{"$in":metadata_list}})
+        
+        if self.qhamode=='phonon':
+            scondition.extend([{'adopted': True}, {"S_vib": { "$exists": True } }])
+            hit_condition = list((self.vasp_db).db['phonon'].find({'$and':scondition},{'metadata':1}))
+        elif self.qhamode=='debye':
+            scondition.append({"debye": { "$exists": True } })
+            hit_condition = list((self.vasp_db).db['qha'].find({'$and':scondition},{'metadata':1}))
+        else:
+            hit_condition = None
+            
+        if hit_condition is not None:
+            metadata = [i['metadata']['tag'] for i in hit_condition]
+            self.hit_condition = list(set(metadata))
+            self.hit_count = {i:metadata.count(i) for i in metadata}
+        else: self.hit_condition = None
+
+    def skipby(self, phase, metatag, els=None):
+        if self.metatag!=None:
+            if self.metatag!=metatag: return True
+        if els is None:
+            els,tmp = formula2composition(phase.split('_')[0])
         if len (self.within) != 0:
             for e in els:
                 if e not in self.within: return True
@@ -83,16 +124,22 @@ class EVfindMDB ():
 
 
     def EV_find(self):
+        evdirhome = 'E-V'
+        if not os.path.exists(evdirhome): os.mkdir(evdirhome)
+
         hit = []
         count = []
         phases = []
         volumes = []
         ITEMS = []
+        potname = []
+        fp_ev = open(os.path.join(evdirhome,"E-V.dat"),"w")
         for i in self.items:
-            try:
-                mm = i['metadata']['tag']
-            except:
-                continue
+            mm = i['metadata']['tag']
+            els = i['elements']
+            if self.skipby("", mm, els=els): continue
+            if self.hit_condition is not None:
+                if mm not in self.hit_condition: continue
             if mm in hit:
                 volume = i['output']['structure']['lattice']['volume']
                 if volume not in volumes[hit.index(mm)]:
@@ -104,24 +151,9 @@ class EVfindMDB ():
                 count.append(1)
                 volumes.append([i['output']['structure']['lattice']['volume']])
 
-                pot = i['input']['pseudo_potential']['functional'].upper()
-                if pot=="":
-                    pot = i['orig_inputs']['potcar']['functional'].upper()
-                    if pot=='Perdew-Zunger81'.upper(): pot="LDA"
-
-                try:
-                    pot += "+"+i['input']['GGA']
-                except:
-                    pass
-
-                if i['input']['is_hubbard']: pot+= '+U'
-                try:
-                    if i['input']['incar']['LSORBIT']: potsoc = pot +"SOC"
-                except:
-                    potsoc = pot
+                potsoc = get_used_pot(i)
 
                 structure = Structure.from_dict(i['output']['structure'])
-                natoms = len(structure.sites)
                 formula_pretty = structure.composition.reduced_formula
                 try:
                     formula2composition(formula_pretty)
@@ -129,7 +161,8 @@ class EVfindMDB ():
                     formula_pretty = reduced_formula(structure.composition.alphabetical_formula)
                 sa = SpacegroupAnalyzer(structure)
                 phasename = formula_pretty+'_'\
-                    + sa.get_space_group_symbol().replace('/','.')+'_'+str(sa.get_space_group_number())+potsoc
+                    + sa.get_space_group_symbol().replace('/','.')+'_'+str(sa.get_space_group_number())
+                potname.append(potsoc)
 
                 if phasename in phases:
                     for jj in range (10000):
@@ -139,16 +172,24 @@ class EVfindMDB ():
                         break
                 phases.append(phasename)
 
-        for i,m in enumerate(hit):
+        blank_lines = False
+        for i,mm in enumerate(hit):
+            if self.hit_condition is not None:
+                if mm not in self.hit_condition: continue
+                if self.qhamode == 'phonon':
+                    if self.hit_count[mm] < self.nV: continue
             if count[i]<self.nV: continue
-            if self.skipby(phases[i]): continue
-            metadata = {'tag':m}
-            sys.stdout.write('{}, static: {:>2}, {}\n'.format(metadata, count[i], phases[i]))
-            EV, POSCAR, INCAR = get_rec_from_metatag(self.vasp_db, m)
+            if self.skipby(phases[i], mm): continue
+            EV, POSCAR, INCAR = get_rec_from_metatag(self.vasp_db, mm)
+            metadata = {'tag':mm}
+            pname = phases[i].split('#')
+            if len(pname)>1: phases[i] = pname[0]+potname[i]+EV['MagState']+'#'+pname[1]
+            else: phases[i] = pname[0]+potname[i]+EV['MagState']
+            if EV['natoms'] < self.natoms: continue
+            
+            sys.stdout.write('{}, static: {:>2}, natoms: {:>3}, {}\n'.format(metadata, count[i], EV['natoms'], phases[i]))
 
-            evdir = 'E-V'
-            if not os.path.exists(evdir): os.mkdir(evdir)
-            folder = os.path.join(evdir,phases[i])
+            folder = os.path.join(evdirhome,phases[i])
             if not os.path.exists(folder): os.mkdir(folder)
             with open (os.path.join(folder,'POSCAR'), 'w') as fp:
                 fp.write(POSCAR)
@@ -156,7 +197,56 @@ class EVfindMDB ():
             readme['E-V'] = EV
             readme['INCAR'] = INCAR
             readme['POSCAR'] = POSCAR
+            natoms = readme['E-V']['natoms']
             with open (os.path.join(folder,'readme'), 'w') as fp:
                 myjsonout(readme, fp, indent="", comma="")
+            i_energies = np.array(EV['energies'])/natoms
+            i_volumes = np.array(EV['volumes'])/natoms
+            val, idx = min((val, idx) for (idx, val) in enumerate(i_energies))
+            if blank_lines: print("\n", file=fp_ev)
+            blank_lines=True
+            print("#phase:", phases[i], file=fp_ev)
+            print("#metadata:", mm, file=fp_ev)
+            print("#natoms:", natoms, file=fp_ev)
+            elist = ['Fe','Cu', 'Se', 'Al', 'Ni', 'Co', 'Pt', 'Ta', 'O']
+            el = []
+            nel = []
+            if len(EV['magmoms'])>0:
+                fp_ev.write("#magmoms:")
+                magmoms = EV['magmoms'][idx]
+                m0 = magmoms[0]
+                n0 = 1
+                for j in range(1,len(magmoms)):
+                    if magmoms[j] == m0:
+                        n0 += 1
+                    else:
+                        if n0==1: fp_ev.write('{},'.format(m0))
+                        else: fp_ev.write('{}*{},'.format(n0,m0))
+                        idx = len(el)%len(elist)
+                        el.append(elist[idx])
+                        nel.append(n0)
+                        n0 = 1
+                        m0 = magmoms[j]
+                if n0==1: fp_ev.write('{}\n'.format(m0))
+                else: fp_ev.write('{}*{}\n'.format(n0,m0))
+                idx = len(el)%len(elist)
+                el.append(elist[idx])
+                nel.append(n0)
 
-            thermoplot(folder,"0 K total energies (eV/atom)",EV['volumes'], EV['energies'])
+                lines = [l for l in POSCAR.split('\n') if l!=""]
+                with open (os.path.join(folder,phases[i]+'.VASP'), 'w') as fp:
+                    for j in range(0,5):
+                        print(lines[j], file=fp)
+                    for j in range(len(el)):
+                        fp.write(' {}'.format(el[j]))
+                    fp.write('\n')
+                    for j in range(len(nel)):
+                        fp.write(' {}'.format(nel[j]))
+                    fp.write('\n')
+                    print(lines[7], file=fp)
+                    for j in range(8,len(lines)):
+                        print(lines[j], float(list(magmoms[j-8].values())[0]), file=fp)
+
+            for j in range(len(i_volumes)):
+                print(i_volumes[j], i_energies[j],  file=fp_ev)
+            thermoplot(folder,"0 K total energies (eV/atom)", i_volumes, i_energies)

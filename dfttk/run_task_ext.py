@@ -11,20 +11,43 @@ from atomate.vasp.firetasks.run_calc import RunVaspCustodian
 from pymatgen.core import Structure
 import socket
 import pytz
-from dfttk.pythelec import get_code_version
+from dfttk.analysis.ywutils import get_code_version
 
 
-def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
-    try:
-        store_raw_vasprunxml = override_default_vasp_params['user_incar_settings']['store_raw_vasprunxml']
-    except:
-        store_raw_vasprunxml = False
+#exculde the case of HF and METAGGA calculations since non-scf calculations cannot be simply run
+def excludeCase_v0(kmesh_factor):
+    with open ("INCAR", "r") as fp:
+        lines = fp.readlines()
+    for line in lines:
+        if line.upper().startswith("METAGGA") : return 1
+        elif line.upper().startswith("LHFCALC") :
+            l = line.upper().replace("="," ").replace("."," ")
+            ff = [f for f in l.split(" ") if f!=""]
+            if ff[1].startswith("T") : return 1
+    return kmesh_factor
+
+
+def get_kmesh_factor(override_default_vasp_params, vasp_input_set):
+    user_incar_settings = override_default_vasp_params.get('user_incar_settings', {})
+    store_raw_vasprunxml = user_incar_settings.get('store_raw_vasprunxml', False)
+    
     if type(store_raw_vasprunxml)==int: kmesh_factor = store_raw_vasprunxml
-    elif type(store_raw_vasprunxml)==bool: 
-        if store_raw_vasprunxml: kmesh_factor = 2
-        else : kmesh_factor = 0
-    else: kmesh_factor = 0
-#    print ("eeeeeeeeeeeeeeee", store_raw_vasprunxml, kmesh_factor)
+    elif store_raw_vasprunxml is True: kmesh_factor = 2
+    else : return 0
+
+    for k in user_incar_settings:
+        if k.upper() in ["METAGGA", "LHFCALC"] : return 1
+
+    if kmesh_factor >= 2:
+        user_incar_settings = vasp_input_set.config['INCAR'] or {}
+        for k in user_incar_settings:
+            if k.upper() in ["METAGGA", "LHFCALC"] : return 1
+
+    return kmesh_factor
+
+
+def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params,vasp_input_set):
+    kmesh_factor = get_kmesh_factor(override_default_vasp_params, vasp_input_set)
     if kmesh_factor > 1:
         t.append(nonscalc(kmesh_factor=kmesh_factor))
         t.append(RunVaspCustodian(vasp_cmd=vasp_cmd, auto_npar=">>auto_npar<<", gzip_output=False))
@@ -32,7 +55,7 @@ def run_task_ext(t,vasp_cmd,db_file,structure,tag,override_default_vasp_params):
             tag=tag, xml="vasprun.xml", kmesh_factor = kmesh_factor))
     elif kmesh_factor == 1:
         t.append(InsertXMLToDb(db_file=db_file, structure=structure, 
-            tag=tag, xml="vasprun.xml", kmesh_factor = 1))
+            tag=tag, xml="vasprun.xml", kmesh_factor = kmesh_factor))
 
 
 @explicit_serialize

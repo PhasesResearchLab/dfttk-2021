@@ -305,9 +305,9 @@ class ElasticTensorToDb(FiretaskBase):
         }
         vasp_input_set = env_chk(self.get('vasp_input_set'), False)
         if vasp_input_set:
-            d['vasp_input_set_all'] = vasp_input_set.CONFIG
-            d['vasp_input_set'] = {'INCAR':vasp_input_set.CONFIG['INCAR'], \
-            'KPOINTS':vasp_input_set.CONFIG['KPOINTS'].as_dict()}
+            d['vasp_input_set_all'] = vasp_input_set.config
+            d['vasp_input_set'] = {'INCAR':vasp_input_set.config['INCAR'], \
+            'KPOINTS':vasp_input_set.config['KPOINTS'].as_dict()}
 
         # Get optimized structure
         calc_locs_opt = [cl for cl in fw_spec.get('calc_locs', []) if 'optimiz' in cl['name']]
@@ -401,11 +401,14 @@ class ElasticTensorToDb(FiretaskBase):
                 "ieee_format": ieee.voigt
             }
         })
-        if order == 2:
-            d.update({"derived_properties": ieee.get_structure_property_dict(ref_struct)})
-        else:
-            soec = ElasticTensor(ieee[0])
-            d.update({"derived_properties": soec.get_structure_property_dict(ref_struct)})
+        try:
+            if order == 2:
+                d.update({"derived_properties": ieee.get_structure_property_dict(ref_struct)})
+            else:
+                soec = ElasticTensor(ieee[0])
+                d.update({"derived_properties": soec.get_structure_property_dict(ref_struct)})
+        except:
+            pass
 
         d["formula_pretty"] = ref_struct.composition.reduced_formula
         d['last_updated'] = datetime.utcnow()

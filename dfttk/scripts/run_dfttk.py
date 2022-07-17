@@ -16,6 +16,9 @@ import copy
 import os
 import sys
 import shutil
+import glob
+
+from atomate.vasp.config import VASP_CMD, DB_FILE
 
 
 def get_abspath(path):
@@ -65,11 +68,10 @@ def get_structure_file(STR_FOLDER=".", RECURSIVE=False, MATCH_PATTERN="*"):
         if RECURSIVE:
             STR_FILES = recursive_glob(STR_FOLDER, MATCH_PATTERN)
         else:
-            STR_FILES = os.listdir(STR_FOLDER)
+            STR_FILES = glob.glob(os.path.join(STR_FOLDER,MATCH_PATTERN))
             for file_i in STR_FILES:
                 if os.path.isdir(file_i):
                     STR_FILES.remove(file_i)
-            STR_FILES = [os.path.join(STR_FOLDER, file_i) for file_i in STR_FILES]
     return STR_FILES
 
 def get_user_settings(STR_FILENAME, STR_PATH="./", NEW_SETTING="SETTINGS"):
@@ -106,7 +108,52 @@ def get_user_settings(STR_FILENAME, STR_PATH="./", NEW_SETTING="SETTINGS"):
                         "http://guide.materialsvirtuallab.org/monty/monty.serialization.html#monty.serialization.loadfn")
     return user_settings
 
-def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
+def parse_magmom(magmom=None, nvalue=0):
+    if magmom is None: return None
+    mm = []
+    i = 0
+    while i < len(magmom):
+        m = magmom[i]
+        n = str(m).replace(' ','').split('*')
+        if len(n)==1: mm.append(float(m))
+        else:
+            nn = int(n[0])
+            nsub = []
+            if n[1].startswith('('):
+                if n[1].endswith(')'):
+                    nsub.append(n[1].replace('(','').replace(')',''))
+                else:
+                    nsub.append(n[1].replace('(',''))
+                while i+1 < len(magmom):
+                    i += 1
+                    if magmom[i].endswith(')'):
+                        nsub.append(magmom[i].replace(')',''))
+                        break
+                    else:
+                        nsub.append(magmom[i])
+            else: nsub.append(n[1])
+
+            for k in range(nn):
+                for j in range(len(nsub)):
+                    mm.append(float(nsub[j]))            
+        i += 1
+    if len(mm)==nvalue*3:
+        _mm = []
+        for i in range(len(mm)):
+            _mm.append(mm[i*3:(i+1)*3])
+        mm = _mm
+    """
+    mm = []
+    for m in magmom:
+        n = str(m).split('*')
+        if len(n)==1: mm.append(float(m))
+        else:
+            for i in range(int(n[0])):
+                mm.append(float(n[1]))
+    """
+    return mm
+
+def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}, db_file=None):
     """
     Get a single workflow
 
@@ -122,13 +169,16 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     ################ PARAMETERS FOR WF #############################
     #str, the absolute path of db.json file, e.g. /storage/home/mjl6505/atomate/config/db.json
     #  If None, it will use the configuration in fireworks
-    db_file = settings.get('db_file', None)
+    if db_file is None:
+        db_file = settings.get('db_file', None)
     #list, the MAGMOM of the structure, e.g. [4.0, 4.0, -4.0, -4.0]
     magmom = settings.get('magmom', None)
+    magmom = parse_magmom(magmom=magmom, nvalue=len(structure.sites))
+
     #int, the number of initial deformations, e.g. 7
     num_deformations = settings.get('num_deformations', 7)
     #list/tuple(min, max) or float(-max, max), the maximum amplitude of deformation, e.g. (-0.15, 0.15) means (0.95, 1.1) in volume
-    deformation_fraction = settings.get('deformation_fraction', (-0.15, 0.15))
+    deformation_fraction = settings.get('deformation_fraction', (-0.15, 0.20))
     #float, minimum ratio of Volumes spacing, e.g. 0.05
     volume_spacing_min = settings.get('volume_spacing_min', 0.05)
     #bool, run phonon(True) or not(False)
@@ -175,10 +225,6 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     #override_default_vasp_params = {'user_incar_settings': {}, 'user_kpoints_settings': {}, 'user_potcar_functional': str}
     #If some value in 'user_incar_settings' is set to None, it will use vasp's default value
     override_default_vasp_params = settings.get('override_default_vasp_params', {})
-    #check if fworker_name is assigned
-    powerups = settings.get('powerups', {})
-    if len(powerups)>0:
-        override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
 
     #dict, dict of class ModifyIncar with keywords in Workflow name. e.g.
     """
@@ -189,6 +235,14 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     """
     modify_incar_params = settings.get('modify_incar_params', {})
 
+    #check if fworker_name is assigned
+    powerups = settings.get('powerups', {})
+    if len(powerups)>0:
+        if 'user_incar_settings' not in override_default_vasp_params:
+            override_default_vasp_params.update({'user_incar_settings':{}})
+        override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
+        modify_incar_params.update({'powerups':powerups})
+    
     #dict, dict of class ModifyKpoints with keywords in Workflow name, similar with modify_incar_params
     modify_kpoints_params = settings.get('modify_kpoints_params', {})
     #bool, print(True) or not(False) some informations, used for debug
@@ -211,7 +265,6 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
     #conventional = settings.get('conventional', True)
     """
 
-    uis = override_default_vasp_params.get('user_incar_settings', {})
     #Set the default value for phonon_supercell_matrix_min/max
     if isinstance(phonon_supercell_matrix, str) and (phonon_supercell_matrix_min is None):
         if phonon_supercell_matrix.lower().startswith('a'):
@@ -226,12 +279,14 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
         else:
             raise ValueError("Unknown parameters for phonon_supercell_matrix({}), support 'atoms', 'lattice' or 'volume' or 3x3 list.".format(phonon_supercell_matrix))
 
+    uis = override_default_vasp_params.get('user_incar_settings', {})
     if magmom:
         structure.add_site_property('magmom', magmom)
     elif 'MAGMOM' in uis:
         magmom = uis['MAGMOM']
         if isinstance(magmom, str):
             magmom = Incar.from_string('MAGMOM={}'.format(magmom)).as_dict()['MAGMOM']
+        magmom = parse_magmom(magmom=magmom,nvalue=len(structure.sites))
         structure.add_site_property('magmom', magmom)
     if not db_file:
         #from fireworks.fw_config import config_to_dict
@@ -263,13 +318,13 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}):
                  phonon_supercell_matrix_max=phonon_supercell_matrix_max, optimize_sc=optimize_sc, level=level,
                  force_phonon=force_phonon, stable_tor=stable_tor, store_volumetric_data=store_volumetric_data)
     elif WORKFLOW == "born":
-        wf = get_wf_borncharge(structure=structure, metadata=metadata, db_file=">>db_file<<", isif=2, name="born charge",
+        wf = get_wf_borncharge(structure=structure, metadata=metadata, db_file=db_file, isif=2, name="born charge",
                       vasp_cmd=">>vasp_cmd<<", override_default_vasp_params=override_default_vasp_params,
                       modify_incar=modify_incar_params)
     elif WORKFLOW == 'elastic':
-            wf = get_wf_elastic(structure=structure, metadata=metadata, vasp_cmd=">>vasp_cmd<<", db_file=">>db_file<<", name="elastic",
-                       override_default_vasp_params=override_default_vasp_params, strain_states=strain_states,
-                       stencils=stencils, analysis=analysis, sym_reduce=sym_reduce, order=order, conventional=conventional)
+        wf = get_wf_elastic(structure=structure, metadata=metadata, vasp_cmd=">>vasp_cmd<<", db_file=">>db_file<<", name="elastic",
+            override_default_vasp_params=override_default_vasp_params, strain_states=strain_states,
+            stencils=stencils, analysis=analysis, sym_reduce=sym_reduce, order=order, conventional=conventional)
     else:
         raise ValueError("Currently, only the gibbs energy workflow is supported.")
     return wf
@@ -309,10 +364,12 @@ def run(args):
     WRITE_OUT_WF = args.WRITE_OUT_WF    # Write out wf file or not
     TAG = args.TAG                      # Metadata from the command line
     APPEND = args.APPEND                # Append calculations, e.g. appending volumes or phonon or born
-
-    if os.path.exists('db.json'):
-        db_file = 'db.json'
-    else:
+    db_file = args.db_file              # user supplier db_file such as db.json
+    
+    if not db_file:
+        if os.path.exists('db.json'):
+            db_file = 'db.json'
+    elif not os.path.exists(db_file):
         db_file = None
 
     ## Initial wfs and metadatas
@@ -342,8 +399,9 @@ def run(args):
             if phonon_supercell_matrix is None:
                 user_settings.update({"phonon_supercell_matrix": "atoms"})
 
-            wf = get_wf_single(structure, WORKFLOW=WORKFLOW, settings=user_settings)
-            wf = Customizing_Workflows(wf,user_settings=user_settings)
+            wf = get_wf_single(structure, WORKFLOW=WORKFLOW, settings=user_settings, db_file=db_file)
+            
+            wf = Customizing_Workflows(wf,powerups_options=user_settings.get('powerups', None))
             if isinstance(wf, list):
                 wfs = wfs + wf
             else:
@@ -351,7 +409,6 @@ def run(args):
 
             if WRITE_OUT_WF:
                 dfttk_wf_filename = os.path.join(STR_PATH, "dfttk_wf-" + STR_FILENAME_WITH_EXT + ".yaml")
-                #dumpfn(wf.to_dict(), dfttk_wf_filename)
                 dumpfn(wf, dfttk_wf_filename)
     else:
         if os.path.exists('METADATAS.yaml'):
@@ -381,7 +438,6 @@ def run(args):
 
                 if flag_run:
                     user_settings = get_user_settings(STR_FILENAME_WITH_EXT, STR_PATH=STR_PATH, NEW_SETTING=SETTINGS)
-
                     metadatai = metadatas.get(STR_FILE, None)
                     if metadatai:
                         user_settings.update({'metadata': metadatai})
@@ -392,7 +448,7 @@ def run(args):
                         user_settings.update({"phonon_supercell_matrix": "atoms"})
 
                     wf = get_wf_single(structure, WORKFLOW=WORKFLOW, settings=user_settings)
-                    wf = Customizing_Workflows(wf,user_settings=user_settings)
+                    wf = Customizing_Workflows(wf)
                     metadatas[STR_FILE] = wf.as_dict()["metadata"]
                     wfs.append(wf)
 
@@ -531,6 +587,9 @@ def run_dfttk():
                            "N(N>1): qlaunch rapidfire -m N")
     prun.add_argument("-o", "--write_out_wf", dest="WRITE_OUT_WF", action="store_true",
                       help="Write out the workflow")
+    prun.add_argument("-db", "--db_file", dest="db_file", nargs="?", type=str, default=None,
+                      help="alternative database other than default\n"
+                           "Default: None")
     prun.set_defaults(func=run)
 
     #SUB-PROCESS: config

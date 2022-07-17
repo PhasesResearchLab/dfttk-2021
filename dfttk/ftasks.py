@@ -32,7 +32,8 @@ from dfttk.custodian_jobs import ATATWalltimeHandler, ATATInfDetJob
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 from pymatgen.core import __version__ as pymatgen_ver
-
+from dfttk.pythelec import get_static_calculations
+from dfttk.scripts.assign_fworker_name import Customizing_Workflows, get_powerups_options
 
 def extend_calc_locs(name, fw_spec):
     """
@@ -224,10 +225,13 @@ class CalculatePhononThermalProperties(FiretaskBase):
 
         unitcell = Structure.from_file('POSCAR-unitcell')
         supercell_matrix = self['supercell_matrix']
-        temperatures, f_vib, s_vib, cv_vib, force_constants = get_f_vib_phonopy(unitcell, supercell_matrix, vasprun_path='vasprun.xml', t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'])
+        temperatures, f_vib, s_vib, cv_vib, force_constants, code_version \
+            = get_f_vib_phonopy(unitcell, supercell_matrix, vasprun_path='vasprun.xml', t_min=self['t_min'], t_max=self['t_max'], t_step=self['t_step'])
         if isinstance(supercell_matrix, np.ndarray):
             supercell_matrix = supercell_matrix.tolist()  # make serializable
         thermal_props_dict = {
+            'vasp_version': code_version,
+            'force_constant_factor': 1.0,
             'volume': unitcell.volume,
             'F_vib': f_vib.tolist(),
             'CV_vib': cv_vib.tolist(),
@@ -294,8 +298,13 @@ class QHAAnalysis(FiretaskBase):
         everyT = self.get('everyT', 1)
         tag = self["tag"]
 
+        volumes, energies, dos_objs, _calc = get_static_calculations(vasp_db, tag)
+        structure = Structure.from_dict(_calc['output']['structure'])
+        
+        """
         # get the energies, volumes and DOS objects by searching for the tag
-        static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
+        #static_calculations = vasp_db.collection.find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]})
+        static_calculations = vasp_db.collection.find({'$and':[ {'metadata': {'tag':tag}}, {'adopted': True} ]})
 
         energies = []
         volumes = []
@@ -315,6 +324,7 @@ class QHAAnalysis(FiretaskBase):
         energies = sort_x_by_y(energies, volumes)
         dos_objs = sort_x_by_y(dos_objs, volumes)
         volumes = sorted(volumes)
+        """
 
         qha_result = {}
         qha_result['structure'] = structure.as_dict()
@@ -323,13 +333,14 @@ class QHAAnalysis(FiretaskBase):
         qha_result['metadata'] = self.get('metadata', {})
 
         poisson = self.get('poisson', 0.363615)
-        bp2gru = self.get('bp2gru', 1)
+        bp2gru = self.get('bp2gru', 2./3.)
 
         # phonon properties
         # check if phonon calculations existed
         #always perform phonon calculations when when enough phonon calculations found
         #to perform a quasiharmonic phonon calculations, one needs at least phonon results five volumes
-        phonon_calculations= list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))     
+        #phonon_calculations= list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))     
+        phonon_calculations= list(vasp_db.db['phonon'].find({'$and':[ {'metadata': {'tag':tag}}, {'adopted': True} ]}))     
         num_phonon_finished = len(phonon_calculations)       
         qha_result['has_phonon'] = num_phonon_finished >= 5
         #if self['phonon']:
@@ -345,6 +356,7 @@ class QHAAnalysis(FiretaskBase):
             vol_c_vib = []
             for calc in phonon_calculations:
                 if calc['volume'] in vol_vol: continue
+                if calc['volume'] not in volumes: continue
                 vol_vol.append(calc['volume'])
                 vol_f_vib.append(calc['F_vib'][::everyT])
                 vol_s_vib.append(calc['S_vib'])
@@ -391,8 +403,10 @@ class QHAAnalysis(FiretaskBase):
         eos_res['b1'] = float(eos.b1)
         eos_res['eq_volume'] = float(eos.v0)
         eos_res['eq_energy'] = float(eos.e0)
-        eos_res['energies'] = energies
-        eos_res['volumes'] = volumes
+        #eos_res['energies'] = energies
+        #eos_res['volumes'] = volumes
+        eos_res['energies'] = list(energies)
+        eos_res['volumes'] = list(volumes)
         eos_res['name'] = 'Vinet'
         eos_res['error'] = {}
         eos_res['error']['difference'] = errors.tolist()  # volume by volume differences
@@ -941,7 +955,11 @@ class CheckRelaxation(FiretaskBase):
                                 override_symmetry_tolerances=symmetry_options, store_volumetric_data=self.store_volumetric_data, **self["common_kwargs"]))
             else:
                 raise ValueError(f"Unknown job_type {job_type} for step {step}.")
-        return detour_fws
+        common_kwargs = self.get('common_kwargs',{})
+        override_default_vasp_params = common_kwargs.get('override_default_vasp_params',{})
+        user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
+        #user_incar_settings = common_kwargs.get('modify_incar_params',{})
+        return Customizing_Workflows(detour_fws, powerups_options=user_incar_settings.get('powerups', None))
 
 
 @explicit_serialize
