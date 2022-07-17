@@ -518,9 +518,9 @@ def mark_adopted_TF(tag, db_file, adpoted, phonon=False):
         t_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
         vasp_db = VaspCalcDb.from_db_file(t_file, admin=True)
     if vasp_db:
-        vasp_db.collection.update({'metadata.tag': tag}, {'$set': {'adopted': adpoted}}, upsert = True, multi = True)
+        vasp_db.collection.update_many({'metadata.tag': tag}, {'$set': {'adopted': adpoted}}, upsert = True)
         if phonon:
-            vasp_db.db['phonon'].update({'metadata.tag': tag}, {'$set': {'adopted': adpoted}}, upsert = True, multi = True)
+            vasp_db.db['phonon'].update_many({'metadata.tag': tag}, {'$set': {'adopted': adpoted}}, upsert = True)
 
 
 def mark_adopted(tag, db_file, volumes, phonon=False):
@@ -532,11 +532,11 @@ def mark_adopted(tag, db_file, volumes, phonon=False):
         t_file = loadfn(config_to_dict()["FWORKER_LOC"])["env"]["db_file"]
         vasp_db = VaspCalcDb.from_db_file(t_file, admin=True)
     for volume in volumes:
-        vasp_db.collection.update({'$and':[ {'metadata.tag': tag}, {'output.structure.lattice.volume': volume} ]},
-                                  {'$set': {'adopted': True}}, upsert = True, multi = False)            # Mark only one
+        vasp_db.collection.update_one({'$and':[ {'metadata.tag': tag}, {'output.structure.lattice.volume': volume} ]},
+                                  {'$set': {'adopted': True}}, upsert = True)            # Mark only one
         if phonon:
-            vasp_db.db['phonon'].update({'$and':[ {'metadata.tag': tag}, {'volume': volume} ]},
-                                        {'$set': {'adopted': True}}, upsert = True, multi = False)
+            vasp_db.db['phonon'].update_one({'$and':[ {'metadata.tag': tag}, {'volume': volume} ]},
+                                        {'$set': {'adopted': True}}, upsert = True)
 
 
 def consistent_check_db(db_file, tag):
