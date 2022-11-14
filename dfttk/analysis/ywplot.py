@@ -617,7 +617,7 @@ class thermoplot:
         elif self.thermodynamicproperty.lower()!="heat capacities (J/mol-atom/K)".lower(): self.plot_default()
         else: self.plot_Heat_Capacity()
 
-        if self.plottitle!=None: plt.title(self.plottitle)
+        #if self.plottitle!=None: plt.title(self.plottitle)
         plt.xlabel(self._xlabel)
         plt.ylabel(self._ylabel)
         self.ax.legend(loc=0, prop={'size': 24})
@@ -2390,7 +2390,6 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None, local=None):
               natom = len(structure.sites)
               sa = SpacegroupAnalyzer(structure)
               ngroup = sa.get_space_group_number()
-              print("xxxxxxxxxxxxx", ngroup)
 
   #print(natom,ngroup)
   i1 = 0

@@ -202,8 +202,10 @@ class DebyeModel(object):
             # Low temperature limit: 1
             # take 0 K E-V curve properties
             dBdP = self.ev_eos_fit.b1  # bulk modulus/pressure derivative
+            debye = s*A * (self.ev_eos_fit.v0*1.e-30/self.natoms) ** (1. / 6.) * np.sqrt(self.bulk_modulus*1e9/self.avg_mass)
             gamma = (1+dBdP)/2 - self.bp2gru  # 0K equilibrium Gruneisen parameter
-            return debye * (self.ev_eos_fit.v0 / volume) ** (gamma)
+            debye = debye*(self.ev_eos_fit.v0 / volume) ** (gamma)
+            return debye 
         else:
             return debye
 

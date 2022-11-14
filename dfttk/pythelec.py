@@ -1624,8 +1624,14 @@ class thelecMDB():
         tmp = _calc['input']['pseudo_potential']
         tmp['functional'] = potsoc
         key_comments['pseudo_potential'] = tmp
-        key_comments['ENCUT'] = _calc['input']['incar']['ENCUT']
-        key_comments['NEDOS'] = _calc['input']['incar']['NEDOS']
+        try:
+            key_comments['ENCUT'] = _calc['input']['incar']['ENCUT']
+        except:
+            pass
+        try:
+            key_comments['NEDOS'] = _calc['input']['incar']['NEDOS']
+        except:
+            pass
         try:
             key_comments['LSORBIT'] = _calc['input']['incar']['LSORBIT']
         except:
@@ -2339,6 +2345,7 @@ class thelecMDB():
 
     def datasm(self, fname):
         data = np.loadtxt(fname, comments="#", dtype=float)
+        data_orig = copy.deepcopy(data)
         nT = data.shape[0]
         nF = data.shape[1]
         nSmooth = 11
@@ -2348,7 +2355,8 @@ class thelecMDB():
         for i in range(1,nF):
             #data[:,i]=np.convolve(data[:,i], box, mode='same')
             data[:,i]=savgol_filter(data[:,i], nSmooth, 3)
-        with open(fname+'_sm', 'w') as fout:
+
+        with open(fname+'_sm.csv', 'w') as fout:
             with open(fname, 'r') as fin:
                 lines = fin.readlines()
                 for line in lines:
@@ -2357,9 +2365,19 @@ class thelecMDB():
             for i in range(0,nT):
                 for j in range(0,nF):
                     if j==nF-1: fout.write('{}\n'.format(data[i,j]))
-                    else: fout.write('{} '.format(data[i,j])) 
+                    else: fout.write('{}, '.format(data[i,j])) 
     
+            
+        with open(fname+'.csv', 'w') as fout:
+            with open(fname, 'r') as fin:
+                lines = fin.readlines()
+                for line in lines:
+                    if line.startswith('#'): print(line.strip(),file=fout)
 
+            for i in range(0,nT):
+                for j in range(0,nF):
+                    if j==nF-1: fout.write('{}\n'.format(data_orig[i,j]))
+                    else: fout.write('{}, '.format(data_orig[i,j])) 
 
     def add_comput_inf(self):
         if self.vasp_db!=None:
@@ -2759,7 +2777,10 @@ class thelecMDB():
 
 
     def run_console(self):
-        finished_tags = finished_calc()
+        try:
+            finished_tags = finished_calc()
+        except:
+            finished_tags = {}
         if not self.renew:
             if self.tag is not None:
                 if self.tag in finished_tags:
