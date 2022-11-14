@@ -893,6 +893,12 @@ def vol_within(vol, volumes, thr=0.001):
     return False
 
 
+def vol_within_index(vol, volumes, thr=0.001):
+    for i,v in enumerate(volumes):
+        if (abs(vol-v) < thr): return i
+    return -1
+
+
 def vol_closest(vol, volumes, thr=1.e-6):
     for i,v in enumerate(volumes):
         if (abs(vol-v) < thr*vol): return i
@@ -1068,7 +1074,7 @@ class thelecMDB():
 
 
     def get_superfij(self,i, phdir):
-        if vol_within(float(i['volume']), self.Vlat):
+        if vol_within(float(i['volume']), self.Vlat, thr=1.e-6):
             print("\nit seems a repeated phonon calculation for", i['volume'],"so it is discared\n")
             return None
         try:
@@ -1105,6 +1111,9 @@ class thelecMDB():
         structure.to(filename=os.path.join(voldir,'POSCAR'))
 
         with open (os.path.join(voldir,'metadata.json'),'w') as out:
+            idx = vol_within_index(i['volume'],self.volumes, thr=1.e-3)
+            #print("iiiiiiiiii idx=", idx, i['volume'],self.volumes)
+            if idx >=0:
             mm = i['metadata']
             mm['volume'] = i['volume']
             mm['energy'] = self.energies[(list(self.volumes)).index(i['volume'])]
@@ -1121,7 +1130,8 @@ class thelecMDB():
 
 
         with open (os.path.join(voldir,'OSZICAR'),'w') as out:
-            out.write('   1 F= xx E0= {}\n'.format(self.energies[(list(self.volumes)).index(i['volume'])]))
+            idx = vol_within_index(i['volume'],self.volumes, thr=1.e-3)
+            if idx >0: out.write('   1 F= xx E0= {}\n'.format(self.energies[idx]))
         with open (os.path.join(voldir,'superfij.out'),'w') as out:
             for line in range (2,5):
                 out.write('{}\n'.format(unitcell_l[line]))
@@ -1433,13 +1443,18 @@ class thelecMDB():
         for i in (self.vasp_db).db['phonon'].find({'metadata.tag': self.tag}):
             try:
                 self.force_constant_factor = i['force_constant_factor']
+                if self.static_vasp_version[0:1] >= '6' and self.static_vasp_version[0:3] < '6.2':
+                    self.force_constant_factor /= 0.004091649655126895
             except:
                 if self.static_vasp_version[0:1] >= '6':
                     self.force_constant_factor = 0.004091649655126895
                 else:
                     self.force_constant_factor = 1.0
 
-            if i['volume'] not in self.volumes: continue
+            #if i['volume'] not in self.volumes: 
+            if not vol_within(i['volume'], self.volumes, thr=1.e-3):
+                print (i['volume'], "is not within", self.volumes)
+                continue
             voldir = self.get_superfij(i, phdir)
             if voldir is None: continue
 
@@ -1558,7 +1573,7 @@ class thelecMDB():
         for i,v in enumerate (self.Vlat):
             fvol = False
             for j,vol in enumerate(self.volumes):
-                if abs(vol-v)<1.e-8:
+                if abs(vol-v)<1.e-6:
                     print (v, self.energies[j])
                     fvol = True
             if not fvol:
@@ -1571,7 +1586,8 @@ class thelecMDB():
         _e = []
         _d = []
         for i, vol in enumerate(list(self.volumes)):
-            if vol not in self.Vlat:
+            #if vol not in self.Vlat:
+            if not vol_within(vol,self.Vlat,thr=1.e-3):
                 print ("data in static calculation with volume=", vol, "is discarded")
                 continue
             _v.append(vol)
@@ -2078,9 +2094,10 @@ class thelecMDB():
         Flat = []
         Dlat = []
         for i, vol in enumerate(_Vlat):
-            if vol_within(vol, Vlat): continue
+            if vol_within(vol, Vlat, thr=1.e-3): continue
             #if vol in Vlat: continue
-            if vol not in self.volumes: continue
+            if not vol_within(vol, self.volumes, thr=1.e-3): continue
+            #if vol not in self.volumes: continue
             Vlat.append(vol)
             Slat.append(_Slat[i])
             Clat.append(_Clat[i])
