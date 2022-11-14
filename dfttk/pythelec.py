@@ -1114,10 +1114,10 @@ class thelecMDB():
             idx = vol_within_index(i['volume'],self.volumes, thr=1.e-3)
             #print("iiiiiiiiii idx=", idx, i['volume'],self.volumes)
             if idx >=0:
-            mm = i['metadata']
-            mm['volume'] = i['volume']
-            mm['energy'] = self.energies[(list(self.volumes)).index(i['volume'])]
-            out.write('{}\n'.format(mm))
+                mm = i['metadata']
+                mm['volume'] = i['volume']
+                mm['energy'] = self.energies[idx]
+                out.write('{}\n'.format(mm))
 
 
         if len(self.xmlvol)!=0:
