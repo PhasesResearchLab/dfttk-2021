@@ -1433,7 +1433,7 @@ def mkDict(line):
   idx = 1
   while True:
     if not os.path.exists(dir0): break
-    recordfile = dir0,"record.json"
+    recordfile = os.path.join(dir0,"record.json")
     newdir = False
     try:
       if os.path.exists(recordfile):
@@ -1744,7 +1744,6 @@ def Phonon298(dir0, pvdos=False):
     copyfile(os.path.join(plotdatabase,dfile),os.path.join(phdir298,dfile))
     cwd = os.getcwd()
     os.chdir( phdir298 )
-    import platform
     if platform.system()=="Linux":
       cmd = 'timeout 6 pos2s Symmetry.pos -THR 3.e-4 >&symmetry.out'
       output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -2446,7 +2445,6 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None, local=None):
       move("vdos.png", os.path.join(cwd,folder,'vdos298.15.png'))
 
   if not os.path.exists('symmetry.mode'):
-    import platform
     if platform.system()=="Linux":
       cmd = "pos2s Symmetry.pos -THR 0.001"
       output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
