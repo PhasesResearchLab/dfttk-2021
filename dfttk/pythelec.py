@@ -1444,9 +1444,10 @@ class thelecMDB():
             try:
                 self.force_constant_factor = i['force_constant_factor']
                 if self.static_vasp_version[0:1] >= '6' and self.static_vasp_version[0:3] < '6.2':
-                    self.force_constant_factor /= 0.004091649655126895
+                    if self.force_constant_factor == 0.004091649655126895:
+                        self.force_constant_factor /= 0.004091649655126895
             except:
-                if self.static_vasp_version[0:1] >= '6':
+                if self.static_vasp_version[0:3] >= '6.2':
                     self.force_constant_factor = 0.004091649655126895
                 else:
                     self.force_constant_factor = 1.0
