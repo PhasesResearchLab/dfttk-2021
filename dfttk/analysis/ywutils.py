@@ -271,7 +271,7 @@ def get_rec_from_metatag(vasp_db,m, test=False):
     for calc in static_calculations:
         vol = calc['output']['structure']['lattice']['volume']
         if kpoints is None: kpoints = calc['orig_inputs']['kpoints']['kpoints']
-        if vol_within(vol, volumes): continue
+        if vol_within(vol, volumes, thr=1.e-6): continue
         natoms = len(calc['output']['structure']['sites'])
         try:
             sites = calc['output']['structure']['sites']
@@ -306,7 +306,7 @@ def get_rec_from_metatag(vasp_db,m, test=False):
             for calc in all_static_calculations:
                 if len(calc['metadata'])<=1:continue # only check constrained calculation
                 vol = calc['output']['structure']['lattice']['volume']
-                if vol_within(vol, volumes): continue
+                if vol_within(vol, volumes, thr=1.e-6): continue
                 natoms = len(calc['output']['structure']['sites'])
                 try:
                     sites = calc['output']['structure']['sites']

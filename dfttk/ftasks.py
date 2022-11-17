@@ -32,7 +32,7 @@ from dfttk.custodian_jobs import ATATWalltimeHandler, ATATInfDetJob
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 from pymatgen.core import __version__ as pymatgen_ver
-from dfttk.pythelec import get_static_calculations
+from dfttk.pythelec import get_static_calculations, vol_within
 from dfttk.scripts.assign_fworker_name import Customizing_Workflows
 
 def extend_calc_locs(name, fw_spec):
@@ -355,8 +355,10 @@ class QHAAnalysis(FiretaskBase):
             vol_s_vib = []
             vol_c_vib = []
             for calc in phonon_calculations:
-                if calc['volume'] in vol_vol: continue
-                if calc['volume'] not in volumes: continue
+                #if calc['volume'] in vol_vol: continue
+                #if calc['volume'] not in volumes: continue
+                if vol_within(calc['volume'], vol_vol, thr=1.e-6): continue
+                if not vol_within(calc['volume'],volumes, thr=1.e-6): continue
                 vol_vol.append(calc['volume'])
                 vol_f_vib.append(calc['F_vib'][::everyT])
                 vol_s_vib.append(calc['S_vib'])
@@ -371,7 +373,8 @@ class QHAAnalysis(FiretaskBase):
             _energies = []
             _dos_objs = []
             for iv,vol in enumerate(volumes):
-                if vol not in vol_vol:  continue
+                #if vol not in vol_vol:  continue
+                if not vol_within(vol,vol_vol, thr=1.e-6): continue
                 _volumes.append(vol)
                 _energies.append(energies[iv])
                 _dos_objs.append(dos_objs[iv])

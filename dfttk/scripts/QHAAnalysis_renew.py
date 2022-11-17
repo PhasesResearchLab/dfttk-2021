@@ -133,8 +133,8 @@ class QHAAnalysis_renew(FiretaskBase):
             for calc in phonon_calculations:
                 #if calc['volume'] in vol_vol: continue
                 #if calc['volume'] not in volumes: continue
-                if vol_within(calc['volume'], vol_vol): continue
-                if not vol_within(calc['volume'],volumes): continue
+                if vol_within(calc['volume'], vol_vol, thr=1.e-6): continue
+                if not vol_within(calc['volume'],volumes, the=1.e-6): continue
                 vol_vol.append(calc['volume'])
                 vol_f_vib.append(calc['F_vib'])
                 vol_s_vib.append(calc['S_vib'])
@@ -152,7 +152,7 @@ class QHAAnalysis_renew(FiretaskBase):
             _dos_objs = []
             for iv,vol in enumerate(volumes):
                 #if vol not in vol_vol:  continue
-                if not vol_within(vol, vol_vol): continue
+                if not vol_within(vol, vol_vol, thr=1.e-6): continue
                 _volumes.append(vol)
                 _energies.append(energies[iv])
                 _dos_objs.append(dos_objs[iv])

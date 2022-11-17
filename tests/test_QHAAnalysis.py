@@ -59,7 +59,7 @@ else:
 
 @pytest.mark.QHAAnalysis
 def test_QHAAnalysis():
-    tags = ['5e8b5a18-b2b9-4dcd-81a7-0bd75ee361ec']
+    tags = ['a9b209b5-2dd9-4e4a-890d-9c3387861f52']
     print(db_file)
     for tag in tags:
         vasp_db = VaspCalcDb.from_db_file(db_file, admin=False)

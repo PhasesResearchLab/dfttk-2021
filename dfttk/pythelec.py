@@ -1111,7 +1111,7 @@ class thelecMDB():
         structure.to(filename=os.path.join(voldir,'POSCAR'))
 
         with open (os.path.join(voldir,'metadata.json'),'w') as out:
-            idx = vol_within_index(i['volume'],self.volumes, thr=1.e-3)
+            idx = vol_within_index(i['volume'],self.volumes, thr=1.e-6)
             #print("iiiiiiiiii idx=", idx, i['volume'],self.volumes)
             if idx >=0:
                 mm = i['metadata']
@@ -1130,7 +1130,7 @@ class thelecMDB():
 
 
         with open (os.path.join(voldir,'OSZICAR'),'w') as out:
-            idx = vol_within_index(i['volume'],self.volumes, thr=1.e-3)
+            idx = vol_within_index(i['volume'],self.volumes, thr=1.e-6)
             if idx >0: out.write('   1 F= xx E0= {}\n'.format(self.energies[idx]))
         with open (os.path.join(voldir,'superfij.out'),'w') as out:
             for line in range (2,5):
@@ -1453,7 +1453,7 @@ class thelecMDB():
                     self.force_constant_factor = 1.0
 
             #if i['volume'] not in self.volumes: 
-            if not vol_within(i['volume'], self.volumes, thr=1.e-3):
+            if not vol_within(i['volume'], self.volumes, thr=1.e-6):
                 print (i['volume'], "is not within", self.volumes)
                 continue
             voldir = self.get_superfij(i, phdir)
@@ -1588,7 +1588,7 @@ class thelecMDB():
         _d = []
         for i, vol in enumerate(list(self.volumes)):
             #if vol not in self.Vlat:
-            if not vol_within(vol,self.Vlat,thr=1.e-3):
+            if not vol_within(vol,self.Vlat,thr=1.e-6):
                 print ("data in static calculation with volume=", vol, "is discarded")
                 continue
             _v.append(vol)
@@ -2095,9 +2095,9 @@ class thelecMDB():
         Flat = []
         Dlat = []
         for i, vol in enumerate(_Vlat):
-            if vol_within(vol, Vlat, thr=1.e-3): continue
+            if vol_within(vol, Vlat, thr=1.e-6): continue
             #if vol in Vlat: continue
-            if not vol_within(vol, self.volumes, thr=1.e-3): continue
+            if not vol_within(vol, self.volumes, thr=1.e-6): continue
             #if vol not in self.volumes: continue
             Vlat.append(vol)
             Slat.append(_Slat[i])
