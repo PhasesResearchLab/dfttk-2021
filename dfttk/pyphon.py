@@ -292,15 +292,15 @@ if __name__ == '__main__':
 
     sys.stderr.write ("\nThe phonon quality= {:08.6f}\n\n".format(quality))
 
-    for i in range(T.size):
+    for i in range(1, T.size):
         tmp0 = 0.0
         tmp1 = 0.0
         if N_ph[i]!=0.:
             tmp0 = C_ph_mu[i]/N_ph[i]
             tmp1 = C_ph_n[i]/N_ph[i]
 
-        sys.stdout.write('{:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} \
-        {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g}\n'.format(\
-        T[i], F_ph[i]*unit, U_ph[i]*unit, S_ph[i]*unit, C_ph_mu[i]*unit, C_ph_n[i], \
+        sys.stdout.write('{:10.7g} {:10.2f} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} \
+        {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} \n'.format(\
+        T[i], debyeT[i], F_ph[i]*unit, U_ph[i]*unit, S_ph[i]*unit, C_ph_mu[i]*unit, C_ph_n[i], \
         tmp0, tmp1, Sound_ph[i], Sound_nn[i], \
         N_ph[i], NN_ph[i], debyeT[i]))
