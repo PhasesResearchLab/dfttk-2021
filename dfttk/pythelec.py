@@ -2035,7 +2035,7 @@ class thelecMDB():
                     self.force_constant_factor = i['force_constant_factor']
                 except:
                     if self.static_vasp_version[0:1] >= '6':
-                        print("\n**************FETAL ERROR! force constant not compatible for :", self.tag, "by default phonopy with vasp6\n")
+                        print("\n**************Warning! force constant may not compatible for :", self.tag, "by default phonopy with vasp6\n")
                         
 
         try:
@@ -2066,10 +2066,13 @@ class thelecMDB():
             _Flat = []
 
             for i in self.qha_items:
-                _Vlat.append(i['volume'])
-                _Slat.append(i['S_vib'][::self.everyT])
-                _Clat.append(i['CV_vib'][::self.everyT])
-                _Flat.append(i['F_vib'][::self.everyT])
+                try:
+                    _Vlat.append(i['volume'])
+                    _Slat.append(i['S_vib'][::self.everyT])
+                    _Clat.append(i['CV_vib'][::self.everyT])
+                    _Flat.append(i['F_vib'][::self.everyT])
+                else:
+                    pass
             self.volT = np.zeros(len(self.T_vib))
             self.GibT = np.zeros(len(self.T_vib))
             _Dlat = np.full((len(_Vlat)), 400.)

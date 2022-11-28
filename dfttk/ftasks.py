@@ -359,10 +359,13 @@ class QHAAnalysis(FiretaskBase):
                 #if calc['volume'] not in volumes: continue
                 if vol_within(calc['volume'], vol_vol, thr=1.e-6): continue
                 if not vol_within(calc['volume'],volumes, thr=1.e-6): continue
-                vol_vol.append(calc['volume'])
-                vol_f_vib.append(calc['F_vib'])
-                vol_s_vib.append(calc['S_vib'])
-                vol_c_vib.append(calc['CV_vib'])
+                try:
+                    vol_vol.append(calc['volume'])
+                    vol_f_vib.append(calc['F_vib'])
+                    vol_s_vib.append(calc['S_vib'])
+                    vol_c_vib.append(calc['CV_vib'])
+                except:
+                    pass
             # sort them order of the unit cell volumes
             vol_f_vib = sort_x_by_y(vol_f_vib, vol_vol)
             vol_s_vib = sort_x_by_y(vol_s_vib, vol_vol)
