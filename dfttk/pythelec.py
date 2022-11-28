@@ -2071,7 +2071,7 @@ class thelecMDB():
                     _Slat.append(i['S_vib'][::self.everyT])
                     _Clat.append(i['CV_vib'][::self.everyT])
                     _Flat.append(i['F_vib'][::self.everyT])
-                else:
+                except:
                     pass
             self.volT = np.zeros(len(self.T_vib))
             self.GibT = np.zeros(len(self.T_vib))
