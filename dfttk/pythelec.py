@@ -2067,10 +2067,10 @@ class thelecMDB():
 
             for i in self.qha_items:
                 try:
-                    _Vlat.append(i['volume'])
                     _Slat.append(i['S_vib'][::self.everyT])
                     _Clat.append(i['CV_vib'][::self.everyT])
                     _Flat.append(i['F_vib'][::self.everyT])
+                    _Vlat.append(i['volume'])
                 except:
                     pass
             self.volT = np.zeros(len(self.T_vib))
