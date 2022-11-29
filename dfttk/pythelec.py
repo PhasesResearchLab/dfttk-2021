@@ -2018,19 +2018,19 @@ class thelecMDB():
             return
         self.from_phonon_collection = False
         if self.qhamode=="debye":
-            self.qha_items = self.vasp_db.db['qha'].find({'metadata.tag': self.tag})
+            self.qha_items = self.vasp_db.db['qha'].find({'$and':[ {'metadata': {'tag':self.tag}}, {'S_vib': {'$exists': True}} ]})
         elif self.qhamode=="phonon":
-            self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata.tag': self.tag})
+            self.qha_items = self.vasp_db.db['qha_phonon'].find({'$and':[ {'metadata': {'tag':self.tag}}, {'S_vib': {'$exists': True}} ]})
         else:
             try:
                 self.qhamode='phonon'
-                self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata.tag': self.tag})
+                self.qha_items = self.vasp_db.db['qha_phonon'].find({'$and':[ {'metadata': {'tag':self.tag}}, {'S_vib': {'$exists': True}} ]})
             except:
                 self.qhamode='debye'
-                self.qha_items = self.vasp_db.db['qha'].find({'metadata.tag': self.tag})
+                self.qha_items = self.vasp_db.db['qha'].find({'$and':[ {'metadata': {'tag':self.tag}}, {'S_vib': {'$exists': True}} ]})
         # check compatibility with vasp6
         if self.qhamode=='phonon':
-            for i in (self.vasp_db).db['phonon'].find({'metadata.tag': self.tag}):
+            for i in (self.vasp_db).db['phonon'].find({'$and':[ {'metadata.tag': self.tag}, {'S_vib': {'$exists': True}} ]}):
                 try:
                     self.force_constant_factor = i['force_constant_factor']
                 except:
@@ -2044,12 +2044,12 @@ class thelecMDB():
             #print("xxxx=",self.T_vib)
         except:
             try:
-                self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata': self.tag})
+                self.qha_items = self.vasp_db.db['qha_phonon'].find({'$and':[ {'metadata.tag': self.tag}, {'S_vib': {'$exists': True}} ]})
                 self.T_vib = self.qha_items[0][self.qhamode]['temperatures'][::self.everyT]
             except:
                 try:
                     self.qhamode = 'phonon'
-                    self.qha_items = self.vasp_db.db[self.qhamode].find({'metadata.tag': self.tag})
+                    self.qha_items = self.vasp_db.db[self.qhamode].find({'$and':[ {'metadata.tag': self.tag}, {'S_vib': {'$exists': True}} ]})
                     self.T_vib = self.qha_items[0]['temperatures'][::self.everyT]
                     self.from_phonon_collection = True
                 except:
@@ -2066,13 +2066,11 @@ class thelecMDB():
             _Flat = []
 
             for i in self.qha_items:
-                try:
-                    _Slat.append(i['S_vib'][::self.everyT])
-                    _Clat.append(i['CV_vib'][::self.everyT])
-                    _Flat.append(i['F_vib'][::self.everyT])
-                    _Vlat.append(i['volume'])
-                except:
-                    pass
+                _Slat.append(i['S_vib'][::self.everyT])
+                _Clat.append(i['CV_vib'][::self.everyT])
+                _Flat.append(i['F_vib'][::self.everyT])
+                _Vlat.append(i['volume'])
+
             self.volT = np.zeros(len(self.T_vib))
             self.GibT = np.zeros(len(self.T_vib))
             _Dlat = np.full((len(_Vlat)), 400.)
