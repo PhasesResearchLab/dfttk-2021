@@ -76,7 +76,7 @@ def get_machines(nodes=1, ppn=16, user_machines=None):
                 "vasp_cmd": "mpirun vasp_std"}
             }
         #dumpfn(machines, "machines.yaml", default_flow_style=False, indent=4)
-        dumpfn(machines, "machines.yaml", indent=4)
+        dumpfn(machines, "machines.yaml")
     return machines
 
 def replace_file(filename, old_str, new_str):
@@ -639,10 +639,10 @@ def update_configfile(filename, base_file):
             ori_file[item] = base_file[item]
     """
     if filename.endswith(".json"):
-        dumpfn(ori_file, filename, indent=4)
+        dumpfn(ori_file, filename)
     elif filename.endswith(".yaml"):
         #dumpfn(ori_file, filename, default_flow_style=False, indent=4)
-        dumpfn(ori_file, filename, indent=4)
+        dumpfn(ori_file, filename)
 
 def config_atomate(path_to_store_config=".", config_folder="config", queue_script="vaspjob.pbs",
     queue_type="pbs", vasp_cmd_flag="vasp_std", machine="aci", machines=None,
@@ -727,11 +727,11 @@ class ConfigTemplate(object):
         with open(filename, 'w') as f:
             if filename.endswith(".json"):
                 from json import dump
-                dump(self.DATA, f, indent=4)
+                dump(self.DATA, f)
             elif filename.endswith(".yaml"):
                 from yaml import dump
                 #dump(self.DATA, f, default_flow_style=False, sort_keys=False, indent=4)
-                dump(self.DATA, f, sort_keys=False, indent=4)
+                dump(self.DATA, f, sort_keys=False)
 
 class ConfigDb(ConfigTemplate):
     """docstring for ConfigDb"""
