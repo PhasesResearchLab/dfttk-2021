@@ -71,6 +71,32 @@ Following are the steps of adding API key number on DFTTK.
     a reason that was not caught and handled by Custodian. Check the output files in the 
     launch directory and see if there are any errors in the VASP output or stdout/stderr.
 
+12. During the installation or running dfttk, it could report this or that packakge missing/VersionConflict errors. You may have many of them, esspecially when you have good years' experience using python and many of your packages are obselete. DO NOT blame me, ``it is due to pymatgen``
+
+    You can try to sovle them by   
+
+  .. code-block:: bash
+      pip install <missed-package> -U  #where <missed-package> should be the name of missed package
+
+    Sometimes, one may meet issue with ruamel_yaml due to ``conda`` bug on namespace of ruamel_yaml vs ruamel.yaml.  One may Manually delete the files from site-packages. In my case, to delete ruamel.yaml the command was rm -rf ``your-path-to-anaconda3``/lib/python``your-version``/site-packages/ruamel*. Then
+
+  .. code-block:: bash
+    pip install ruamel.yaml
+
+13. During the installation in Windows system, the latest fireworks package may give you trouble
+
+    I solved by install the development version
+
+  .. code-block:: bash
+      git clone https://github.com/materialsproject/fireworks
+      cd fireworks
+
+    replace the \`\`\` in README.md by \` followed by
+
+  .. code-block:: bash
+      pip install -e .
+
+
 atomate issue
 =============
 
