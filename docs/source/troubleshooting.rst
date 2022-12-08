@@ -62,6 +62,7 @@ Following are the steps of adding API key number on DFTTK.
 10. How to find the reason for FIZZLED job.
 
 .. code-block:: bash
+   
     lpad get_fws -i fw_id -d more
 
 11. VasprunXMLValidator found from the command "lpad get_fws -i fw_id -d more"
@@ -75,26 +76,29 @@ Following are the steps of adding API key number on DFTTK.
 
     You can try to sovle them by   
 
-.. code-block:: bash
-    pip install <missed-package> -U  #where <missed-package> should be the name of missed package
+    .. code-block:: bash
+   
+        pip install <missed-package> -U  #where <missed-package> should be the name of missed package
 
     Sometimes, one may meet issue with ruamel_yaml due to ``conda`` bug on namespace of ruamel_yaml vs ruamel.yaml.  One may Manually delete the files from site-packages. In my case, to delete ruamel.yaml the command was rm -rf ``your-path-to-anaconda3``/lib/python``your-version``/site-packages/ruamel*. Then
 
-.. code-block:: bash
-    pip install ruamel.yaml
+    .. code-block:: bash
+   
+        pip install ruamel.yaml
 
 13. During the installation in Windows system, the latest fireworks package may give you some troubles
 
     I solved by install the development version
 
-.. code-block:: bash
-    git clone https://github.com/materialsproject/fireworks
-    cd fireworks
+    .. code-block:: bash
+   
+        git clone https://github.com/materialsproject/fireworks
+        cd fireworks
 
     replace the \`\`\` in README.md by \` followed by
 
-.. code-block:: bash
-    pip install -e .
+    .. code-block:: bash
+        pip install -e .
 
 
 atomate issue
