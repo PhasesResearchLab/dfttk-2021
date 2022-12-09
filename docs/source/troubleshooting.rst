@@ -99,18 +99,18 @@ or equivalently in the ``.cshrc`` file
 
         pip install -e .
 
- 14.     Sometimes, some VASP jobs may crash (showing as "F" or "FIZZLED") due to various reasons (Ram leakage, job time limitations etc) or even no reasons.
+ 14.     Sometimes, some VASP jobs may crash (showing as "F" or "FIZZLED" when you use the command ``lpad get_wflows`` to check your job status) due to various reasons (Ram leakage, job time limitations etc) or even no reasons.
 
     These problems can mostly resovled by rerun the wflows using: 
 
     .. code-block:: bash
 
-        lapd rerun_fws -s FIZZLED
+        lapd rerun_fws -s FIZZLED #you may ``qlaunch your VASP batch jobs if no jobs in queue``
 
-atomate issue
-=============
+atomate issue (This issue has been resolved by atomate 1.0.3)
+=============================================================
 
-    atomate not compatible with pymongo >=4.0, you can sovle it by::
+    if you use old version of atomate such as 0.9.7, atomate may not be compatible with pymongo >=4.0, you can sovle it by::
 
     pip uninstall pymongo
 
