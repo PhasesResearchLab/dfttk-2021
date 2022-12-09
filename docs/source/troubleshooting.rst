@@ -99,6 +99,13 @@ or equivalently in the ``.cshrc`` file
 
         pip install -e .
 
+ 14.     Sometimes, some VASP jobs may crash (showing as "F" or "FIZZLED") due to various reasons (Ram leakage, job time limitations etc) or even no reasons.
+
+    These problems can mostly resovled by rerun the wflows using: 
+
+    .. code-block:: bash
+
+        lapd rerun_fws -s FIZZLED
 
 atomate issue
 =============
