@@ -30,7 +30,7 @@ or equivalently in the ``.cshrc`` file
 
 5.      git push issue for contributors, see https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account
 
-6.      for batch run of the postprocessing modules, make sure compatibilities of non-ascii character by:
+6.      For batch run of the postprocessing modules, make sure compatibilities of non-ascii character by:
 
 .. code-block:: bash
 
@@ -42,7 +42,7 @@ or equivalently in the ``.cshrc`` file
 8.      When you are interesting in revising the code, if have job running in the system before your changes, the codes in the batch system might not be updated and the results might be not as you assumed. It takes me two days to figure out this problem. The solution is to kill all the dfttk running job and resubmit them.
 Following are the steps of adding API key number on DFTTK.
 
-9. How to solve the install warning of 'PMG_MAPI_KEY' is empty.
+9.      How to solve the install warning of 'PMG_MAPI_KEY' is empty.
 
   1. Go to the materials project website,
   https://materialsproject.org/, under the API section, you will
@@ -60,20 +60,20 @@ Following are the steps of adding API key number on DFTTK.
 
       PMG_MAPI_KEY: ######(your API key number)
 
-10. How to find the reason for FIZZLED job.
+10.     How to find the reason for FIZZLED job.
 
 .. code-block:: bash
    
     lpad get_fws -i fw_id -d more
 
-11. VasprunXMLValidator found from the command "lpad get_fws -i fw_id -d more"
+11.     VasprunXMLValidator found from the command "lpad get_fws -i fw_id -d more"
 
     If you get an error from the VasprunXMLValidator, that means that the vasprun.xml failed 
     to be parsed and/or validated. Usually that means the VASP job did not run or failed for 
     a reason that was not caught and handled by Custodian. Check the output files in the 
     launch directory and see if there are any errors in the VASP output or stdout/stderr.
 
-12. During the installation or running dfttk, it could report this or that packakge missing/VersionConflict errors. You may have many of them, esspecially when you have good years' experience using python and many of your packages are obselete. DO NOT blame me, ``it is due to pymatgen``
+12.      During the installation or running dfttk, it could report this or that packakge missing/VersionConflict errors. You may have many of them, esspecially when you have good years' experience using python and many of your packages are obselete. DO NOT blame me, ``it is due to pymatgen``
 
     You can try to sovle them by   
 
@@ -87,7 +87,7 @@ Following are the steps of adding API key number on DFTTK.
    
         pip install ruamel.yaml
 
-13. During the installation in Windows system, the latest fireworks package may give you some troubles
+13.      During the installation in Windows system, the latest fireworks package may give you some troubles
 
     I solved by install the development version
 
