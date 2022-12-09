@@ -78,7 +78,7 @@ or equivalently in the ``.cshrc`` file
    
         pip install <missed-package> -U  #where <missed-package> should be the name of missed package
 
-    Sometimes, one may meet issue with ruamel_yaml due to ``conda`` bug on namespace of ruamel_yaml vs ruamel.yaml.  One may Manually delete the files from site-packages. In my case, to delete ruamel.yaml the command was rm -rf ``your-path-to-anaconda3``/lib/python``your-version``/site-packages/ruamel*. Then
+    Sometimes, one may meet issue with ruamel_yaml due to ``conda`` bug on namespace of ruamel_yaml vs ruamel.yaml.  One may Manually delete the files from site-packages.  What I learnt was to delete ruamel.yaml  ``rm -rf your-path-to-anaconda3/lib/python-your-version/site-packages/ruamel*``. Then install ruamel.yaml by
 
     .. code-block:: bash
    
@@ -86,14 +86,14 @@ or equivalently in the ``.cshrc`` file
 
 13.      During the installation in Windows system, the latest fireworks package may give you some troubles
 
-    I solved by install the development version
+    I solved the problem by installing the development version
 
     .. code-block:: bash
    
         git clone https://github.com/materialsproject/fireworks
         cd fireworks
 
-    replace the \`\`\` in README.md by \` followed by
+    The trouble is due to the line containing \`\`\` in README.md. You can delete/replace them followed by install it as
 
     .. code-block:: bash
         pip install -e .
