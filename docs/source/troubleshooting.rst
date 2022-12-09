@@ -86,6 +86,8 @@ or equivalently in the ``.cshrc`` file
 
 13.      During the installation in Windows system, the latest fireworks package may give you some troubles
 
+    See troubleshooting 6. If peoblem persists, do the following:
+    
     I solved the problem by installing the development version
 
     .. code-block:: bash
