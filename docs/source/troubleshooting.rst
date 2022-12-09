@@ -41,13 +41,9 @@ or equivalently in the ``.cshrc`` file
 
 8.      When you are interesting in revising the code, if have job running in the system before your changes, the codes in the batch system might not be updated and the results might be not as you assumed. It takes me two days to figure out this problem. The solution is to kill all the dfttk running job and resubmit them.
 
-9.      How to solve the install warning of 'PMG_MAPI_KEY' is empty.
+9.      How to solve the install warning of 'PMG_MAPI_KEY' is empty. Following are the steps of adding API key number on DFTTK.
 
-  Following are the steps of adding API key number on DFTTK.
-
-  1. Go to the materials project website,
-  https://materialsproject.org/, under the API section, you will
-  easily find you API Keys number.
+  1. Go to the materials project website, https://materialsproject.org/, under the API section, you will easily find you API Keys number.
 
   2. Go to the .pmgrc.yaml file
 
