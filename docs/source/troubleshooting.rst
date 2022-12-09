@@ -105,7 +105,7 @@ or equivalently in the ``.cshrc`` file
 
     .. code-block:: bash
 
-        lapd rerun_fws -s FIZZLED #you may ``qlaunch your VASP batch jobs if no jobs in queue``
+        lapd rerun_fws -s FIZZLED #you may need ``qlaunch`` your VASP batch jobs if no jobs in queue
 
 atomate issue (This issue has been resolved by atomate 1.0.3)
 =============================================================
