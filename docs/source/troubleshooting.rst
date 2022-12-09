@@ -92,11 +92,11 @@ or equivalently in the ``.cshrc`` file
    
         git clone https://github.com/materialsproject/fireworks
         cd fireworks
-        pip install -e .
 
     The trouble is due to the line containing "```" in README.md. You can delete/replace them followed by installing fireworks it as
 
     .. code-block:: bash
+
         pip install -e .
 
 
