@@ -37,12 +37,13 @@ or equivalently in the ``.cshrc`` file
     export LC_ALL='en_US.utf8' #for bsh;
     setenv LC_ALL en_US.utf8 #for csh
 
-7.      For phonon calculations, due to certain reasons (such as temperature range too high), one may not see results in the ``qha_phonon`` or ``qha`` MongoDB collections. In this case, the subcommand ``dfttk thfind`` will try to find results from the ``phonon`` collection and process the data by calling ``Yphon``
+7.      For phonon calculations, due to certain reasons (such as temperature range too high), one may not see results in the ``qha_phonon`` or ``qha`` MongoDB collections. In this case, the subcommand ``dfttk thfind`` will try to find results from the ``phonon`` collection and process the data by calling ``Yphon``:
 
 8.      When you are interesting in revising the code, if have job running in the system before your changes, the codes in the batch system might not be updated and the results might be not as you assumed. It takes me two days to figure out this problem. The solution is to kill all the dfttk running job and resubmit them.
-Following are the steps of adding API key number on DFTTK.
 
 9.      How to solve the install warning of 'PMG_MAPI_KEY' is empty.
+
+  Following are the steps of adding API key number on DFTTK.
 
   1. Go to the materials project website,
   https://materialsproject.org/, under the API section, you will
