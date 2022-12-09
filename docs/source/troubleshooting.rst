@@ -93,7 +93,7 @@ or equivalently in the ``.cshrc`` file
         git clone https://github.com/materialsproject/fireworks
         cd fireworks
 
-    The trouble is due to the line containing \`\`\` in README.md. You can delete/replace them followed by install it as
+    The trouble is due to the line containing "```" in README.md. You can delete/replace them followed by install it as
 
     .. code-block:: bash
         pip install -e .
