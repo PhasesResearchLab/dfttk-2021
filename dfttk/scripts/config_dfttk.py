@@ -75,7 +75,8 @@ def get_machines(nodes=1, ppn=16, user_machines=None):
                 "_fw_template_file": os.path.join(".", "config", "PBS_template_custom.txt"),
                 "vasp_cmd": "mpirun vasp_std"}
             }
-        dumpfn(machines, "machines.yaml", default_flow_style=False, indent=4)
+        #dumpfn(machines, "machines.yaml", default_flow_style=False, indent=4)
+        dumpfn(machines, "machines.yaml")
     return machines
 
 def replace_file(filename, old_str, new_str):
@@ -639,7 +640,8 @@ def update_configfile(filename, base_file):
     if filename.endswith(".json"):
         dumpfn(ori_file, filename, indent=4)
     elif filename.endswith(".yaml"):
-        dumpfn(ori_file, filename, default_flow_style=False, indent=4)
+        #dumpfn(ori_file, filename, default_flow_style=False, indent=4)
+        dumpfn(ori_file, filename)
 
 def config_atomate(path_to_store_config=".", config_folder="config", queue_script="vaspjob.pbs",
     queue_type="pbs", vasp_cmd_flag="vasp_std", machine="aci", machines=None,
