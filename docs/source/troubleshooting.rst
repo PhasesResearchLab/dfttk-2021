@@ -103,7 +103,7 @@ or equivalently in the ``.cshrc`` file
 
  14.     Sometimes, some VASP jobs may crash (showing as "F" or "FIZZLED" when you use the command ``lpad get_wflows`` to check your job status) due to various reasons (Ram leakage, job time limitations etc) or even no reasons.
 
-    These problems can mostly be resoleed by rerunning the wflows using: 
+    These problems can mostly be resolved by rerunning the wflows using: 
 
     .. code-block:: bash
 
