@@ -3,7 +3,8 @@
 import argparse
 from pymatgen.ext.matproj import MPRester, Structure
 from pymatgen.io.vasp.inputs import Potcar, Incar
-from dfttk.wflows import get_wf_gibbs, get_wf_EV_bjb, get_wf_gibbs_robust, get_wf_borncharge, get_wf_elastic
+from dfttk.wflows import get_wf_gibbs, get_wf_EV_bjb, get_wf_singleV, get_wf_crosscom, \
+    get_wf_gibbs_robust, get_wf_borncharge, get_wf_elastic
 from dfttk.utils import recursive_glob
 from dfttk.structure_builders.parse_anrl_prototype import multi_replace
 from dfttk.scripts.querydb import get_eq_structure_by_metadata
@@ -237,11 +238,13 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}, db_file=None)
 
     #check if fworker_name is assigned
     powerups = settings.get('powerups', {})
+    """
     if len(powerups)>0:
         if 'user_incar_settings' not in override_default_vasp_params:
             override_default_vasp_params.update({'user_incar_settings':{}})
         override_default_vasp_params['user_incar_settings'].update({'powerups':powerups})
         modify_incar_params.update({'powerups':powerups})
+    """
     
     #dict, dict of class ModifyKpoints with keywords in Workflow name, similar with modify_incar_params
     modify_kpoints_params = settings.get('modify_kpoints_params', {})
@@ -307,7 +310,12 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}, db_file=None)
     """
     if WORKFLOW == "eos":
         wf = get_wf_EV_bjb(structure, deformation_fraction=deformation_fraction, store_volumetric_data=store_volumetric_data,
-                  num_deformations=num_deformations, override_symmetry_tolerances=override_default_vasp_params, metadata=metadata)
+                  num_deformations=num_deformations, settings=settings, override_symmetry_tolerances=override_default_vasp_params, metadata=metadata)
+    elif WORKFLOW == "singleV":
+        wf = get_wf_singleV(structure,  store_volumetric_data=store_volumetric_data, metadata=metadata, 
+            override_default_vasp_params=override_default_vasp_params, settings=settings)
+    elif WORKFLOW == "crosscom":
+        wf = get_wf_crosscom(structure, metadata=metadata, settings=settings)     
     elif WORKFLOW == "robust" or WORKFLOW == "get_wf_gibbs":
         wf = get_wf_gibbs_robust(structure, num_deformations=num_deformations, deformation_fraction=deformation_fraction,
                  phonon=phonon, phonon_supercell_matrix=phonon_supercell_matrix, t_min=t_min, t_max=t_max, t_step=t_step,
@@ -316,14 +324,17 @@ def get_wf_single(structure, WORKFLOW="get_wf_gibbs", settings={}, db_file=None)
                  override_default_vasp_params=override_default_vasp_params, modify_incar_params=modify_incar_params,
                  modify_kpoints_params=modify_kpoints_params, verbose=verbose, phonon_supercell_matrix_min=phonon_supercell_matrix_min,
                  phonon_supercell_matrix_max=phonon_supercell_matrix_max, optimize_sc=optimize_sc, level=level,
-                 force_phonon=force_phonon, stable_tor=stable_tor, store_volumetric_data=store_volumetric_data)
+                 force_phonon=force_phonon, stable_tor=stable_tor, store_volumetric_data=store_volumetric_data,
+                 settings=settings)
     elif WORKFLOW == "born":
         wf = get_wf_borncharge(structure=structure, metadata=metadata, db_file=db_file, isif=2, name="born charge",
                       vasp_cmd=">>vasp_cmd<<", override_default_vasp_params=override_default_vasp_params,
-                      modify_incar=modify_incar_params)
+                      modify_incar=modify_incar_params, settings=settings)
     elif WORKFLOW == 'elastic':
         wf = get_wf_elastic(structure=structure, metadata=metadata, vasp_cmd=">>vasp_cmd<<", db_file=">>db_file<<", name="elastic",
-            override_default_vasp_params=override_default_vasp_params, strain_states=strain_states,
+            override_default_vasp_params=override_default_vasp_params, 
+            settings=settings,
+            strain_states=strain_states,
             stencils=stencils, analysis=analysis, sym_reduce=sym_reduce, order=order, conventional=conventional)
     else:
         raise ValueError("Currently, only the gibbs energy workflow is supported.")
@@ -448,7 +459,7 @@ def run(args):
                         user_settings.update({"phonon_supercell_matrix": "atoms"})
 
                     wf = get_wf_single(structure, WORKFLOW=WORKFLOW, settings=user_settings)
-                    wf = Customizing_Workflows(wf)
+                    wf = Customizing_Workflows(wf,powerups_options=user_settings.get('powerups', None))
                     metadatas[STR_FILE] = wf.as_dict()["metadata"]
                     wfs.append(wf)
 

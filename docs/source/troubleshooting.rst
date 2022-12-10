@@ -29,23 +29,21 @@ or equivalently in the ``.cshrc`` file
     setenv FW_CONFIG_FILE /storage/work/y/yuw3/dfttk/config/FW_config.yaml
 
 5.      git push issue for contributors, see https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account
-6.      for batch run of the postprocessing modules, make sure compatibilities of non-ascii character by:
+
+6.      For batch run of the postprocessing modules, make sure compatibilities of non-ascii character by:
 
 .. code-block:: bash
 
     export LC_ALL='en_US.utf8' #for bsh;
     setenv LC_ALL en_US.utf8 #for csh
 
-7.      For phonon calculations, due to certain reasons (such as temperature range too high), one may not see results in the ``qha_phonon`` or ``qha`` MongoDB collections. In this case, the subcommand ``dfttk thfind`` will try to find results from the ``phonon`` collection and process the data by calling ``Yphon``
+7.      For phonon calculations, due to certain reasons (such as temperature range too high), one may not see results in the ``qha_phonon`` or ``qha`` MongoDB collections. In this case, the subcommand ``dfttk thfind`` will try to find results from the ``phonon`` collection and process the data by calling ``Yphon``:
 
 8.      When you are interesting in revising the code, if have job running in the system before your changes, the codes in the batch system might not be updated and the results might be not as you assumed. It takes me two days to figure out this problem. The solution is to kill all the dfttk running job and resubmit them.
-Following are the steps of adding API key number on DFTTK.
 
-9. How to solve the install warning of 'PMG_MAPI_KEY' is empty.
+9.      How to solve the install warning of 'PMG_MAPI_KEY' is empty. Following are the steps of adding API key number on DFTTK.
 
-  1. Go to the materials project website,
-  https://materialsproject.org/, under the API section, you will
-  easily find you API Keys number.
+  1. Go to the materials project website, https://materialsproject.org/, under the API section, you will easily find you API Keys number.
 
   2. Go to the .pmgrc.yaml file
 
@@ -59,18 +57,76 @@ Following are the steps of adding API key number on DFTTK.
 
       PMG_MAPI_KEY: ######(your API key number)
 
-10. How to find the reason for FIZZLED job.
+10.     How to find the reason for FIZZLED job.
 
-  .. code-block:: bash
-      lpad get_fws -i fw_id -d more
+.. code-block:: bash
+   
+    lpad get_fws -i fw_id -d more
 
-11. VasprunXMLValidator found from the command "lpad get_fws -i fw_id -d more"
+11.     VasprunXMLValidator found from the command "lpad get_fws -i fw_id -d more"
 
     If you get an error from the VasprunXMLValidator, that means that the vasprun.xml failed 
     to be parsed and/or validated. Usually that means the VASP job did not run or failed for 
     a reason that was not caught and handled by Custodian. Check the output files in the 
     launch directory and see if there are any errors in the VASP output or stdout/stderr.
 
+12.      During the installation or running dfttk, it could report this or that packakge missing/VersionConflict errors. You may have many of them, esspecially when you have good years' experience using python and many of your packages are obselete. DO NOT blame me, ``it is due to pymatgen``
+
+    You can try to sovle them by   
+
+    .. code-block:: bash
+   
+        pip install <missed-package> -U  #where <missed-package> should be the name of missed package
+
+    Sometimes, one may meet issue with ruamel_yaml due to ``conda`` bug on namespace of ruamel_yaml vs ruamel.yaml.  One may Manually delete the files from site-packages.  What I learnt was to delete ruamel.yaml  ``rm -rf your-path-to-anaconda3/lib/python-your-version/site-packages/ruamel*``. Then install ruamel.yaml by
+
+    .. code-block:: bash
+   
+        pip install ruamel.yaml
+
+13.      During the installation in Windows system, the latest fireworks package may give you some troubles
+
+    See troubleshooting 6. If the problem persists, do the following:
+    
+    I solved the problem by installing the development version
+
+    .. code-block:: bash
+   
+        git clone https://github.com/materialsproject/fireworks
+        cd fireworks
+
+    The trouble is due to the line containing "```" in README.md. You can delete/replace them followed by installing fireworks it as
+
+    .. code-block:: bash
+
+        pip install -e .
+
+ 14.     Sometimes, some VASP jobs may crash (showing as "F" or "FIZZLED" when you use the command ``lpad get_wflows`` to check your job status) due to various reasons (Ram leakage, job time limitations etc) or even no reasons.
+
+    These problems can mostly be resoleed by rerunning the wflows using: 
+
+    .. code-block:: bash
+
+        lapd detect_lostruns --rerun
+        lapd rerun_fws -s FIZZLED #you may need ``qlaunch`` your VASP batch jobs if no jobs in queue
+
+atomate issue (This issue has been resolved by atomate 1.0.3)
+=============================================================
+
+    if you use old version of atomate such as 0.9.7, atomate may not be compatible with pymongo >=4.0, you can sovle it by::
+
+    pip uninstall pymongo
+
+    pip install pymongo==3.11.3
+
+    pip uninstall maggma
+
+    pip install maggma==0.26.0
+
+fireworks issue
+===============
+
+    fireworks>=1.9.5 requires UTF-8 for for Windows, you should turn it on Windows setting (system locale) 
 
 pymatgen 2021 issue
 ===================

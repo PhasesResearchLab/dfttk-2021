@@ -893,6 +893,12 @@ def vol_within(vol, volumes, thr=0.001):
     return False
 
 
+def vol_within_index(vol, volumes, thr=0.001):
+    for i,v in enumerate(volumes):
+        if (abs(vol-v) < thr): return i
+    return -1
+
+
 def vol_closest(vol, volumes, thr=1.e-6):
     for i,v in enumerate(volumes):
         if (abs(vol-v) < thr*vol): return i
@@ -931,8 +937,8 @@ def get_static_calculations(vasp_db, tag):
             _dos_objs.append(vasp_db.get_dos(calc['task_id']))
 
     tvolumes = np.array(sorted(volumes))
-    if len(tvolumes)>1:
-        dvolumes = tvolumes[1:-1] - tvolumes[0:-2]
+    if len(tvolumes)>=3:
+        dvolumes = tvolumes[1:] - tvolumes[0:-1]
         dvolumes = sorted(dvolumes)
         if abs(dvolumes[-1]-dvolumes[-2]) > 0.01*dvolumes[-1]:
             #adding useful contraint calculations if not calculated statically
@@ -1068,7 +1074,7 @@ class thelecMDB():
 
 
     def get_superfij(self,i, phdir):
-        if vol_within(float(i['volume']), self.Vlat):
+        if vol_within(float(i['volume']), self.Vlat, thr=1.e-6):
             print("\nit seems a repeated phonon calculation for", i['volume'],"so it is discared\n")
             return None
         try:
@@ -1105,10 +1111,13 @@ class thelecMDB():
         structure.to(filename=os.path.join(voldir,'POSCAR'))
 
         with open (os.path.join(voldir,'metadata.json'),'w') as out:
-            mm = i['metadata']
-            mm['volume'] = i['volume']
-            mm['energy'] = self.energies[(list(self.volumes)).index(i['volume'])]
-            out.write('{}\n'.format(mm))
+            idx = vol_within_index(i['volume'],self.volumes, thr=1.e-6)
+            #print("iiiiiiiiii idx=", idx, i['volume'],self.volumes)
+            if idx >=0:
+                mm = i['metadata']
+                mm['volume'] = i['volume']
+                mm['energy'] = self.energies[idx]
+                out.write('{}\n'.format(mm))
 
 
         if len(self.xmlvol)!=0:
@@ -1121,7 +1130,8 @@ class thelecMDB():
 
 
         with open (os.path.join(voldir,'OSZICAR'),'w') as out:
-            out.write('   1 F= xx E0= {}\n'.format(self.energies[(list(self.volumes)).index(i['volume'])]))
+            idx = vol_within_index(i['volume'],self.volumes, thr=1.e-6)
+            if idx >0: out.write('   1 F= xx E0= {}\n'.format(self.energies[idx]))
         with open (os.path.join(voldir,'superfij.out'),'w') as out:
             for line in range (2,5):
                 out.write('{}\n'.format(unitcell_l[line]))
@@ -1433,11 +1443,19 @@ class thelecMDB():
         for i in (self.vasp_db).db['phonon'].find({'metadata.tag': self.tag}):
             try:
                 self.force_constant_factor = i['force_constant_factor']
+                if self.static_vasp_version[0:1] >= '6' and self.static_vasp_version[0:3] < '6.2':
+                    if self.force_constant_factor == 1.0:
+                        self.force_constant_factor /= 0.004091649655126895
             except:
-                if self.static_vasp_version[0:1] >= '6':
+                if self.static_vasp_version[0:3] >= '6.2':
                     self.force_constant_factor = 0.004091649655126895
+                else:
+                    self.force_constant_factor = 1.0
 
-            if i['volume'] not in self.volumes: continue
+            #if i['volume'] not in self.volumes: 
+            if not vol_within(i['volume'], self.volumes, thr=1.e-6):
+                print (i['volume'], "is not within", self.volumes)
+                continue
             voldir = self.get_superfij(i, phdir)
             if voldir is None: continue
 
@@ -1460,7 +1478,7 @@ class thelecMDB():
                 if self.debug:
                     _nqwave = "-nqwave "+ str(1.e4)
                 #md = "Yphon -tranI 2 -DebCut 0.5 " +_nqwave+ " <superfij.out"
-                cmd = "Yphon -DebCut 0.5 " +_nqwave+ " <superfij.out"
+                cmd = "Yphon -DebCut 0.5 -thr2 0.001 " +_nqwave+ " <superfij.out"
                 if has_Born: cmd += " -Born dielecfij.out"
                 print(cmd, " at ", voldir)
                 output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -1520,7 +1538,7 @@ class thelecMDB():
                 _nqwave = ""
                 if self.debug:
                     _nqwave = "-nqwave "+ str(1.e4)
-                cmd = "Yphon -tranI 2 -DebCut 0.5 " +_nqwave+ " <superfij.out"
+                cmd = "Yphon -tranI 2 -DebCut 0.5 -thr2 0.001 " +_nqwave+ " <superfij.out"
                 print(cmd, " at ", dir)
                 output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
@@ -1556,7 +1574,7 @@ class thelecMDB():
         for i,v in enumerate (self.Vlat):
             fvol = False
             for j,vol in enumerate(self.volumes):
-                if abs(vol-v)<1.e-8:
+                if abs(vol-v)<1.e-6:
                     print (v, self.energies[j])
                     fvol = True
             if not fvol:
@@ -1569,7 +1587,8 @@ class thelecMDB():
         _e = []
         _d = []
         for i, vol in enumerate(list(self.volumes)):
-            if vol not in self.Vlat:
+            #if vol not in self.Vlat:
+            if not vol_within(vol,self.Vlat,thr=1.e-6):
                 print ("data in static calculation with volume=", vol, "is discarded")
                 continue
             _v.append(vol)
@@ -1622,8 +1641,14 @@ class thelecMDB():
         tmp = _calc['input']['pseudo_potential']
         tmp['functional'] = potsoc
         key_comments['pseudo_potential'] = tmp
-        key_comments['ENCUT'] = _calc['input']['incar']['ENCUT']
-        key_comments['NEDOS'] = _calc['input']['incar']['NEDOS']
+        try:
+            key_comments['ENCUT'] = _calc['input']['incar']['ENCUT']
+        except:
+            pass
+        try:
+            key_comments['NEDOS'] = _calc['input']['incar']['NEDOS']
+        except:
+            pass
         try:
             key_comments['LSORBIT'] = _calc['input']['incar']['LSORBIT']
         except:
@@ -1658,7 +1683,7 @@ class thelecMDB():
         for i in vasp_version:
             v = i['calcs_reversed'][0]['vasp_version']
             if self.static_vasp_version is None: self.static_vasp_version = v
-            elif v[0:1]!=self.static_vasp_version[0:1]:
+            elif v[0:3]!=self.static_vasp_version[0:3]:
                 print("\n***********FETAL messing up calculation! please remove:", self.tag, "\n")
         if self.static_vasp_version is not None:
             print("\nvasp version for the static calculation is:", self.static_vasp_version, " for ", self.tag, "\n")
@@ -1993,24 +2018,24 @@ class thelecMDB():
             return
         self.from_phonon_collection = False
         if self.qhamode=="debye":
-            self.qha_items = self.vasp_db.db['qha'].find({'metadata.tag': self.tag})
+            self.qha_items = self.vasp_db.db['qha'].find({'$and':[ {'metadata': {'tag':self.tag}}, {'S_vib': {'$exists': True}} ]})
         elif self.qhamode=="phonon":
-            self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata.tag': self.tag})
+            self.qha_items = self.vasp_db.db['qha_phonon'].find({'$and':[ {'metadata': {'tag':self.tag}}, {'S_vib': {'$exists': True}} ]})
         else:
             try:
                 self.qhamode='phonon'
-                self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata.tag': self.tag})
+                self.qha_items = self.vasp_db.db['qha_phonon'].find({'$and':[ {'metadata': {'tag':self.tag}}, {'S_vib': {'$exists': True}} ]})
             except:
                 self.qhamode='debye'
-                self.qha_items = self.vasp_db.db['qha'].find({'metadata.tag': self.tag})
+                self.qha_items = self.vasp_db.db['qha'].find({'$and':[ {'metadata': {'tag':self.tag}}, {'S_vib': {'$exists': True}} ]})
         # check compatibility with vasp6
         if self.qhamode=='phonon':
-            for i in (self.vasp_db).db['phonon'].find({'metadata.tag': self.tag}):
+            for i in (self.vasp_db).db['phonon'].find({'$and':[ {'metadata.tag': self.tag}, {'S_vib': {'$exists': True}} ]}):
                 try:
                     self.force_constant_factor = i['force_constant_factor']
                 except:
                     if self.static_vasp_version[0:1] >= '6':
-                        print("\n**************FETAL ERROR! force constant not compatible for :", self.tag, "by default phonopy with vasp6\n")
+                        print("\n**************Warning! force constant may not compatible for :", self.tag, "by default phonopy with vasp6\n")
                         
 
         try:
@@ -2019,12 +2044,12 @@ class thelecMDB():
             #print("xxxx=",self.T_vib)
         except:
             try:
-                self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata': self.tag})
+                self.qha_items = self.vasp_db.db['qha_phonon'].find({'$and':[ {'metadata.tag': self.tag}, {'S_vib': {'$exists': True}} ]})
                 self.T_vib = self.qha_items[0][self.qhamode]['temperatures'][::self.everyT]
             except:
                 try:
                     self.qhamode = 'phonon'
-                    self.qha_items = self.vasp_db.db[self.qhamode].find({'metadata.tag': self.tag})
+                    self.qha_items = self.vasp_db.db[self.qhamode].find({'$and':[ {'metadata.tag': self.tag}, {'S_vib': {'$exists': True}} ]})
                     self.T_vib = self.qha_items[0]['temperatures'][::self.everyT]
                     self.from_phonon_collection = True
                 except:
@@ -2041,10 +2066,11 @@ class thelecMDB():
             _Flat = []
 
             for i in self.qha_items:
-                _Vlat.append(i['volume'])
                 _Slat.append(i['S_vib'][::self.everyT])
                 _Clat.append(i['CV_vib'][::self.everyT])
                 _Flat.append(i['F_vib'][::self.everyT])
+                _Vlat.append(i['volume'])
+
             self.volT = np.zeros(len(self.T_vib))
             self.GibT = np.zeros(len(self.T_vib))
             _Dlat = np.full((len(_Vlat)), 400.)
@@ -2070,9 +2096,10 @@ class thelecMDB():
         Flat = []
         Dlat = []
         for i, vol in enumerate(_Vlat):
-            if vol_within(vol, Vlat): continue
+            if vol_within(vol, Vlat, thr=1.e-6): continue
             #if vol in Vlat: continue
-            if vol not in self.volumes: continue
+            if not vol_within(vol, self.volumes, thr=1.e-6): continue
+            #if vol not in self.volumes: continue
             Vlat.append(vol)
             Slat.append(_Slat[i])
             Clat.append(_Clat[i])
@@ -2337,6 +2364,7 @@ class thelecMDB():
 
     def datasm(self, fname):
         data = np.loadtxt(fname, comments="#", dtype=float)
+        data_orig = copy.deepcopy(data)
         nT = data.shape[0]
         nF = data.shape[1]
         nSmooth = 11
@@ -2346,7 +2374,8 @@ class thelecMDB():
         for i in range(1,nF):
             #data[:,i]=np.convolve(data[:,i], box, mode='same')
             data[:,i]=savgol_filter(data[:,i], nSmooth, 3)
-        with open(fname+'_sm', 'w') as fout:
+
+        with open(fname+'_sm.csv', 'w') as fout:
             with open(fname, 'r') as fin:
                 lines = fin.readlines()
                 for line in lines:
@@ -2355,9 +2384,19 @@ class thelecMDB():
             for i in range(0,nT):
                 for j in range(0,nF):
                     if j==nF-1: fout.write('{}\n'.format(data[i,j]))
-                    else: fout.write('{} '.format(data[i,j])) 
+                    else: fout.write('{}, '.format(data[i,j])) 
     
+            
+        with open(fname+'.csv', 'w') as fout:
+            with open(fname, 'r') as fin:
+                lines = fin.readlines()
+                for line in lines:
+                    if line.startswith('#'): print(line.strip(),file=fout)
 
+            for i in range(0,nT):
+                for j in range(0,nF):
+                    if j==nF-1: fout.write('{}\n'.format(data_orig[i,j]))
+                    else: fout.write('{}, '.format(data_orig[i,j])) 
 
     def add_comput_inf(self):
         if self.vasp_db!=None:
@@ -2757,7 +2796,10 @@ class thelecMDB():
 
 
     def run_console(self):
-        finished_tags = finished_calc()
+        try:
+            finished_tags = finished_calc()
+        except:
+            finished_tags = {}
         if not self.renew:
             if self.tag is not None:
                 if self.tag in finished_tags:

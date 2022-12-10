@@ -32,8 +32,8 @@ from dfttk.custodian_jobs import ATATWalltimeHandler, ATATInfDetJob
 from atomate import __version__ as atomate_ver
 from dfttk import __version__ as dfttk_ver
 from pymatgen.core import __version__ as pymatgen_ver
-from dfttk.pythelec import get_static_calculations
-from dfttk.scripts.assign_fworker_name import Customizing_Workflows, get_powerups_options
+from dfttk.pythelec import get_static_calculations, vol_within
+from dfttk.scripts.assign_fworker_name import Customizing_Workflows
 
 def extend_calc_locs(name, fw_spec):
     """
@@ -340,9 +340,13 @@ class QHAAnalysis(FiretaskBase):
         #always perform phonon calculations when when enough phonon calculations found
         #to perform a quasiharmonic phonon calculations, one needs at least phonon results five volumes
         #phonon_calculations= list(vasp_db.db['phonon'].find({'$and':[ {'metadata.tag': tag}, {'adopted': True} ]}))     
-        phonon_calculations= list(vasp_db.db['phonon'].find({'$and':[ {'metadata': {'tag':tag}}, {'adopted': True} ]}))     
+        phonon_calculations= list(vasp_db.db['phonon'].find({'$and':[ {'metadata': {'tag':tag}}, {'adopted': True}, {'S_vib': {'$exists': True}} ]}))     
         num_phonon_finished = len(phonon_calculations)       
         qha_result['has_phonon'] = num_phonon_finished >= 5
+        if not qha_result['has_phonon']:
+            phonon_calculations= list(vasp_db.db['phonon'].find({'$and':[ {'metadata': {'tag':tag}}, {'S_vib': {'$exists': True}} ]}))     
+            num_phonon_finished = len(phonon_calculations)       
+            qha_result['has_phonon'] = num_phonon_finished >= 5
         #if self['phonon']:
         if qha_result['has_phonon']:
             # get the vibrational properties from the FW spec
@@ -355,12 +359,15 @@ class QHAAnalysis(FiretaskBase):
             vol_s_vib = []
             vol_c_vib = []
             for calc in phonon_calculations:
-                if calc['volume'] in vol_vol: continue
-                if calc['volume'] not in volumes: continue
-                vol_vol.append(calc['volume'])
+                #if calc['volume'] in vol_vol: continue
+                #if calc['volume'] not in volumes: continue
+                if vol_within(calc['volume'], vol_vol, thr=1.e-6): continue
+                if not vol_within(calc['volume'],volumes, thr=1.e-6): continue
                 vol_f_vib.append(calc['F_vib'][::everyT])
                 vol_s_vib.append(calc['S_vib'])
                 vol_c_vib.append(calc['CV_vib'])
+                vol_vol.append(calc['volume'])
+
             # sort them order of the unit cell volumes
             vol_f_vib = sort_x_by_y(vol_f_vib, vol_vol)
             vol_s_vib = sort_x_by_y(vol_s_vib, vol_vol)
@@ -371,7 +378,8 @@ class QHAAnalysis(FiretaskBase):
             _energies = []
             _dos_objs = []
             for iv,vol in enumerate(volumes):
-                if vol not in vol_vol:  continue
+                #if vol not in vol_vol:  continue
+                if not vol_within(vol,vol_vol, thr=1.e-6): continue
                 _volumes.append(vol)
                 _energies.append(energies[iv])
                 _dos_objs.append(dos_objs[iv])
@@ -741,6 +749,88 @@ class ModifyKpoints(FiretaskBase):
 
 
 @explicit_serialize
+class Crosscom_Calculation(FiretaskBase):
+    """Continue Static/Phonon calculations
+    """
+
+    required_params = []
+    optional_params = ['db_file', 'vasp_cmd', 'a_kwargs',
+                       'db_insert', 'tag', 'metadata', 'name', 'vasp_input_set',
+                       't_min', 't_max', 't_step', 
+                       'verbose', 'modify_incar_params', 'modify_kpoints_params', 
+                       'override_default_vasp_params', 
+                       'store_volumetric_data', 'static', 'defo']
+
+    def run_task(self, fw_spec):
+        db_file = self.get('db_file') or DB_FILE
+        vasp_cmd = self.get('vasp_cmd') or VASP_CMD
+        db_insert = self.get('db_insert', None)
+        tag = self.get('tag')
+        metadata = self.get('metadata')
+        name = self.get('name', "Crosscom_Calculation")
+        t_min = self.get('t_min', None)
+        t_max = self.get('t_max', None)
+        t_step = self.get('t_step', None)
+        modify_incar_params = self.get('modify_incar_params', {})
+        modify_kpoints_params = self.get('modify_kpoints_params', {})
+        override_default_vasp_params = self.get('override_default_vasp_params', {})
+        store_volumetric_data = self.get('store_volumetric_data', False)
+
+        return FWAction(detours=self.get_detour_workflow(
+            db_file, vasp_cmd, db_insert, tag, metadata, name, 
+            t_min, t_max, t_step, 
+            modify_incar_params, modify_kpoints_params,
+            override_default_vasp_params,
+            store_volumetric_data)
+            )
+
+    def get_detour_workflow(self,
+        db_file, vasp_cmd, db_insert, tag, metadata, name, 
+        t_min, t_max, t_step, 
+        modify_incar_params, modify_kpoints_params, 
+        override_default_vasp_params, 
+        store_volumetric_data):
+        from fireworks import Workflow
+        from .fworks import PhononFW, StaticFW
+        a_kwargs = self.get('a_kwargs',{})
+        settings = a_kwargs.get('settings', {})
+        stable_tor = settings.get('stable_tor', 0.01)
+        
+        phonon = settings.get('phonon', False)
+        phonon_supercell_matrix = a_kwargs.get('phonon_supercell_matrix', None)
+        structure=a_kwargs.get('structure', None)
+        site_properties = structure.site_properties
+        
+        detour_fws = []
+        inp_structure = Structure.from_file('CONTCAR')
+        if len(site_properties)>0:
+            for prop, vals in site_properties.items():
+                inp_structure.add_site_property(prop, vals)
+
+        detour_fws.append(StaticFW(inp_structure, name="crosscom-static"+'-defo={:5.3f}'.format(self.get('defo',1.0)), 
+                 vasp_cmd=vasp_cmd, metadata=metadata, prev_calc_loc=False, modify_incar=modify_incar_params, 
+                 db_file=db_file, tag=tag, 
+                 a_kwargs=a_kwargs,
+                 override_default_vasp_params=override_default_vasp_params,
+                 store_volumetric_data=store_volumetric_data))
+
+        if phonon:
+            t_kwargs = {'t_min': t_min, 't_max': t_max, 't_step': t_step}
+            common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': db_file, "metadata": metadata, "tag": tag,
+                'override_default_vasp_params': override_default_vasp_params}
+            detour_fws.append(PhononFW(inp_structure, phonon_supercell_matrix, 
+                name='crosscom-phonon'+'-defo={:5.3f}'.format(self.get('defo',1.0)), 
+                prev_calc_loc=False, stable_tor=stable_tor,
+                a_kwargs=a_kwargs,
+                **t_kwargs, **common_kwargs))
+        """
+        override_default_vasp_params = override_default_vasp_params or {}
+        user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
+        """
+        return Customizing_Workflows(detour_fws, powerups_options=settings.get('powerups', None))
+
+
+@explicit_serialize
 class CheckRelaxation(FiretaskBase):
     """Run VASP calculations to get symmetry conserved and symmetry broken structures.
 
@@ -806,7 +896,8 @@ class CheckRelaxation(FiretaskBase):
 
     required_params = ["db_file", "tag", "common_kwargs"]
     optional_params = ["metadata", "tol_energy", "tol_strain", "tol_bond", 'level', 'isif4',  "energy_with_isif",
-                       "static_kwargs", "relax_kwargs", 'store_volumetric_data', 'site_properties']
+                       "static_kwargs", "relax_kwargs", 'store_volumetric_data', 
+                       'a_kwargs', 'site_properties']
 
     def run_task(self, fw_spec):
         self.db_file = env_chk(self.get("db_file"), fw_spec)
@@ -930,6 +1021,8 @@ class CheckRelaxation(FiretaskBase):
         
         symmetry_options = self.symmetry_options
         static_kwargs = self.get('static_kwargs', {})
+        a_kwargs = self.get('a_kwargs', {})
+        settings = a_kwargs.get('settings', {})
 
         # Assume the data for the current step is already in the database
         db = VaspCalcDb.from_db_file(self.db_file, admin=True).db['relaxations']
@@ -949,17 +1042,21 @@ class CheckRelaxation(FiretaskBase):
                 md['symmetry_type'] = step["symmetry_type"]
                 common_copy["metadata"] = md
                 detour_fws.append(StaticFW(inp_structure, isif=step['isif'], store_volumetric_data=self.store_volumetric_data,
-                                           **static_kwargs, **common_copy))
+                        a_kwargs=a_kwargs,
+                        **static_kwargs, **common_copy))
             elif job_type == "relax":
                 detour_fws.append(RobustOptimizeFW(inp_structure, isif=step["isif"], energy_with_isif=energy_with_isif,
-                                override_symmetry_tolerances=symmetry_options, store_volumetric_data=self.store_volumetric_data, **self["common_kwargs"]))
+                                override_symmetry_tolerances=symmetry_options, store_volumetric_data=self.store_volumetric_data, 
+                                a_kwargs=a_kwargs, **self["common_kwargs"]))
             else:
                 raise ValueError(f"Unknown job_type {job_type} for step {step}.")
+        """
         common_kwargs = self.get('common_kwargs',{})
         override_default_vasp_params = common_kwargs.get('override_default_vasp_params',{})
         user_incar_settings = override_default_vasp_params.get('user_incar_settings',{})
         #user_incar_settings = common_kwargs.get('modify_incar_params',{})
-        return Customizing_Workflows(detour_fws, powerups_options=user_incar_settings.get('powerups', None))
+        """
+        return Customizing_Workflows(detour_fws, powerups_options=settings.get('powerups', None))
 
 
 @explicit_serialize

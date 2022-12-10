@@ -187,10 +187,12 @@ class EVfindMDB ():
             else: phases[i] = pname[0]+potname[i]+EV['MagState']
             if EV['natoms'] < self.natoms: continue
             
-            sys.stdout.write('{}, static: {:>2}, natoms: {:>3}, {}\n'.format(metadata, count[i], EV['natoms'], phases[i]))
-
             folder = os.path.join(evdirhome,phases[i])
             if not os.path.exists(folder): os.mkdir(folder)
+            self.num_Born = 0
+            self.get_data(folder, EV, mm)
+            sys.stdout.write('{}, static: {:>2}, natoms: {:>3}, phonon: {:>2}, Born: {}, {}\n'.format(metadata, \
+                count[i], EV['natoms'], self.num_phonon, self.num_Born, phases[i]))
             with open (os.path.join(folder,'POSCAR'), 'w') as fp:
                 fp.write(POSCAR)
             readme = {}
@@ -250,3 +252,139 @@ class EVfindMDB ():
             for j in range(len(i_volumes)):
                 print(i_volumes[j], i_energies[j],  file=fp_ev)
             thermoplot(folder,"0 K total energies (eV/atom)", i_volumes, i_energies)
+
+    def get_data(self, phasename, EV, tag):
+        phdir = os.path.join(phasename,'Yphon')
+        if not os.path.exists(phdir):
+            os.mkdir(phdir)
+
+        self.num_Born = self.get_dielecfij(phdir, tag)
+        vasp_version = list(self.vasp_db.db['tasks'].find({'$and':[ {'metadata.tag': tag}, { 'calcs_reversed': { '$exists': True } }]}))
+        self.static_vasp_version = None
+        for i in vasp_version:
+            v = i['calcs_reversed'][0]['vasp_version']
+            #print ("xxxxxxxx", v)
+            if self.static_vasp_version is None: self.static_vasp_version = v
+            """
+            elif v[0:3]!=self.static_vasp_version[0:3]:
+                print("\n***********FETAL messing up calculation! please remove:", tag, "\n")
+            """
+        """
+        if self.static_vasp_version is not None:
+            print("\nvasp version for the static calculation is:", self.static_vasp_version, " for ", tag, "\n")
+        """
+        
+        self.num_phonon = 0
+        for i in (self.vasp_db).db['phonon'].find({'metadata.tag': tag}):
+            try:
+                self.force_constant_factor = i['force_constant_factor']
+            except:
+                if self.static_vasp_version[0:1] >= '6':
+                    self.force_constant_factor = 0.004091649655126895
+                else:
+                    self.force_constant_factor = 1.0
+
+            if i['volume'] not in EV['volumes']: continue
+            self.num_phonon += 1
+            voldir = self.get_superfij(i, phdir, EV['volumes'], EV['energies'])
+
+
+
+    def get_superfij(self,i, phdir, volumes, energies):
+        try:
+            structure = Structure.from_dict(i['unitcell'])
+        except:
+            print("\nit seems phonon for", i['volume'],"is not finished yet  and so it is discared\n")
+            return None
+        vol = 'V{:010.6f}'.format(float(i['volume']))
+        voldir = os.path.join(phdir,vol)
+        if not os.path.exists(voldir):
+            os.mkdir(voldir)
+        elif os.path.exists(os.path.join(voldir,'superfij.out')): return voldir
+
+        poscar = structure.to(fmt="poscar")
+        unitcell_l = str(poscar).split('\n')
+        natom = len(structure.sites)
+
+        supercell_matrix = i['supercell_matrix']
+        supercell_structure = copy.deepcopy(structure)
+        supercell_structure.make_supercell(supercell_matrix)
+
+        sa = SpacegroupAnalyzer(supercell_structure)
+        #reduced_structure = supercell_structure.get_reduced_structure(reduction_algo='niggli')
+        #print ('niggli reduced structure', reduced_structure)
+        #poscar = reduced_structure.to(fmt="poscar")
+        primitive_unitcell_structure = sa.find_primitive()
+        poscar = primitive_unitcell_structure.to(fmt="poscar")
+        punitcell_l = str(poscar).split('\n')
+
+        natoms = len(supercell_structure.sites)
+        ##print(supercell_structure.sites)
+        poscar = supercell_structure.to(fmt="poscar")
+        supercell_l = str(poscar).split('\n')
+        structure.to(filename=os.path.join(voldir,'POSCAR'))
+
+        with open (os.path.join(voldir,'OSZICAR'),'w') as out:
+            out.write('   1 F= xx E0= {}\n'.format(energies[(list(volumes)).index(i['volume'])]))
+        with open (os.path.join(voldir,'superfij.out'),'w') as out:
+            for line in range (2,5):
+                out.write('{}\n'.format(unitcell_l[line]))
+            for line in range (2,5):
+                out.write('{}\n'.format(supercell_l[line]))
+            out.write('{} {}\n'.format(natoms, natoms//natom))
+            for line in range (7,natoms+8):
+                out.write('{}\n'.format(supercell_l[line]))
+            force_constant_matrix = np.array(i['force_constants'])
+            hessian_matrix = np.empty((natoms*3, natoms*3), dtype=float)
+
+            for ii in range(natoms):
+               for jj in range(natoms):
+                    for x in range(3):
+                        for y in range(3):
+                            hessian_matrix[ii*3+x, jj*3+y] = -force_constant_matrix[ii,jj,x,y]
+
+            hessian_matrix *= self.force_constant_factor
+            if self.force_constant_factor!=1.0: 
+                print ("\n force constant matrix has been rescaled by :", self.force_constant_factor)
+
+            for xx in range(natoms*3):
+                for yy in range(natoms*3-1):
+                    out.write('{} '.format(hessian_matrix[xx,yy]))
+                out.write('{}\n'.format(hessian_matrix[xx,natoms*3-1]))
+        return voldir
+
+    def get_dielecfij(self, phdir, tag):
+
+        volumes_b = (self.vasp_db).db['borncharge'].find({'metadata.tag': tag}, {'_id':0, 'volume':1})
+        volumes_b = [i['volume'] for i in volumes_b]
+        num_Born = len(volumes_b)      
+        if num_Born>0:
+            for i in (self.vasp_db).db['borncharge'].find({'metadata.tag': tag}):
+                vol = 'V{:010.6f}'.format(float(i['volume']))
+                voldir = phdir+'/'+vol
+                if not os.path.exists(voldir):
+                   os.mkdir(voldir)
+
+                structure = Structure.from_dict(i['structure'])
+                poscar = structure.to(fmt="poscar")
+                poscar = str(poscar).split('\n')
+                natom = len(structure.sites)
+                with open (voldir+'/dielecfij.out','w') as out:
+                    for line in range (2,5):
+                        out.write('{}\n'.format(poscar[line]))
+                    for line in range (8,natom+8):
+                        out.write('{}\n'.format(poscar[line]))
+                    dielectric_tensor = np.array(i['dielectric_tensor'])
+                    for x in range(3):
+                        for y in range(3):
+                            out.write('{} '.format(dielectric_tensor[x,y]))
+                        out.write('\n')
+                    born_charge = np.array(i['born_charge'])
+                    for ii in range(natom):
+                        out.write(' ion  {}\n'.format(ii+1))
+                        for x in range(3):
+                            out.write('  {} '.format(x+1))
+                            for y in range(3):
+                                out.write('{} '.format(born_charge[ii,x,y]))
+                            out.write('\n')
+        return num_Born

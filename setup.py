@@ -19,7 +19,7 @@ setup(
                     'dfttk.analysis' : ['database/*']},
     description='Density functional theory workflows for finite temperature thermodynamics based on atomate workflows. Created by the Phases Research Lab',
     long_description=readme(),
-    install_requires=['atomate>=0.9.4', 'tinydb', 'phonopy', 'ase', 'pymatgen', 'numpy>=1.20.1'],
+    install_requires=['atomate==1.0.3', 'maggma==0.49.9', 'pymongo==4.3.3','phonopy==2.9.1', 'fireworks==2.0.3', 'tinydb', 'ase', 'pymatgen==2022.11.1', 'numpy>=1.20.1'],
     extras_require={
         'dev': [
             'sphinx',

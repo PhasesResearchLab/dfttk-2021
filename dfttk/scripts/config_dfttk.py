@@ -75,7 +75,8 @@ def get_machines(nodes=1, ppn=16, user_machines=None):
                 "_fw_template_file": os.path.join(".", "config", "PBS_template_custom.txt"),
                 "vasp_cmd": "mpirun vasp_std"}
             }
-        dumpfn(machines, "machines.yaml", default_flow_style=False, indent=4)
+        #dumpfn(machines, "machines.yaml", default_flow_style=False, indent=4)
+        dumpfn(machines, "machines.yaml")
     return machines
 
 def replace_file(filename, old_str, new_str):
@@ -600,7 +601,8 @@ def config_pymatgen(psp_dir=None, def_fun="PBE", mapi=None, path_to_store_psp="p
             shutil.copyfile(pmg_config_file, pmg_config_file + ".dfttk.bak")
     for key in keys_required:
         params[key] = keys_dict[key]
-    dumpfn(params, pmg_config_file, default_flow_style=False)
+    #dumpfn(params, pmg_config_file, default_flow_style=False)
+    dumpfn(params, pmg_config_file)
     if "PMG_MAPI_KEY" in keys_required and (not mapi):
         warnings.warn("'PMG_MAPI_KEY' is empty, some function will not work. " +
             "Please add your own Materials Project's API. " +
@@ -637,9 +639,10 @@ def update_configfile(filename, base_file):
             ori_file[item] = base_file[item]
     """
     if filename.endswith(".json"):
-        dumpfn(ori_file, filename, indent=4)
+        dumpfn(ori_file, filename)
     elif filename.endswith(".yaml"):
-        dumpfn(ori_file, filename, default_flow_style=False, indent=4)
+        #dumpfn(ori_file, filename, default_flow_style=False, indent=4)
+        dumpfn(ori_file, filename)
 
 def config_atomate(path_to_store_config=".", config_folder="config", queue_script="vaspjob.pbs",
     queue_type="pbs", vasp_cmd_flag="vasp_std", machine="aci", machines=None,
@@ -724,10 +727,11 @@ class ConfigTemplate(object):
         with open(filename, 'w') as f:
             if filename.endswith(".json"):
                 from json import dump
-                dump(self.DATA, f, indent=4)
+                dump(self.DATA, f)
             elif filename.endswith(".yaml"):
                 from yaml import dump
-                dump(self.DATA, f, default_flow_style=False, sort_keys=False, indent=4)
+                #dump(self.DATA, f, default_flow_style=False, sort_keys=False, indent=4)
+                dump(self.DATA, f, sort_keys=False)
 
 class ConfigDb(ConfigTemplate):
     """docstring for ConfigDb"""

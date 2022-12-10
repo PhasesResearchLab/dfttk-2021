@@ -617,7 +617,7 @@ class thermoplot:
         elif self.thermodynamicproperty.lower()!="heat capacities (J/mol-atom/K)".lower(): self.plot_default()
         else: self.plot_Heat_Capacity()
 
-        if self.plottitle!=None: plt.title(self.plottitle)
+        #if self.plottitle!=None: plt.title(self.plottitle)
         plt.xlabel(self._xlabel)
         plt.ylabel(self._ylabel)
         self.ax.legend(loc=0, prop={'size': 24})
@@ -642,10 +642,11 @@ class thermoplot:
             self.ax.plot(self.x, self.y, fillstyle='none', marker='o', markersize=12,
                 color='k', linestyle='None', label=self._label)
         xnew = np.linspace(min(self.x)*0.95,max(self.x)*1.05, 300)
-        from dfttk.pythelec import BMvol4, BMvol, alt_curve_fit
-        f2, pcov = alt_curve_fit(BMvol4, self.x, self.y)
-        ynew = BMvol(xnew, f2)
-        self.ax.plot(xnew,ynew,'-',linewidth=1,color='b', label="BMvol4")
+        if len(self.x)>=4:
+            from dfttk.pythelec import BMvol4, BMvol, alt_curve_fit
+            f2, pcov = alt_curve_fit(BMvol4, self.x, self.y)
+            ynew = BMvol(xnew, f2)
+            self.ax.plot(xnew,ynew,'-',linewidth=1,color='b', label="BMvol4")
 
 
     def plot_Helmholtz_energy_v0(self):
@@ -1432,7 +1433,7 @@ def mkDict(line):
   idx = 1
   while True:
     if not os.path.exists(dir0): break
-    recordfile = dir0,"record.json"
+    recordfile = os.path.join(dir0,"record.json")
     newdir = False
     try:
       if os.path.exists(recordfile):
@@ -1743,7 +1744,6 @@ def Phonon298(dir0, pvdos=False):
     copyfile(os.path.join(plotdatabase,dfile),os.path.join(phdir298,dfile))
     cwd = os.getcwd()
     os.chdir( phdir298 )
-    import platform
     if platform.system()=="Linux":
       cmd = 'timeout 6 pos2s Symmetry.pos -THR 3.e-4 >&symmetry.out'
       output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -2366,19 +2366,29 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None, local=None):
     ydir = os.path.join(folder,'..')
 
   vdict = {}
+  emin = 1.0e36
   for root, dirs, files in os.walk(ydir):
     for dir in dirs:
       poscar = os.path.join(ydir,dir,'POSCAR')
+
       if os.path.exists(poscar):
         structure = Structure.from_file(poscar)
         vol = 'V{:010.6f}'.format(structure.volume)
         vdict[vol]=dir
-  try:
-    natom = len(structure.sites)
-    sa = SpacegroupAnalyzer(structure)
-    ngroup = sa.get_space_group_number()
-  except:
-    return
+        oszicar = os.path.join(ydir,dir, 'OSZICAR')
+        if not os.path.exists(poscar): continue
+        with open(oszicar,"r") as fp:
+          lines = fp.readlines()
+          for line in lines:
+            dat = [s for s in line.split() if s!=""]
+            if len(dat) < 5: continue
+            if dat[1]!="F=" or dat[3]!="E0=": continue
+            e = float(dat[4])
+            if e < emin:
+              emin = e
+              natom = len(structure.sites)
+              sa = SpacegroupAnalyzer(structure)
+              ngroup = sa.get_space_group_number()
 
   #print(natom,ngroup)
   i1 = 0
@@ -2435,7 +2445,6 @@ def Plot298(folder, V298, volumes, debug=False, plottitle=None, local=None):
       move("vdos.png", os.path.join(cwd,folder,'vdos298.15.png'))
 
   if not os.path.exists('symmetry.mode'):
-    import platform
     if platform.system()=="Linux":
       cmd = "pos2s Symmetry.pos -THR 0.001"
       output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,

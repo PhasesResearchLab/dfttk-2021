@@ -17,7 +17,7 @@
     :align: right
     :height: 300px
     :figclass: align-right
-
+   
 Project Goal
 ------------
 
@@ -25,6 +25,30 @@ The goal of DFTTK is to make high-throughput first-principles calculations as si
 The density functional theory (DFT) based software VASP is employed to perform first-principles calculations. In addition thermodynamic properties via the quasiharmonic approach, we proposed that any property, as long as it is dependent on the volume or stain, can be predicted using a quasi-static approach implemented by our group according to (i) the predicted property-volume/strain relationship from first-principles calculations directly and (ii) the volume/strain-temperature relationship of materials from the quasiharmonic approach. 
 
 For a given structure and elements, calculate all kinds of thermodynamic properties at finite temperature and pressure by first-principles approach based on density functional theory, including lattice vibration, thermal electron excitation, Seebeck coefficient, Lorenz number, effective charge carrier concentration etc. 
+
+
+Citing DFTTK
+------------
+
+If you use DFTTK for work presented in a publication, we ask that you cite the following publication:
+
+Y. Wang, M. Q. Liao, B. J. Bocklund, P. Gao, S. L. Shang, H. J. Kim, A. M. Beese, L. Q. Chen, and Z. K. Liu, DFTTK: Density functional theory toolkit for high-throughput lattice dynamics calculations, CALPHAD 75 (2021) 102355. doi:`10.1016/j.calphad.2021.102355 <https://doi.org/10.1016/j.calphad.2021.102355>`_.
+
+::
+
+   @article{Wang2021DFTTK,
+            archivePrefix = {arXiv},
+            arxivId = {2107.03966},
+            author = {Yi Wang, Mingqing Liao, Brandon J. Bocklund, Peng Gao, Shun-Li Shang, Hojong Kim, Allison M. Beese, Long-Qing Chen, Zi-Kui Liu},
+            doi = {10.1016/j.calphad.2021.102355},
+            eprint = {2107.03966},
+            issn = {0364-5916},
+            journal = {CALPHAD},
+            month = {december},
+            pages = {102355},
+            title = {{DFTTK: Density functional theory toolkit for high-throughput lattice dynamics calculations}},
+            year = {2019}
+   }
 
 High-throughput calculations
 ----------------------------
@@ -140,10 +164,19 @@ The solution is to make the best use of `ISIF <https://cms.mpi.univie.ac.at/vasp
     faq.rst
     Acknowledgements.rst
 
-
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+References
+----------
+
+.. [Wang2021] Wang *et al.*, CALPHAD 75 (2021) 102355. doi:`10.1016/j.calphad.2021.102355 <https://doi.org/10.1016/j.calphad.2021.102355>`_
+.. [Bocklund2019] Bocklund *et al.*, MRS Communications 9(2) (2019) 1–10. doi:`10.1557/mrc.2019.59 <https://doi.org/10.1557/mrc.2019.59>`_
+.. [Dinsdale1991] Dinsdale, Calphad 15(4) (1991) 317-425, doi:`10.1016/0364-5916(91)90030-N <https://doi.org/10.1016/0364-5916(91)90030-N>`_
+.. [Otis2016] Otis, Ph.D. Dissertation, The Pennsylvania State University (2016). https://etda.libraries.psu.edu/catalog/s1784k73d
+.. [Otis2017] Otis *et al.*, JOM 69 (2017) doi:`10.1007/s11837-017-2318-6 <http://doi.org/10.1007/s11837-017-2318-6>`_
+.. [Shang2010] Shang, Wang, and Liu, Magnes. Technol. 2010 617-622 (2010).
