@@ -86,7 +86,7 @@ or equivalently in the ``.cshrc`` file
 
 13.      During the installation in Windows system, the latest fireworks package may give you some troubles
 
-    See troubleshooting 6. If peoblem persists, do the following:
+    See troubleshooting 6. If the problem persists, do the following:
     
     I solved the problem by installing the development version
 
@@ -103,10 +103,11 @@ or equivalently in the ``.cshrc`` file
 
  14.     Sometimes, some VASP jobs may crash (showing as "F" or "FIZZLED" when you use the command ``lpad get_wflows`` to check your job status) due to various reasons (Ram leakage, job time limitations etc) or even no reasons.
 
-    These problems can mostly resovled by rerun the wflows using: 
+    These problems can mostly be resoleed by rerunning the wflows using: 
 
     .. code-block:: bash
 
+        lapd detect_lostruns --rerun
         lapd rerun_fws -s FIZZLED #you may need ``qlaunch`` your VASP batch jobs if no jobs in queue
 
 atomate issue (This issue has been resolved by atomate 1.0.3)
