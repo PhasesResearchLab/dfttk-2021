@@ -2007,6 +2007,7 @@ def plotAPI(readme, thermofile, volumes=None, energies=None,
   zthermo.update({"enthalpy (J/mol-atom)":list(thermo[:,4])})
   zthermo.update({"entropy (J/mol-atom K)":list(thermo[:,3])})
   zthermo.update({"Cp (J/mol-atom K)":list(thermo[:,6])})
+  """
   if T0 < thermo[-1,0] :
     if fitCp:
       proStoichiometricCp()
@@ -2015,6 +2016,7 @@ def plotAPI(readme, thermofile, volumes=None, energies=None,
     with open(os.path.join(folder,'..','record.json'), 'w') as fp:
       myjsonout(SGTErec, fp, indent="", comma="")
     myjsonout(SGTErec, sys.stdout, indent="", comma="")
+  """
 
   if volumes is not None:
     thermoplot(folder,"Atomic volume ($\AA^3$)",list(thermo[:,0]),list(thermo[:,1]), xlim=xlim, label=plotlabel,plottitle=plottitle)
