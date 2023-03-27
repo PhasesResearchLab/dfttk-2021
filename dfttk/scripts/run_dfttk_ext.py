@@ -283,6 +283,12 @@ def shared_aguments(pthelec):
     pthelec.add_argument("-dgx", "--debye_gruneisen_x", dest="debye_gruneisen_x", nargs="?", type=float, default=2./3,
                       help="Value of x for the Debye gruneisen model. \n"
                            "Default: 2/3")
+    pthelec.add_argument("-debT0", "--debyeT0", dest="debye_T0", nargs="?", type=float, default=-1.0,
+                      help="User defined Debye temperature at static eq volume for the Debye gruneisen model. \n"
+                           "Default: -1.0")
+    pthelec.add_argument("-gruT0", "--gruneisenT0", dest="gruneisen_T0", nargs="?", type=float, default=None,
+                      help="User defined Gruneisen parameter for the Debye gruneisen model. \n"
+                           "Default: None")
     pthelec.add_argument("-db_repair", "--db_repair", dest="db_repair", action='store_true', default=False,
                       help="repair database for prebiously FIZZLED calculation. \n"
                            "Default: False")

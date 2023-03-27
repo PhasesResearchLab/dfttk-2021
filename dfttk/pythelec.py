@@ -27,6 +27,7 @@ from dfttk.utils import sort_x_by_y
 from dfttk.analysis.ywplot import myjsonout
 from dfttk.analysis.ywutils import get_rec_from_metatag, get_used_pot
 from dfttk.analysis.ywutils import formula2composition, reduced_formula, MM_of_Elements
+from dfttk.analysis.debye import DebyeModel
 import warnings
 
 
@@ -660,7 +661,7 @@ def thelecAPI(t0, t1, td, xdn, xup, dope, ndosmx, gaussian, natom, outf, doscar)
             fvib.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(T[i], F_el_atom[i], S_el_atom[i], C_el_atom[i], M_el[i], seebeck_coefficients[i], L, Q_el[i], Q_p[i], Q_e[i], C_mu[i], W_p[i], W_e[i], Y_p[i], Y_e[i]))
 
 def BMvol(V,a):
-  T = V**(-1./3)
+  T = np.array(V)**(-1./3) # new bug fix
   fval = a[0]+a[1]*T
   if len(a) > 2:
     fval += a[2]*T*T
@@ -1068,6 +1069,8 @@ class thelecMDB():
             self.poscar=args.poscar
             self.vdos=args.vdos
             self.local=args.local
+            self.gruneisen_T0 = args.gruneisen_T0
+            self.debye_T0 = args.debye_T0
 
         if self.vasp_db==None: self.pyphon=True
         #print ("iiiii=",len(self._Yphon))
@@ -1419,7 +1422,8 @@ class thelecMDB():
 
     def toYphon(self, _T=None, for_plot=False):
         if self.vasp_db==None or self.local!="":
-            self.toYphon_without_DB(_T=_T, for_plot=for_plot)
+            if self.qhamode=="debye": self.toDebye_without_DB(_T=_T, for_plot=for_plot)
+            else: self.toYphon_without_DB(_T=_T, for_plot=for_plot)
             return
 
         self.Vlat = []
@@ -1525,16 +1529,18 @@ class thelecMDB():
             self.T_vib = T_remesh(self.t0, self.t1, self.td, _nT=self.nT)
 
         print ("extract the superfij.out used by Yphon ...")
+        cwd = os.getcwd() # new bug fix
         for i, vol in enumerate(self.volumes):
             if self.local!="":
                 dir = self.dirs[i]
             else:
                 dir = os.path.join(self.phasename,'Yphon','V{:010.6f}'.format(vol))
-            cwd = os.getcwd()
+            os.chdir( cwd ) # new bug fix
             if not os.path.exists(dir): continue
 
             os.chdir( dir)
             if not os.path.exists('vdos.out'):
+                if not os.path.exists('superfij.out'): continue # new bug fix
                 _nqwave = ""
                 if self.debug:
                     _nqwave = "-nqwave "+ str(1.e4)
@@ -1568,6 +1574,51 @@ class thelecMDB():
         self.GibT = np.zeros(len(self.T_vib))
 
 
+    def toDebye_without_DB(self, _T=None, for_plot=False):
+        self.Vlat = copy.deepcopy(self.volumes)
+        self.Flat = []
+        self.Clat = []
+        self.Slat = []
+        self.Dlat = []
+        self.quality = []
+        """
+        t0 = self.t0
+        t1 = self.t1
+        td = self.td
+        """
+        if _T is not None:
+            self.T_vib = copy.deepcopy(_T)
+            """
+            t0 = self.T_vib[0]
+            t1 = max(self.T_vib)
+            td = self.T_vib[1] - self.T_vib[0]
+            """
+        elif self.debug:
+            self.T_vib = T_remesh(self.t0, self.t1, self.td, _nT=65)
+        else:
+            self.T_vib = T_remesh(self.t0, self.t1, self.td, _nT=self.nT)
+
+        print ("Employ Debye model to calculate thermodynamics ...")
+        vib_kwargs = {}
+        debye_model = DebyeModel(self.energies, self.volumes, self.structure, 
+            T=self.T_vib, #t_min=t0, t_step=td, t_max=t1, 
+            gruneisen_T0 = self.gruneisen_T0, debye_T0 = self.debye_T0, **vib_kwargs)
+
+        for i in range(0,len(self.Vlat)):
+            self.Flat.append(debye_model.F_vib[i,:])
+            self.Slat.append(debye_model.S_vib[i,:])
+            self.Clat.append(debye_model.C_vib[i,:])
+            self.Dlat.append(debye_model.D_vib[i])
+        self.Slat = np.array(sort_x_by_y(self.Slat, self.Vlat))
+        self.Clat = np.array(sort_x_by_y(self.Clat, self.Vlat))
+        self.Flat = np.array(sort_x_by_y(self.Flat, self.Vlat))
+        self.Dlat = np.array(sort_x_by_y(self.Dlat, self.Vlat))
+        self.Vlat = np.array(sort_x_by_y(self.Vlat, self.Vlat))
+        if for_plot: return
+        self.volT = np.zeros(len(self.T_vib))
+        self.GibT = np.zeros(len(self.T_vib))
+
+
     def check_vol(self):
         print ("\nChecking compatibility between qha/Yphon data and static calculation:\n")
         print (self.Vlat)
@@ -1587,7 +1638,6 @@ class thelecMDB():
         _e = []
         _d = []
         for i, vol in enumerate(list(self.volumes)):
-            #if vol not in self.Vlat:
             if not vol_within(vol,self.Vlat,thr=1.e-6):
                 print ("data in static calculation with volume=", vol, "is discarded")
                 continue
@@ -1705,6 +1755,15 @@ class thelecMDB():
         _structure = None  # single Structure for QHA calculation
         self.structure = None
         for calc in static_calculations:
+            if os.path.exists(os.path.join(yphondir, calc, 'DOSCAR.gz')) : 
+                if os.stat(os.path.join(yphondir, calc, 'DOSCAR.gz')).st_size < 3000: continue
+                dos_objs.append(os.path.join(yphondir, calc, 'DOSCAR.gz'))
+            elif os.path.exists(os.path.join(yphondir, calc, 'DOSCAR')) : 
+                if os.stat(os.path.join(yphondir, calc, 'DOSCAR')).st_size < 3000: continue
+                dos_objs.append(os.path.join(yphondir, calc, 'DOSCAR'))
+            else:
+                continue
+
             poscar = os.path.join(yphondir, calc, 'POSCAR')
             if not os.path.exists(poscar) : continue
             oszicar = os.path.join(yphondir, calc, 'OSZICAR')
@@ -1754,13 +1813,6 @@ class thelecMDB():
                 key_comments ={}
                 key_comments['comments'] = 'local calculations'
                 self.key_comments = key_comments
-
-            if os.path.exists(os.path.join(yphondir, calc, 'DOSCAR.gz')) : 
-                dos_objs.append(os.path.join(yphondir, calc, 'DOSCAR.gz'))
-            elif os.path.exists(os.path.join(yphondir, calc, 'DOSCAR')) : 
-                dos_objs.append(os.path.join(yphondir, calc, 'DOSCAR'))
-            else:
-                continue
 
         # sort everything in volume order
         # note that we are doing volume last because it is the thing we are sorting by!
