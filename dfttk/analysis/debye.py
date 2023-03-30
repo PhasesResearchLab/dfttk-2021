@@ -230,15 +230,18 @@ class DebyeModel(object):
                 debye = self.debye_T0
             else:
                 debye = s*A * (self.ev_eos_fit.v0*1.e-30/self.natoms) ** (1. / 6.) * np.sqrt(self.bulk_modulus*1e9/self.avg_mass)
-
             gamma *= volume/self.ev_eos_fit.v0
             debye = debye*(self.ev_eos_fit.v0 / volume) ** (gamma)
             return debye 
         else:
             bulk_modulus=160.2176621*volume*self.derivative(volume, der=2)
+            pressure=-160.2176621*self.derivative(volume, der=1)
+            #V^(1/3) [((1+λ)2)/3*∂E/∂V + V (∂^2 E)/(∂V^2 )]
+            #V^(1/3) [((1+3*(x-1))2)/3*∂E/∂V + V (∂^2 E)/(∂V^2 )]
+            shift_pressure = -(1+3*(self.bp2gru-1))*2/3*pressure
             if self.debye_T0 > 0.0: return self.debye_T0*(volume/self.ev_eos_fit.v0)**(1./6.)* \
-                np.sqrt(bulk_modulus/self.bulk_modulus)
-            return s*A * (volume*1.e-30/self.natoms) ** (1. / 6.) * np.sqrt(bulk_modulus*1e9/self.avg_mass)
+                np.sqrt((shift_pressure+bulk_modulus)/self.bulk_modulus)
+            return s*A * (volume*1.e-30/self.natoms) ** (1. / 6.) * np.sqrt((shift_pressure+bulk_modulus)*1e9/self.avg_mass)
                 #t0 = s*A * (self.ev_eos_fit.v0*1.e-30/self.natoms) ** (1. / 6.) * np.sqrt(self.bulk_modulus*1e9/self.avg_mass)
                 #debye *= self.debye_T0/t0
 
