@@ -169,7 +169,7 @@ class RobustOptimizeFW(Firework):
         t.append(PassCalcLocs(name=name))
         if db_insert:
             t.append(VaspToDb(db_file=">>db_file<<", additional_fields={"task_label": name, "metadata": metadata}, store_volumetric_data=store_volumetric_data))
-        t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, site_properties=site_properties))
+        t.append(CheckSymmetryToDb(db_file=">>db_file<<", tag=tag, site_properties=site_properties, override_symmetry_tolerances=override_symmetry_tolerances))
 
         common_kwargs = {'vasp_cmd': vasp_cmd, 'db_file': ">>db_file<<", "metadata": metadata, "tag": tag,
                          'override_default_vasp_params': override_default_vasp_params}

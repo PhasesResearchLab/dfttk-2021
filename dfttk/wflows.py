@@ -64,7 +64,7 @@ def get_wf_EV_bjb(structure, deformation_fraction=(-0.08, 0.12), store_volumetri
         struct = deepcopy(structure)
         struct.scale_lattice(defo)
         full_relax_fw = RobustOptimizeFW(struct, isif=5, vasp_cmd=VASP_CMD, db_file=DB_FILE,
-                                         store_volumetric_data=store_volumetric_data)
+                                store_volumetric_data=store_volumetric_data, override_symmetry_tolerances=override_symmetry_tolerances)
         fws.append(full_relax_fw)
     if metadata is not None and all(x in metadata for x in ('phase_name', 'sublattice_configuration')):
         # create a nicer name for the workflow
