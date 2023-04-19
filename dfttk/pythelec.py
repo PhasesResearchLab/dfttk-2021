@@ -1071,6 +1071,7 @@ class thelecMDB():
             self.local=args.local
             self.gruneisen_T0 = args.gruneisen_T0
             self.debye_T0 = args.debye_T0
+            self.bp2gru=args.debye_gruneisen_x
 
         if self.vasp_db==None: self.pyphon=True
         #print ("iiiii=",len(self._Yphon))
@@ -1530,7 +1531,7 @@ class thelecMDB():
 
         print ("extract the superfij.out used by Yphon ...")
         cwd = os.getcwd() # new bug fix
-        for i, vol in enumerate(self.volumes):
+        for i, vol in enumerate(self.volsave):
             if self.local!="":
                 dir = self.dirs[i]
             else:
@@ -1552,7 +1553,7 @@ class thelecMDB():
             with open("vdos.out", "r") as fp:
                 f_vib, U_ph, s_vib, cv_vib, C_ph_n, Sound_ph, Sound_nn, N_ph, NN_ph, debyeT, quality, natoms \
                     = ywpyphon.vibrational_contributions(self.T_vib, dos_input=fp, energyunit='eV')
-                self.Vlat.append(float(self.volumes[i]))
+                self.Vlat.append(float(self.volsave[i]))
                 self.quality.append(quality)
 
             self.Flat.append(f_vib)
@@ -1601,7 +1602,7 @@ class thelecMDB():
         print ("Employ Debye model to calculate thermodynamics ...")
         vib_kwargs = {}
         debye_model = DebyeModel(self.energies, self.volumes, self.structure, 
-            T=self.T_vib, #t_min=t0, t_step=td, t_max=t1, 
+            T=self.T_vib, bp2gru=self.bp2gru, #t_min=t0, t_step=td, t_max=t1, 
             gruneisen_T0 = self.gruneisen_T0, debye_T0 = self.debye_T0, **vib_kwargs)
 
         for i in range(0,len(self.Vlat)):
@@ -1822,6 +1823,7 @@ class thelecMDB():
         self.dos_objs = sort_x_by_y(dos_objs, volumes)
         self.dirs = sort_x_by_y(dirs,volumes)
         self.volumes = sort_x_by_y(volumes,volumes)
+        self.volsave = copy.deepcopy(self.volumes)
         self.key_comments['E-V'] = {'lattices':sort_x_by_y(lattices, volumes),
             'volumes':self.volumes, 'energies':self.energies,
             'natoms':self.natoms}
@@ -2354,7 +2356,7 @@ class thelecMDB():
                         self.TupLimit = self.T[i-1]
                         print ("\nPerhaps it has reached the upvolume limit at T =", self.T[i], "\n")
                         break
-                print("T=",self.T[i], "Bulk Modulus=", blat*toGPa, "Veq=", self.volT[i])
+                #print("T=",self.T[i], "Bulk Modulus=", blat*toGPa, "Veq=", self.volT[i])
                 prp_T = np.zeros((self.theall.shape[0]))
                 for j in range(len(prp_T)):
                     prp_T[j] = interp1d(self.volumes, self.theall[j,i,:], kind='cubic')(self.volT[i])

@@ -239,6 +239,7 @@ class DebyeModel(object):
             #V^(1/3) [((1+λ)2)/3*∂E/∂V + V (∂^2 E)/(∂V^2 )]
             #V^(1/3) [((1+3*(x-1))2)/3*∂E/∂V + V (∂^2 E)/(∂V^2 )]
             shift_pressure = -(1+3*(self.bp2gru-1))*2/3*pressure
+            #print ("xxxxxxxxxxxxxxxxx", shift_pressure, bulk_modulus, "bp2gru=", self.bp2gru)
             if self.debye_T0 > 0.0: return self.debye_T0*(volume/self.ev_eos_fit.v0)**(1./6.)* \
                 np.sqrt((shift_pressure+bulk_modulus)/self.bulk_modulus)
             return s*A * (volume*1.e-30/self.natoms) ** (1. / 6.) * np.sqrt((shift_pressure+bulk_modulus)*1e9/self.avg_mass)
