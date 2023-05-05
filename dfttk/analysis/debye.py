@@ -67,7 +67,7 @@ class DebyeModel(object):
 
     """
     def __init__(self, energies, volumes, structure, T=None, t_min=5, t_step=5,
-                 t_max=2000.0, gruneisen_T0 = 0.0, debye_T0 = -1.0,
+                 t_max=2000.0, gruneisen_T0 = 0.0, gruneisen_T1 = 0.0, debye_T0 = -1.0,
                  eos="vinet", poisson=0.363615,
                  gruneisen=True, bp2gru=2./3., mass_average_mode='arithmetic'):
         self.energies = energies
@@ -84,6 +84,7 @@ class DebyeModel(object):
         self.gruneisen_T0 = gruneisen_T0
         if self.gruneisen_T0 is not None:
             if self.gruneisen_T0 < -99.0: self.gruneisen = False
+        self.gruneisen_T1 = gruneisen_T1
         self.debye_T0 = debye_T0
         # calculate the average masses
         masses = np.array([e.atomic_mass for e in self.structure.species]) * physical_constants["atomic mass constant"][0]
@@ -230,7 +231,13 @@ class DebyeModel(object):
                 debye = self.debye_T0
             else:
                 debye = s*A * (self.ev_eos_fit.v0*1.e-30/self.natoms) ** (1. / 6.) * np.sqrt(self.bulk_modulus*1e9/self.avg_mass)
-            gamma *= volume/self.ev_eos_fit.v0
+            #gamma *= volume/self.ev_eos_fit.v0
+            vv = volume/self.ev_eos_fit.v0
+            if self.gruneisen_T1==0.0:
+                #gamma = gamma*vv + self.gruneisen_T1*vv**3
+                gamma = gamma*vv
+            else:
+                gamma = gamma*vv**self.gruneisen_T1
             debye = debye*(self.ev_eos_fit.v0 / volume) ** (gamma)
             return debye 
         else:

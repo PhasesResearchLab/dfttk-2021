@@ -861,6 +861,31 @@ class thermoplot:
             plt.gca().set_ylim(bottom=0)
 
 
+def plot_theory (theory, ax):
+    #global mindex
+    lindex = -1
+    cindex = -1
+    n_lines = len(linestyles)
+    n_colors = len(colors)
+    for rec in theory:
+        try:
+            xval = np.array(rec['x'])
+            yval = np.array(rec['y'])
+        except:
+            try:
+                lines = np.array(rec['data'])
+                xval = lines[0::2]
+                yval = lines[1::2]
+            except:
+                continue
+        lindex = (lindex+1)%n_lines
+        cindex = (cindex+1)%n_colors
+        Author = rec['Author']
+
+        if len(xval)>0:
+            ax.plot(xval,yval, linestyle=linestyles[lindex], color=colors[cindex], label=Author)
+
+
 def plot_expt (expt, prp, ax, CoT=False, xlim=None):
     #global mindex
     mindex = 0
@@ -926,6 +951,7 @@ def plot_expt (expt, prp, ax, CoT=False, xlim=None):
                 ymax = max(yy.max(), ymax)
             mindex += 1
     return ymax
+
 
 def myjsonout(data,fp,indent="",comma=""):
 	#print (data)
@@ -1818,6 +1844,9 @@ def addpapers(g,formula,pname):
 
 
 markers=['o', 'v', 'd', '^', '<', '>', 's', '*', 'x', '+', '1', '2']
+colors=('k', 'b', 'r', 'c', 'm', 'g', 'y')
+linestyles = ['-', '--', ':', '-.', '.', ',', 'o', '^', 'v', '<', '>', 's',
+              '+', 'x', 'd', '1', '2', '3', '4', 'h', 'p', '|', '_', 'D', 'H']
 
 k_B = 8.6173303e-5
 R = 8.3144598

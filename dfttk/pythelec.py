@@ -1070,6 +1070,7 @@ class thelecMDB():
             self.vdos=args.vdos
             self.local=args.local
             self.gruneisen_T0 = args.gruneisen_T0
+            self.gruneisen_T1 = args.gruneisen_T1
             self.debye_T0 = args.debye_T0
             self.bp2gru=args.debye_gruneisen_x
 
@@ -1329,6 +1330,9 @@ class thelecMDB():
         self.VCij = []
         self.Poisson_Ratio = []
 
+        #print (os.getcwd(), phdir)
+        #raise Exception("Sorry, for debug")
+
         if not os.path.exists(phdir): os.mkdir(phdir)
         for i in volumes_c:
             vol  = float(i['initial_structure']['lattice']['volume'])
@@ -1561,6 +1565,7 @@ class thelecMDB():
             self.Clat.append(cv_vib)
             self.quality.append(quality)
             os.chdir( cwd )
+        os.chdir( cwd )
 
         if len(self.Vlat)<=0:
             print("\nFATAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
@@ -1603,7 +1608,7 @@ class thelecMDB():
         vib_kwargs = {}
         debye_model = DebyeModel(self.energies, self.volumes, self.structure, 
             T=self.T_vib, bp2gru=self.bp2gru, #t_min=t0, t_step=td, t_max=t1, 
-            gruneisen_T0 = self.gruneisen_T0, debye_T0 = self.debye_T0, **vib_kwargs)
+            gruneisen_T0 = self.gruneisen_T0, gruneisen_T1 = self.gruneisen_T1, debye_T0 = self.debye_T0, **vib_kwargs)
 
         for i in range(0,len(self.Vlat)):
             self.Flat.append(debye_model.F_vib[i,:])
@@ -2289,9 +2294,10 @@ class thelecMDB():
                             self.blat[i], self.beta[i] = self.calc_TE_V_general(i, kind='UnivariateSpline')
                         else:
                             self.blat[i], self.beta[i] = self.calc_TE_V_general(i, kind='cubic')
+                        print("i=", self.blat[i])
                         if self.blat[i] < 0:
                             nT = i
-                            print ("\nblat<0! Perhaps it has reached the upvolume limit at T =", self.T[i], "\n")
+                            print ("\nat point1 blat<0! Perhaps it has reached the upvolume limit at T =", self.T[i], "\n")
                             break
                 """
                     _beta = copy.deepcopy(self.beta)
@@ -2344,7 +2350,7 @@ class thelecMDB():
                     blat, beta = self.blat[i], self.beta[i]
                     if blat < 0:
                         self.TupLimit = self.T[i-1]
-                        print ("\nblat<0! Perhaps it has reached the upvolume limit at T =", self.T[i], "\n")
+                        print ("\nat point2: blat<0! Perhaps it has reached the upvolume limit at T =", self.T[i], "\n")
                         break
                     try:
                         slat = interp1d(self.volumes, self.Slat[:,i])(self.volT[i])
@@ -2354,7 +2360,7 @@ class thelecMDB():
                         cplat = clat+beta*beta*blat*self.volT[i]*self.T[i]
                     except:
                         self.TupLimit = self.T[i-1]
-                        print ("\nPerhaps it has reached the upvolume limit at T =", self.T[i], "\n")
+                        print ("\nat pooint3: Perhaps it has reached the upvolume limit at T =", self.T[i], "\n")
                         break
                 #print("T=",self.T[i], "Bulk Modulus=", blat*toGPa, "Veq=", self.volT[i])
                 prp_T = np.zeros((self.theall.shape[0]))

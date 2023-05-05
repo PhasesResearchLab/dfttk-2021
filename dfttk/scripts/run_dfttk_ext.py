@@ -289,6 +289,9 @@ def shared_aguments(pthelec):
     pthelec.add_argument("-gruT0", "--gruneisenT0", dest="gruneisen_T0", nargs="?", type=float, default=None,
                       help="User defined Gruneisen parameter for the Debye gruneisen model. \n"
                            "Default: None")
+    pthelec.add_argument("-gruT1", "--gruneisenT1", dest="gruneisen_T1", nargs="?", type=float, default=0.0,
+                      help="User defined coef for higher order Gruneisen parameter for the Debye gruneisen model. \n"
+                           "Default: None")
     pthelec.add_argument("-db_repair", "--db_repair", dest="db_repair", action='store_true', default=False,
                       help="repair database for prebiously FIZZLED calculation. \n"
                            "Default: False")
