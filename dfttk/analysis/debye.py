@@ -233,11 +233,14 @@ class DebyeModel(object):
                 debye = s*A * (self.ev_eos_fit.v0*1.e-30/self.natoms) ** (1. / 6.) * np.sqrt(self.bulk_modulus*1e9/self.avg_mass)
             #gamma *= volume/self.ev_eos_fit.v0
             vv = volume/self.ev_eos_fit.v0
+            """
             if self.gruneisen_T1==0.0:
                 #gamma = gamma*vv + self.gruneisen_T1*vv**3
                 gamma = gamma*vv
             else:
                 gamma = gamma*vv**self.gruneisen_T1
+            """
+            gamma = gamma*vv**self.gruneisen_T1
             debye = debye*(self.ev_eos_fit.v0 / volume) ** (gamma)
             return debye 
         else:

@@ -903,6 +903,12 @@ def plot_expt (expt, prp, ax, CoT=False, xlim=None):
                     yval = lines[1::2]
                 except:
                     continue
+            ndata = len(xval)
+            if ndata > 30:
+                inc = ndata//30
+                xval = xval[::inc]
+                yval = yval[::inc]
+            #print ("nnnnnnnnnnnn=", ndata, "vvvvvvvvv=", len(xval)
             Author = rec['Author']
             Unit = rec['Unit']
             natom = rec['natom']
@@ -1845,8 +1851,29 @@ def addpapers(g,formula,pname):
 
 markers=['o', 'v', 'd', '^', '<', '>', 's', '*', 'x', '+', '1', '2']
 colors=('k', 'b', 'r', 'c', 'm', 'g', 'y')
-linestyles = ['-', '--', '-.', ':', '.', ',', 'o', '^', 'v', '<', '>', 's',
+"""
+linestyles = ['-', '--', '-.', ':', ',', 'o', '^', 'v', '<', '>', 's',
               '+', 'x', 'd', '1', '2', '3', '4', 'h', 'p', '|', '_', 'D', 'H']
+"""
+linestyle_tuple = [
+     ('solid', 'solid'),      # Same as (0, ()) or '-'
+     ('dotted', 'dotted'),    # Same as (0, (1, 1)) or ':'
+     ('dashed', 'dashed'),    # Same as '--'
+     ('dashdot', 'dashdot'),  # Same as '-.'
+     ('long dash with offset', (5, (10, 3))),
+     ('loosely dashed',        (0, (5, 10))),
+     ('dashed',                (0, (5, 5))),
+     ('densely dashed',        (0, (5, 1))),
+
+     ('loosely dashdotted',    (0, (3, 10, 1, 10))),
+     ('dashdotted',            (0, (3, 5, 1, 5))),
+     ('densely dashdotted',    (0, (3, 1, 1, 1))),
+
+     ('dashdotdotted',         (0, (3, 5, 1, 5, 1, 5))),
+     ('loosely dashdotdotted', (0, (3, 10, 1, 10, 1, 10))),
+     ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))]
+
+linestyles = [linestyle_tuple[i][1] for i, (name, linestyle) in enumerate(linestyle_tuple)]
 
 k_B = 8.6173303e-5
 R = 8.3144598

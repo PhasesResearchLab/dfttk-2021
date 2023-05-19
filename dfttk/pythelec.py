@@ -1075,7 +1075,6 @@ class thelecMDB():
             self.bp2gru=args.debye_gruneisen_x
 
         if self.vasp_db==None: self.pyphon=True
-        #print ("iiiii=",len(self._Yphon))
 
 
     def get_superfij(self,i, phdir):
@@ -2294,7 +2293,6 @@ class thelecMDB():
                             self.blat[i], self.beta[i] = self.calc_TE_V_general(i, kind='UnivariateSpline')
                         else:
                             self.blat[i], self.beta[i] = self.calc_TE_V_general(i, kind='cubic')
-                        print("i=", self.blat[i])
                         if self.blat[i] < 0:
                             nT = i
                             print ("\nat point1 blat<0! Perhaps it has reached the upvolume limit at T =", self.T[i], "\n")
