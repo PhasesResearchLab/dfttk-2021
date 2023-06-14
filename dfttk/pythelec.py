@@ -5,6 +5,7 @@ from __future__ import division
 import sys
 import gzip
 import os
+import shutil
 from os import walk
 import subprocess
 import math
@@ -1424,6 +1425,88 @@ class thelecMDB():
         return has_btp2
 
 
+    def get_Cij_local(self, localdir, pinv=True):
+        self.Cij = []
+        self.VCij = []
+        self.Poisson_Ratio = []
+
+        #print (os.getcwd(), phdir)
+        #raise Exception("Sorry, for debug")
+
+        _, dirs, _ = next(os.walk(localdir))
+        for i,dd in enumerate(sorted(dirs)):
+            poscar = os.path.join(localdir, dd, "POSCAR")
+            if not os.path.exists(poscar): continue
+            Cij = os.path.join(localdir, dd, "Cij.out")
+            if not os.path.exists(Cij): 
+                Cij = os.path.join(localdir, dd, "Cij.out_Relax")
+            if not os.path.exists(Cij): continue
+            structure = Structure.from_file(poscar)
+            vol = structure.volume
+            if vol in self.VCij: continue
+            with open(Cij, "r") as f:
+                lines = f.readlines()
+                if len(lines)!=6: continue
+            Cij = []
+            for line in lines:
+                Cij.append([float(cij) for cij in line.split() if cij.strip()!=""])
+
+            self.Cij.append(Cij)
+            self.VCij.append(vol)
+            _,_,_,Poisson_Ratio=self.Cij_to_Moduli(np.stack(Cij))
+            self.Poisson_Ratio.append(Poisson_Ratio)
+
+        has_Cij = len(self.Cij)>0
+        if has_Cij:
+            self.Cij = np.array(sort_x_by_y(self.Cij, self.VCij))
+            self.Poisson_Ratio = np.array(sort_x_by_y(self.Poisson_Ratio, self.VCij))
+            self.VCij = sort_x_by_y(self.VCij, self.VCij)
+        return has_Cij
+
+
+    #For volume dependent thermoelectric calculations based on the output from BoltrzTraP2 code
+    #btp2_dir is parent path containing thermoelectric results at several volumes
+    def get_btp2_local(self, btp2_dir):
+        volumes_uniform_tau = []
+        volumes_uniform_lambda = []
+        uniform_tau = []
+        uniform_lambda = []
+        _, static_calculations, _ = next(walk(btp2_dir))
+        for calc in static_calculations:
+            poscar = os.path.join(btp2_dir, calc, 'POSCAR')
+            if not os.path.exists(poscar) : continue
+            tmp = os.path.join(btp2_dir, calc, 'interpolation.dope.trace.uniform_tau')
+            if os.path.exists(tmp) :
+                print ("Handling data in ", tmp)
+                structure = Structure.from_file(poscar)
+                vol = structure.volume
+                if vol not in volumes_uniform_tau:
+                    volumes_uniform_tau.append(vol)
+                    uniform_tau.append(np.genfromtxt(tmp))
+            tmp = os.path.join(btp2_dir, calc, 'interpolation.dope.trace.uniform_lambda')
+            if os.path.exists(tmp) :
+                print ("Handling data in ", tmp)
+                structure = Structure.from_file(poscar)
+                vol = structure.volume
+                if vol not in volumes_uniform_lambda:
+                    volumes_uniform_lambda.append(vol)
+                    uniform_lambda.append(np.genfromtxt(tmp))
+
+        has_btp2 = False
+        from dfttk.utils import sort_x_by_y
+        if len(volumes_uniform_tau)>0:
+            has_btp2 = True
+            self.uniform_tau = sort_x_by_y(uniform_tau, volumes_uniform_tau)
+            self.volumes_uniform_tau = sort_x_by_y(volumes_uniform_tau,volumes_uniform_tau)
+            print ("found volumes_uniform_tau volumes from static calculations:", self.volumes_uniform_tau)
+        if len(volumes_uniform_lambda)>0:
+            has_btp2 = True
+            self.uniform_lambda = sort_x_by_y(uniform_lambda, volumes_uniform_lambda)
+            self.volumes_uniform_lambda = sort_x_by_y(volumes_uniform_lambda,volumes_uniform_lambda)
+            print ("found volumes_uniform_lambda volumes from static calculations:", self.volumes_uniform_lambda)
+        return has_btp2
+
+
     def toYphon(self, _T=None, for_plot=False):
         if self.vasp_db==None or self.local!="":
             if self.qhamode=="debye": self.toDebye_without_DB(_T=_T, for_plot=for_plot)
@@ -1759,21 +1842,61 @@ class thelecMDB():
         dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
         _structure = None  # single Structure for QHA calculation
         self.structure = None
+        NF = 0
         for calc in static_calculations:
-            if os.path.exists(os.path.join(yphondir, calc, 'DOSCAR.gz')) : 
-                if os.stat(os.path.join(yphondir, calc, 'DOSCAR.gz')).st_size < 3000: continue
-                dos_objs.append(os.path.join(yphondir, calc, 'DOSCAR.gz'))
-            elif os.path.exists(os.path.join(yphondir, calc, 'DOSCAR')) : 
-                if os.stat(os.path.join(yphondir, calc, 'DOSCAR')).st_size < 3000: continue
-                dos_objs.append(os.path.join(yphondir, calc, 'DOSCAR'))
-            else:
-                continue
+            if os.path.exists(os.path.join(yphondir, calc, "StaticConvergent")) : NF += 1
+        CheckStaticConvergent = NF >= 5
+    
+        dosfile = ""
+        for calc in static_calculations:
+            if CheckStaticConvergent:
+                if not os.path.exists(os.path.join(yphondir, calc, "StaticConvergent")) : continue
+            if not calc.startswith("V"): continue
+            if dosfile == "":
+              if os.path.exists(os.path.join(yphondir, calc, "Static.DOS.gz")) : 
+                if os.stat(os.path.join(yphondir, calc, dosfile)).st_size > 3000: 
+                  dosfile = "Static.DOS.gz"
+            if dosfile == "":
+              if os.path.exists(os.path.join(yphondir, calc, 'DOSCAR.gz')) : 
+                if os.stat(os.path.join(yphondir, calc, 'DOSCAR.gz')).st_size > 3000:
+                  dosfile = "DOSCAR.gz"
+            if dosfile == "":
+              if os.path.exists(os.path.join(yphondir, calc, 'DOSCAR')) : 
+                if os.stat(os.path.join(yphondir, calc, 'DOSCAR')).st_size > 3000:
+                  dosfile = "DOSCAR"
 
-            poscar = os.path.join(yphondir, calc, 'POSCAR')
+            if dosfile == "": continue
+            if not os.path.exists(os.path.join(yphondir, calc, dosfile)) : continue
+            if os.stat(os.path.join(yphondir, calc, dosfile)).st_size < 3000: continue
+
+            if os.path.exists(os.path.join(yphondir, calc, 'CONTCAR')) : 
+                poscar = os.path.join(yphondir, calc, 'CONTCAR')
+            elif os.path.exists(os.path.join(yphondir, calc, 'POSCAR')) : 
+                poscar = os.path.join(yphondir, calc, 'POSCAR')
+            elif os.path.exists(os.path.join(yphondir, calc, 'Static.CON')) :
+                shutil.copyfile(os.path.join(yphondir, calc, 'Static.CON'), os.path.join(yphondir, calc, 'POSCAR'))
+                poscar = os.path.join(yphondir, calc, 'POSCAR')
             if not os.path.exists(poscar) : continue
-            oszicar = os.path.join(yphondir, calc, 'OSZICAR')
+            if os.path.exists(os.path.join(yphondir, calc, 'Static.OSZ')) : 
+                oszicar = os.path.join(yphondir, calc, 'Static.OSZ')
+            elif os.path.exists(os.path.join(yphondir, calc, 'OSZICAR')) : 
+                oszicar = os.path.join(yphondir, calc, 'OSZICAR')
             if not os.path.exists(oszicar) : continue
+
+            eneval = ""
+            with open(oszicar,"r") as fp:
+                lines = fp.readlines()
+                for line in lines:
+                    dat = [s for s in line.split() if s!=""]
+                    if len(dat) < 5: continue
+                    if dat[1]!="F=" or dat[3]!="E0=": continue
+                    eneval = dat[4]
+                    break
+            if eneval == "": continue
+
+            energies.append(float(eneval))
             print ("Handling data in ", os.path.join(yphondir,calc))
+            dos_objs.append(os.path.join(yphondir, calc, dosfile))
             structure = Structure.from_file(poscar)
             if self.structure == None:
                 self.structure = structure
@@ -1786,14 +1909,6 @@ class thelecMDB():
                 continue
             volumes.append(vol)
             dirs.append(os.path.join(yphondir,calc))
-            with open(oszicar,"r") as fp:
-                lines = fp.readlines()
-                for line in lines:
-                    dat = [s for s in line.split() if s!=""]
-                    if len(dat) < 5: continue
-                    if dat[1]!="F=" or dat[3]!="E0=": continue
-                    energies.append(float(dat[4]))
-                    break
 
             # get a Structure. We only need one for the masses and number of atoms in the unit cell.
             if _structure is None:
@@ -1823,12 +1938,20 @@ class thelecMDB():
         # note that we are doing volume last because it is the thing we are sorting by!
 
         from dfttk.utils import sort_x_by_y
-        self.energies = sort_x_by_y(energies, volumes)
-        self.dos_objs = sort_x_by_y(dos_objs, volumes)
-        self.dirs = sort_x_by_y(dirs,volumes)
-        self.volumes = sort_x_by_y(volumes,volumes)
+        _energies = sort_x_by_y(energies, volumes)
+        _dos_objs = sort_x_by_y(dos_objs, volumes)
+        _dirs = sort_x_by_y(dirs,volumes)
+        _lattices = sort_x_by_y(lattices, volumes)
+        _volumes = sort_x_by_y(volumes,volumes)
+        val, idx = min((val, idx) for (idx, val) in enumerate(_energies))
+        iB = max(0, idx-3)
+        iE = min(len(_energies), idx+4)
+        self.energies = _energies[iB:iE]
+        self.dos_objs = _dos_objs[iB:iE]
+        self.dirs = _dirs[iB:iE]
+        self.volumes = _volumes[iB:iE]
         self.volsave = copy.deepcopy(self.volumes)
-        self.key_comments['E-V'] = {'lattices':sort_x_by_y(lattices, volumes),
+        self.key_comments['E-V'] = {'lattices':_lattices[iB:iE],
             'volumes':self.volumes, 'energies':self.energies,
             'natoms':self.natoms}
         print ("found volumes from static calculations:", self.volumes)
@@ -2626,15 +2749,32 @@ class thelecMDB():
         if len(self.VCij) == 0: return
         T = self.T[self.T <=self.TupLimit]
         nT = len(T)
-        if min(self.volT[0:nT]) < min(self.VCij) or max(self.volT[0:nT]) > max(self.VCij): return
+        if min(self.volT[0:nT]) < min(self.VCij): return
+        if max(self.volT[0:nT]) > max(self.VCij):
+            for i,vol in enumerate(self.volT[0:nT]):
+                if vol > max(self.VCij):
+                    nT = i - 1
+                    break
         self.Cij_T = np.zeros((nT, 6, 6), dtype=float)
         electron_volt = physical_constants["electron volt"][0]
         angstrom = 1e-30
         toGPa = electron_volt/angstrom*1.e-9
         for i in range(6):
             for j in range(6):
-                f2 = splrep(self.VCij, self.Cij[:,i,j])
-                self.Cij_T[:,i,j] = splev(self.volT[0:nT], f2)
+                if len(self.VCij)==1:
+                    self.Cij_T[:,i,j] = self.Cij[0,i,j]
+                elif len(self.VCij)==2:
+                    f2 = interp1d(self.VCij, self.Cij[:,i,j], kind='slinear')
+                    self.Cij_T[:,i,j] = f2(self.volT[0:nT])
+                elif len(self.VCij)==3:
+                    f2 = interp1d(self.VCij, self.Cij[:,i,j], kind='quadratic')
+                    self.Cij_T[:,i,j] = f2(self.volT[0:nT])
+                elif len(self.VCij)==4:
+                    f2 = interp1d(self.VCij, self.Cij[:,i,j], kind='cubic')
+                    self.Cij_T[:,i,j] = f2(self.volT[0:nT])
+                else:
+                    f2 = splrep(self.VCij, self.Cij[:,i,j])
+                    self.Cij_T[:,i,j] = splev(self.volT[0:nT], f2)
         """
         if True:
                     print ("db_file",self.VCij)
@@ -2900,8 +3040,12 @@ class thelecMDB():
         self.hasSCF = True
         if not self.check_vol(): return None, None, None, None
         if self.local!="":
+            self.has_Cij = self.get_Cij_local(self.local, pinv=False)
+            self.has_btp2 = self.get_btp2_local(self.local)
+            """
             self.has_Cij = self.get_Cij(self.phasename, pinv=False)
             self.has_btp2 = self.get_btp2(self.local)
+            """
         else:
             self.has_Cij = self.get_Cij(os.path.join(self.phasename,'Yphon'), pinv=False)
             self.has_btp2 = self.get_btp2(self.phasename)
