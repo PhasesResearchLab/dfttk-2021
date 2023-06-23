@@ -400,11 +400,14 @@ def shared_aguments(pthelec):
     pthelec.add_argument("-xlim", "-xlim", dest="xlim", nargs="?", type=float, default=None,
                       help="Up temperature limit for plot. \n"
                            "Default: None")
-    pthelec.add_argument("-dos", "--doscar", dest="doscar", nargs="?", type=str, default=None,
+    pthelec.add_argument("-dos", "-DOSCAR", dest="doscar", nargs="?", type=str, default="DOSCAR",
                       help="file path to DOSCAR file. Run thelec in single volume shot only. \n"
                            "Default: None")
-    pthelec.add_argument("-pos", "--poscar", dest="poscar", nargs="?", type=str, default=None,
-                      help="file path to POSCAR file. Run thelec in single volume shot only. \n"
+    pthelec.add_argument("-con", "-CONTCAR", dest="contcar", nargs="?", type=str, default="CONTCAR",
+                      help="file path to CONTCAR file. Run thelec in single volume shot only. \n"
+                           "Default: None")
+    pthelec.add_argument("-osz", "-OSZICAR", dest="oszicar", nargs="?", type=str, default="OSZICAR",
+                      help="file path to OSZICAR file. Run thelec in single volume shot only. \n"
                            "Default: None")
     pthelec.add_argument("-vdos", "--vdos", dest="vdos", nargs="?", type=str, default=None,
                       help="file path to phonon DOS file produced by Yphon. Run thelec in single volume shot only. \n"

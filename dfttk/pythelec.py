@@ -1067,7 +1067,8 @@ class thelecMDB():
         if args!=None:
             self.nT = args.nT
             self.doscar=args.doscar
-            self.poscar=args.poscar
+            self.poscar=args.contcar
+            self.oszicar=args.oszicar
             self.vdos=args.vdos
             self.local=args.local
             self.gruneisen_T0 = args.gruneisen_T0
@@ -1842,47 +1843,23 @@ class thelecMDB():
         dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
         _structure = None  # single Structure for QHA calculation
         self.structure = None
-        NF = 0
-        for calc in static_calculations:
-            if os.path.exists(os.path.join(yphondir, calc, "StaticConvergent")) : NF += 1
-        CheckStaticConvergent = NF >= 5
     
-        dosfile = ""
         for calc in static_calculations:
-            if CheckStaticConvergent:
-                if not os.path.exists(os.path.join(yphondir, calc, "StaticConvergent")) : continue
             if not calc.startswith("V"): continue
-            if dosfile == "":
-              if os.path.exists(os.path.join(yphondir, calc, "Static.DOS.gz")) : 
-                if os.stat(os.path.join(yphondir, calc, dosfile)).st_size > 3000: 
-                  dosfile = "Static.DOS.gz"
-            if dosfile == "":
-              if os.path.exists(os.path.join(yphondir, calc, 'DOSCAR.gz')) : 
-                if os.stat(os.path.join(yphondir, calc, 'DOSCAR.gz')).st_size > 3000:
-                  dosfile = "DOSCAR.gz"
-            if dosfile == "":
-              if os.path.exists(os.path.join(yphondir, calc, 'DOSCAR')) : 
-                if os.stat(os.path.join(yphondir, calc, 'DOSCAR')).st_size > 3000:
-                  dosfile = "DOSCAR"
 
-            if dosfile == "": continue
-            if not os.path.exists(os.path.join(yphondir, calc, dosfile)) : continue
-            if os.stat(os.path.join(yphondir, calc, dosfile)).st_size < 3000: continue
+            if not os.path.exists(os.path.join(yphondir, calc,self.poscar)): continue
+            if not self.poscar.startswith("CONTCAR") or not self.poscar.startswith("POSCAR"):
+              shutil.copyfile(os.path.join(yphondir, calc, self.poscar), os.path.join(yphondir, calc, 'CONTCAR.dfttk'))
+              poscar = os.path.join(yphondir, calc, 'CONTCAR.dfttk')
+            else:
+              poscar = os.path.join(yphondir, calc, self.poscar)
 
-            if os.path.exists(os.path.join(yphondir, calc, 'CONTCAR')) : 
-                poscar = os.path.join(yphondir, calc, 'CONTCAR')
-            elif os.path.exists(os.path.join(yphondir, calc, 'POSCAR')) : 
-                poscar = os.path.join(yphondir, calc, 'POSCAR')
-            elif os.path.exists(os.path.join(yphondir, calc, 'Static.CON')) :
-                shutil.copyfile(os.path.join(yphondir, calc, 'Static.CON'), os.path.join(yphondir, calc, 'POSCAR'))
-                poscar = os.path.join(yphondir, calc, 'POSCAR')
-            if not os.path.exists(poscar) : continue
-            if os.path.exists(os.path.join(yphondir, calc, 'Static.OSZ')) : 
-                oszicar = os.path.join(yphondir, calc, 'Static.OSZ')
-            elif os.path.exists(os.path.join(yphondir, calc, 'OSZICAR')) : 
-                oszicar = os.path.join(yphondir, calc, 'OSZICAR')
-            if not os.path.exists(oszicar) : continue
+            if not self.noel :
+              if not os.path.exists(os.path.join(yphondir, calc, self.doscar)) : continue
+              if os.stat(os.path.join(yphondir, calc, self.doscar)).st_size < 3000: continue
 
+            if not os.path.exists(os.path.join(yphondir, calc,self.oszicar)): continue
+            oszicar = os.path.join(yphondir, calc, self.oszicar)
             eneval = ""
             with open(oszicar,"r") as fp:
                 lines = fp.readlines()
@@ -1891,12 +1868,11 @@ class thelecMDB():
                     if len(dat) < 5: continue
                     if dat[1]!="F=" or dat[3]!="E0=": continue
                     eneval = dat[4]
-                    break
             if eneval == "": continue
 
             energies.append(float(eneval))
-            print ("Handling data in ", os.path.join(yphondir,calc))
-            dos_objs.append(os.path.join(yphondir, calc, dosfile))
+
+            dos_objs.append(os.path.join(yphondir, calc, self.doscar))
             structure = Structure.from_file(poscar)
             if self.structure == None:
                 self.structure = structure
@@ -1909,6 +1885,7 @@ class thelecMDB():
                 continue
             volumes.append(vol)
             dirs.append(os.path.join(yphondir,calc))
+            print ("Handling data in ", os.path.join(yphondir,calc), vol,eneval)
 
             # get a Structure. We only need one for the masses and number of atoms in the unit cell.
             if _structure is None:
@@ -1955,11 +1932,11 @@ class thelecMDB():
             'volumes':self.volumes, 'energies':self.energies,
             'natoms':self.natoms}
         print ("found volumes from static calculations:", self.volumes)
+        print ("found energies from static calculations:", self.energies)
 
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
         if not os.path.exists(self.phasename):
             os.mkdir(self.phasename)
-
 
 
     # get the energies, volumes and DOS objects by searching for the tag
