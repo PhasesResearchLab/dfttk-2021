@@ -951,7 +951,7 @@ def plot_expt (expt, prp, ax, CoT=False, xlim=None):
                     """
                 else:
                     ax.plot(xx,yy, marker=markers[mindex%len(markers)], markersize=8,
-                        linestyle='None', color=colors[mindex%n_colors),label=Author.split(',')[0])
+                        linestyle='None', color=colors[mindex%n_colors],label=Author.split(',')[0])
                 ymax = max(yy.max(), ymax)
             mindex += 1
     return ymax
