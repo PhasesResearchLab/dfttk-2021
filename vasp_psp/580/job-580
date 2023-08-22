@@ -1,0 +1,11 @@
+#!/bin/csh
+#PBS -N BRelaxAl
+#PBS -A open
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=00:29:00
+module load intel impi vasp
+cd $PBS_O_WORKDIR
+module load intel impi mkl vasp
+
+mpirun vasp_std
+
