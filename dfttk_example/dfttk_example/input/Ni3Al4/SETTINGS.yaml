@@ -1,0 +1,11 @@
+#float, the mimimum of temperature in QHA process, e.g. 5
+t_min : 5
+
+#float, the maximum of temperature in QHA process, e.g. 2000
+t_max : 1000
+
+#float, the step of temperature in QHA process, e.g. 5
+t_step : 5
+
+phonon : True
+phonon_supercell_matrix : [[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]]

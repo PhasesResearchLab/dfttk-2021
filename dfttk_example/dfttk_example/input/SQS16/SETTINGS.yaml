@@ -1,0 +1,11 @@
+override_default_vasp_params : 
+    user_incar_settings :
+        magmom: [16*1]
+        store_raw_vasprunxml : True
+        Relax_settings:
+            PREC: High
+            grid_density: 1000
+
+phonon : True
+force_phonon : True
+phonon_supercell_matrix : [[0,1,1], [1,0,1], [1,1,0]]

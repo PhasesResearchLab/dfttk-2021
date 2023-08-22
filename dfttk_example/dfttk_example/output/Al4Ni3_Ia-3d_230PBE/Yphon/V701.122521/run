@@ -1,0 +1,2 @@
+#!/bin/csh -f
+Yphon -DebCut 0.5 

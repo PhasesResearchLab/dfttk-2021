@@ -1,0 +1,2 @@
+#!/bin/csh -f
+Yphon -tranI 2 -eps -pdis dfile.rho 

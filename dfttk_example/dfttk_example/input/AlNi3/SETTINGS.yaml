@@ -1,0 +1,19 @@
+#float, the mimimum of temperature in QHA process, e.g. 5
+t_min : 5
+
+#float, the maximum of temperature in QHA process, e.g. 2000
+t_max : 1000
+
+#float, the step of temperature in QHA process, e.g. 5
+t_step : 5
+
+phonon : True
+
+#If the phonon is True, you must set this value
+phonon_supercell_matrix : 'atoms'
+
+#The following two parameters is used to when phomon_supercel_matrix is a string
+#phonon_supercell_matrix_min/max determines the range of the type
+#units: number of atoms for 'atoms', A and A^3 for 'lattice' and 'volume', respectively
+phonon_supercell_matrix_min : 30
+phonon_supercell_matrix_max : 130
