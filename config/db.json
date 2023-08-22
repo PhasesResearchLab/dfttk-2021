@@ -1,0 +1,1 @@
+{"database": "nigelhew-results", "collection": "tasks", "admin_user": "nigelhew", "admin_password": "IBczbFXJ5jhuahxD", "readonly_user": "nigelhew", "readonly_password": "IBczbFXJ5jhuahxD", "host": "mongodb+srv://nigelcluster.2nfvbhl.mongodb.net", "port": 27017, "aliases": {}, "authsource": "admin"}

@@ -1,0 +1,15 @@
+host: mongodb+srv://nigelcluster.2nfvbhl.mongodb.net
+port: 27017
+name: nigelhew-fws
+username: nigelhew
+password: IBczbFXJ5jhuahxD
+ssl_ca_certs:
+logdir:
+strm_lvl: INFO
+user_indices: []
+wf_user_indices: []
+ssl: true
+authsource: admin
+
+
+

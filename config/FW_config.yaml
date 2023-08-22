@@ -1,0 +1,8 @@
+CONFIG_FILE_DIR: /storage/work/n/njh5724/dfttk_hs/config
+LAUNCHPAD_LOC: /storage/work/n/njh5724/dfttk_hs/config/my_launchpad.yaml
+FWORKER_LOC: /storage/work/n/njh5724/dfttk_hs/config/my_fworker.yaml
+QUEUEADAPTER_LOC: /storage/work/n/njh5724/dfttk_hs/config/my_qadapter.yaml
+QUEUE_JOBNAME_MAXLEN: 15
+ADD_USER_PACKAGES:
+- atomate.vasp.firetasks
+- atomate.feff.firetasks

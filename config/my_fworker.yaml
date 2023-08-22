@@ -1,0 +1,8 @@
+name: aci-vasp5
+category: ''
+query: '{}'
+env:
+  db_file: /storage/work/n/njh5724/dfttk_hs/config/db.json
+  vasp_cmd: mpirun vasp_std
+  scratch_dir: 'null'
+  incar_update: {}

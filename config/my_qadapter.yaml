@@ -1,0 +1,15 @@
+_fw_name: CommonAdapter
+_fw_q_type: PBS
+rocket_launch: rlaunch -c /storage/work/n/njh5724/dfttk_hs/config rapidfire
+nnodes: 1
+ppnode: 16
+pmem: 8gb
+walltime: 48:00:00
+queue: open
+account: open
+job_name: dfttk
+pre_rocket: "conda activate dfttk_hs\nmodule load intel/19.1.2\nmodule load impi/2019.8\nmodule use /gpfs/group/RISE/sw7/modules\n\
+  module load vasp\nexport UCX_TLS=all"
+post_rocket: ''
+logdir: /storage/work/n/njh5724/dfttk_hs/logs
+vasp_cmd: mpirun vasp_std
