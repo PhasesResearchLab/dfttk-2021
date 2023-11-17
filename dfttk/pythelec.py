@@ -5,6 +5,7 @@ from __future__ import division
 import sys
 import gzip
 import os
+import shutil
 from os import walk
 import subprocess
 import math
@@ -27,6 +28,7 @@ from dfttk.utils import sort_x_by_y
 from dfttk.analysis.ywplot import myjsonout
 from dfttk.analysis.ywutils import get_rec_from_metatag, get_used_pot
 from dfttk.analysis.ywutils import formula2composition, reduced_formula, MM_of_Elements
+from dfttk.analysis.debye import DebyeModel
 import warnings
 
 
@@ -660,7 +662,7 @@ def thelecAPI(t0, t1, td, xdn, xup, dope, ndosmx, gaussian, natom, outf, doscar)
             fvib.write('{} {} {} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(T[i], F_el_atom[i], S_el_atom[i], C_el_atom[i], M_el[i], seebeck_coefficients[i], L, Q_el[i], Q_p[i], Q_e[i], C_mu[i], W_p[i], W_e[i], Y_p[i], Y_e[i]))
 
 def BMvol(V,a):
-  T = V**(-1./3)
+  T = np.array(V)**(-1./3) # new bug fix
   fval = a[0]+a[1]*T
   if len(a) > 2:
     fval += a[2]*T*T
@@ -893,6 +895,12 @@ def vol_within(vol, volumes, thr=0.001):
     return False
 
 
+def vol_within_index(vol, volumes, thr=0.001):
+    for i,v in enumerate(volumes):
+        if (abs(vol-v) < thr): return i
+    return -1
+
+
 def vol_closest(vol, volumes, thr=1.e-6):
     for i,v in enumerate(volumes):
         if (abs(vol-v) < thr*vol): return i
@@ -931,8 +939,8 @@ def get_static_calculations(vasp_db, tag):
             _dos_objs.append(vasp_db.get_dos(calc['task_id']))
 
     tvolumes = np.array(sorted(volumes))
-    if len(tvolumes)>1:
-        dvolumes = tvolumes[1:-1] - tvolumes[0:-2]
+    if len(tvolumes)>=3:
+        dvolumes = tvolumes[1:] - tvolumes[0:-1]
         dvolumes = sorted(dvolumes)
         if abs(dvolumes[-1]-dvolumes[-2]) > 0.01*dvolumes[-1]:
             #adding useful contraint calculations if not calculated statically
@@ -1059,16 +1067,20 @@ class thelecMDB():
         if args!=None:
             self.nT = args.nT
             self.doscar=args.doscar
-            self.poscar=args.poscar
+            self.poscar=args.contcar
+            self.oszicar=args.oszicar
             self.vdos=args.vdos
             self.local=args.local
+            self.gruneisen_T0 = args.gruneisen_T0
+            self.gruneisen_T1 = args.gruneisen_T1
+            self.debye_T0 = args.debye_T0
+            self.bp2gru=args.debye_gruneisen_x
 
         if self.vasp_db==None: self.pyphon=True
-        #print ("iiiii=",len(self._Yphon))
 
 
     def get_superfij(self,i, phdir):
-        if vol_within(float(i['volume']), self.Vlat):
+        if vol_within(float(i['volume']), self.Vlat, thr=1.e-6):
             print("\nit seems a repeated phonon calculation for", i['volume'],"so it is discared\n")
             return None
         try:
@@ -1105,10 +1117,13 @@ class thelecMDB():
         structure.to(filename=os.path.join(voldir,'POSCAR'))
 
         with open (os.path.join(voldir,'metadata.json'),'w') as out:
-            mm = i['metadata']
-            mm['volume'] = i['volume']
-            mm['energy'] = self.energies[(list(self.volumes)).index(i['volume'])]
-            out.write('{}\n'.format(mm))
+            idx = vol_within_index(i['volume'],self.volumes, thr=1.e-6)
+            #print("iiiiiiiiii idx=", idx, i['volume'],self.volumes)
+            if idx >=0:
+                mm = i['metadata']
+                mm['volume'] = i['volume']
+                mm['energy'] = self.energies[idx]
+                out.write('{}\n'.format(mm))
 
 
         if len(self.xmlvol)!=0:
@@ -1121,7 +1136,8 @@ class thelecMDB():
 
 
         with open (os.path.join(voldir,'OSZICAR'),'w') as out:
-            out.write('   1 F= xx E0= {}\n'.format(self.energies[(list(self.volumes)).index(i['volume'])]))
+            idx = vol_within_index(i['volume'],self.volumes, thr=1.e-6)
+            if idx >0: out.write('   1 F= xx E0= {}\n'.format(self.energies[idx]))
         with open (os.path.join(voldir,'superfij.out'),'w') as out:
             for line in range (2,5):
                 out.write('{}\n'.format(unitcell_l[line]))
@@ -1315,6 +1331,9 @@ class thelecMDB():
         self.VCij = []
         self.Poisson_Ratio = []
 
+        #print (os.getcwd(), phdir)
+        #raise Exception("Sorry, for debug")
+
         if not os.path.exists(phdir): os.mkdir(phdir)
         for i in volumes_c:
             vol  = float(i['initial_structure']['lattice']['volume'])
@@ -1407,9 +1426,92 @@ class thelecMDB():
         return has_btp2
 
 
+    def get_Cij_local(self, localdir, pinv=True):
+        self.Cij = []
+        self.VCij = []
+        self.Poisson_Ratio = []
+
+        #print (os.getcwd(), phdir)
+        #raise Exception("Sorry, for debug")
+
+        _, dirs, _ = next(os.walk(localdir))
+        for i,dd in enumerate(sorted(dirs)):
+            poscar = os.path.join(localdir, dd, "POSCAR")
+            if not os.path.exists(poscar): continue
+            Cij = os.path.join(localdir, dd, "Cij.out")
+            if not os.path.exists(Cij): 
+                Cij = os.path.join(localdir, dd, "Cij.out_Relax")
+            if not os.path.exists(Cij): continue
+            structure = Structure.from_file(poscar)
+            vol = structure.volume
+            if vol in self.VCij: continue
+            with open(Cij, "r") as f:
+                lines = f.readlines()
+                if len(lines)!=6: continue
+            Cij = []
+            for line in lines:
+                Cij.append([float(cij) for cij in line.split() if cij.strip()!=""])
+
+            self.Cij.append(Cij)
+            self.VCij.append(vol)
+            _,_,_,Poisson_Ratio=self.Cij_to_Moduli(np.stack(Cij))
+            self.Poisson_Ratio.append(Poisson_Ratio)
+
+        has_Cij = len(self.Cij)>0
+        if has_Cij:
+            self.Cij = np.array(sort_x_by_y(self.Cij, self.VCij))
+            self.Poisson_Ratio = np.array(sort_x_by_y(self.Poisson_Ratio, self.VCij))
+            self.VCij = sort_x_by_y(self.VCij, self.VCij)
+        return has_Cij
+
+
+    #For volume dependent thermoelectric calculations based on the output from BoltrzTraP2 code
+    #btp2_dir is parent path containing thermoelectric results at several volumes
+    def get_btp2_local(self, btp2_dir):
+        volumes_uniform_tau = []
+        volumes_uniform_lambda = []
+        uniform_tau = []
+        uniform_lambda = []
+        _, static_calculations, _ = next(walk(btp2_dir))
+        for calc in static_calculations:
+            poscar = os.path.join(btp2_dir, calc, 'POSCAR')
+            if not os.path.exists(poscar) : continue
+            tmp = os.path.join(btp2_dir, calc, 'interpolation.dope.trace.uniform_tau')
+            if os.path.exists(tmp) :
+                print ("Handling data in ", tmp)
+                structure = Structure.from_file(poscar)
+                vol = structure.volume
+                if vol not in volumes_uniform_tau:
+                    volumes_uniform_tau.append(vol)
+                    uniform_tau.append(np.genfromtxt(tmp))
+            tmp = os.path.join(btp2_dir, calc, 'interpolation.dope.trace.uniform_lambda')
+            if os.path.exists(tmp) :
+                print ("Handling data in ", tmp)
+                structure = Structure.from_file(poscar)
+                vol = structure.volume
+                if vol not in volumes_uniform_lambda:
+                    volumes_uniform_lambda.append(vol)
+                    uniform_lambda.append(np.genfromtxt(tmp))
+
+        has_btp2 = False
+        from dfttk.utils import sort_x_by_y
+        if len(volumes_uniform_tau)>0:
+            has_btp2 = True
+            self.uniform_tau = sort_x_by_y(uniform_tau, volumes_uniform_tau)
+            self.volumes_uniform_tau = sort_x_by_y(volumes_uniform_tau,volumes_uniform_tau)
+            print ("found volumes_uniform_tau volumes from static calculations:", self.volumes_uniform_tau)
+        if len(volumes_uniform_lambda)>0:
+            has_btp2 = True
+            self.uniform_lambda = sort_x_by_y(uniform_lambda, volumes_uniform_lambda)
+            self.volumes_uniform_lambda = sort_x_by_y(volumes_uniform_lambda,volumes_uniform_lambda)
+            print ("found volumes_uniform_lambda volumes from static calculations:", self.volumes_uniform_lambda)
+        return has_btp2
+
+
     def toYphon(self, _T=None, for_plot=False):
         if self.vasp_db==None or self.local!="":
-            self.toYphon_without_DB(_T=_T, for_plot=for_plot)
+            if self.qhamode=="debye": self.toDebye_without_DB(_T=_T, for_plot=for_plot)
+            else: self.toYphon_without_DB(_T=_T, for_plot=for_plot)
             return
 
         self.Vlat = []
@@ -1433,11 +1535,19 @@ class thelecMDB():
         for i in (self.vasp_db).db['phonon'].find({'metadata.tag': self.tag}):
             try:
                 self.force_constant_factor = i['force_constant_factor']
+                if self.static_vasp_version[0:1] >= '6' and self.static_vasp_version[0:3] < '6.2':
+                    if self.force_constant_factor == 1.0:
+                        self.force_constant_factor /= 0.004091649655126895
             except:
-                if self.static_vasp_version[0:1] >= '6':
+                if self.static_vasp_version[0:3] >= '6.2':
                     self.force_constant_factor = 0.004091649655126895
+                else:
+                    self.force_constant_factor = 1.0
 
-            if i['volume'] not in self.volumes: continue
+            #if i['volume'] not in self.volumes: 
+            if not vol_within(i['volume'], self.volumes, thr=1.e-6):
+                print (i['volume'], "is not within", self.volumes)
+                continue
             voldir = self.get_superfij(i, phdir)
             if voldir is None: continue
 
@@ -1460,7 +1570,7 @@ class thelecMDB():
                 if self.debug:
                     _nqwave = "-nqwave "+ str(1.e4)
                 #md = "Yphon -tranI 2 -DebCut 0.5 " +_nqwave+ " <superfij.out"
-                cmd = "Yphon -DebCut 0.5 " +_nqwave+ " <superfij.out"
+                cmd = "Yphon -DebCut 0.5 -thr2 0.001 " +_nqwave+ " <superfij.out"
                 if has_Born: cmd += " -Born dielecfij.out"
                 print(cmd, " at ", voldir)
                 output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -1470,7 +1580,7 @@ class thelecMDB():
                 print ("Calling yphon to get f_vib, s_vib, cv_vib at ", phdir)
             with open("vdos.out", "r") as fp:
                 f_vib, U_ph, s_vib, cv_vib, C_ph_n, Sound_ph, Sound_nn, N_ph, NN_ph, debyeT, quality, natoms \
-                    = ywpyphon.vibrational_contributions(self.T_vib, dos_input=fp, energyunit='eV')
+                    = ywpyphon.vibrational_contributions(self.T_vib, dos_input=fp, energyunit='eV', natom_Static=self.natoms)
                 self.quality.append(quality)
 
             self.Flat.append(f_vib)
@@ -1507,28 +1617,30 @@ class thelecMDB():
             self.T_vib = T_remesh(self.t0, self.t1, self.td, _nT=self.nT)
 
         print ("extract the superfij.out used by Yphon ...")
-        for i, vol in enumerate(self.volumes):
+        cwd = os.getcwd() # new bug fix
+        for i, vol in enumerate(self.volsave):
             if self.local!="":
                 dir = self.dirs[i]
             else:
                 dir = os.path.join(self.phasename,'Yphon','V{:010.6f}'.format(vol))
-            cwd = os.getcwd()
+            os.chdir( cwd ) # new bug fix
             if not os.path.exists(dir): continue
 
             os.chdir( dir)
             if not os.path.exists('vdos.out'):
+                if not os.path.exists('superfij.out'): continue # new bug fix
                 _nqwave = ""
                 if self.debug:
                     _nqwave = "-nqwave "+ str(1.e4)
-                cmd = "Yphon -tranI 2 -DebCut 0.5 " +_nqwave+ " <superfij.out"
+                cmd = "Yphon -tranI 2 -DebCut 0.5 -thr2 0.001 " +_nqwave+ " <superfij.out"
                 print(cmd, " at ", dir)
                 output = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                     universal_newlines=True)
 
             with open("vdos.out", "r") as fp:
                 f_vib, U_ph, s_vib, cv_vib, C_ph_n, Sound_ph, Sound_nn, N_ph, NN_ph, debyeT, quality, natoms \
-                    = ywpyphon.vibrational_contributions(self.T_vib, dos_input=fp, energyunit='eV')
-                self.Vlat.append(float(self.volumes[i]))
+                    = ywpyphon.vibrational_contributions(self.T_vib, dos_input=fp, energyunit='eV', natom_Static=self.natoms)
+                self.Vlat.append(float(self.volsave[i]))
                 self.quality.append(quality)
 
             self.Flat.append(f_vib)
@@ -1536,6 +1648,7 @@ class thelecMDB():
             self.Clat.append(cv_vib)
             self.quality.append(quality)
             os.chdir( cwd )
+        os.chdir( cwd )
 
         if len(self.Vlat)<=0:
             print("\nFATAL ERROR! cannot find required data from phonon collection for metadata tag:", self.tag,"\n")
@@ -1550,13 +1663,58 @@ class thelecMDB():
         self.GibT = np.zeros(len(self.T_vib))
 
 
+    def toDebye_without_DB(self, _T=None, for_plot=False):
+        self.Vlat = copy.deepcopy(self.volumes)
+        self.Flat = []
+        self.Clat = []
+        self.Slat = []
+        self.Dlat = []
+        self.quality = []
+        """
+        t0 = self.t0
+        t1 = self.t1
+        td = self.td
+        """
+        if _T is not None:
+            self.T_vib = copy.deepcopy(_T)
+            """
+            t0 = self.T_vib[0]
+            t1 = max(self.T_vib)
+            td = self.T_vib[1] - self.T_vib[0]
+            """
+        elif self.debug:
+            self.T_vib = T_remesh(self.t0, self.t1, self.td, _nT=65)
+        else:
+            self.T_vib = T_remesh(self.t0, self.t1, self.td, _nT=self.nT)
+
+        print ("Employ Debye model to calculate thermodynamics ...")
+        vib_kwargs = {}
+        debye_model = DebyeModel(self.energies, self.volumes, self.structure, 
+            T=self.T_vib, bp2gru=self.bp2gru, #t_min=t0, t_step=td, t_max=t1, 
+            gruneisen_T0 = self.gruneisen_T0, gruneisen_T1 = self.gruneisen_T1, debye_T0 = self.debye_T0, **vib_kwargs)
+
+        for i in range(0,len(self.Vlat)):
+            self.Flat.append(debye_model.F_vib[i,:])
+            self.Slat.append(debye_model.S_vib[i,:])
+            self.Clat.append(debye_model.C_vib[i,:])
+            self.Dlat.append(debye_model.D_vib[i])
+        self.Slat = np.array(sort_x_by_y(self.Slat, self.Vlat))
+        self.Clat = np.array(sort_x_by_y(self.Clat, self.Vlat))
+        self.Flat = np.array(sort_x_by_y(self.Flat, self.Vlat))
+        self.Dlat = np.array(sort_x_by_y(self.Dlat, self.Vlat))
+        self.Vlat = np.array(sort_x_by_y(self.Vlat, self.Vlat))
+        if for_plot: return
+        self.volT = np.zeros(len(self.T_vib))
+        self.GibT = np.zeros(len(self.T_vib))
+
+
     def check_vol(self):
         print ("\nChecking compatibility between qha/Yphon data and static calculation:\n")
         print (self.Vlat)
         for i,v in enumerate (self.Vlat):
             fvol = False
             for j,vol in enumerate(self.volumes):
-                if abs(vol-v)<1.e-8:
+                if abs(vol-v)<1.e-6:
                     print (v, self.energies[j])
                     fvol = True
             if not fvol:
@@ -1569,7 +1727,7 @@ class thelecMDB():
         _e = []
         _d = []
         for i, vol in enumerate(list(self.volumes)):
-            if vol not in self.Vlat:
+            if not vol_within(vol,self.Vlat,thr=1.e-6):
                 print ("data in static calculation with volume=", vol, "is discarded")
                 continue
             _v.append(vol)
@@ -1622,8 +1780,14 @@ class thelecMDB():
         tmp = _calc['input']['pseudo_potential']
         tmp['functional'] = potsoc
         key_comments['pseudo_potential'] = tmp
-        key_comments['ENCUT'] = _calc['input']['incar']['ENCUT']
-        key_comments['NEDOS'] = _calc['input']['incar']['NEDOS']
+        try:
+            key_comments['ENCUT'] = _calc['input']['incar']['ENCUT']
+        except:
+            pass
+        try:
+            key_comments['NEDOS'] = _calc['input']['incar']['NEDOS']
+        except:
+            pass
         try:
             key_comments['LSORBIT'] = _calc['input']['incar']['LSORBIT']
         except:
@@ -1658,7 +1822,7 @@ class thelecMDB():
         for i in vasp_version:
             v = i['calcs_reversed'][0]['vasp_version']
             if self.static_vasp_version is None: self.static_vasp_version = v
-            elif v[0:1]!=self.static_vasp_version[0:1]:
+            elif v[0:3]!=self.static_vasp_version[0:3]:
                 print("\n***********FETAL messing up calculation! please remove:", self.tag, "\n")
         if self.static_vasp_version is not None:
             print("\nvasp version for the static calculation is:", self.static_vasp_version, " for ", self.tag, "\n")
@@ -1679,12 +1843,36 @@ class thelecMDB():
         dos_objs = []  # pymatgen.electronic_structure.dos.Dos objects
         _structure = None  # single Structure for QHA calculation
         self.structure = None
+    
         for calc in static_calculations:
-            poscar = os.path.join(yphondir, calc, 'POSCAR')
-            if not os.path.exists(poscar) : continue
-            oszicar = os.path.join(yphondir, calc, 'OSZICAR')
-            if not os.path.exists(oszicar) : continue
-            print ("Handling data in ", os.path.join(yphondir,calc))
+            if not calc.startswith("V"): continue
+
+            if not os.path.exists(os.path.join(yphondir, calc,self.poscar)): continue
+            if not self.poscar.startswith("CONTCAR") or not self.poscar.startswith("POSCAR"):
+              shutil.copyfile(os.path.join(yphondir, calc, self.poscar), os.path.join(yphondir, calc, 'CONTCAR.dfttk'))
+              poscar = os.path.join(yphondir, calc, 'CONTCAR.dfttk')
+            else:
+              poscar = os.path.join(yphondir, calc, self.poscar)
+
+            if not self.noel :
+              if not os.path.exists(os.path.join(yphondir, calc, self.doscar)) : continue
+              if os.stat(os.path.join(yphondir, calc, self.doscar)).st_size < 3000: continue
+
+            if not os.path.exists(os.path.join(yphondir, calc,self.oszicar)): continue
+            oszicar = os.path.join(yphondir, calc, self.oszicar)
+            eneval = ""
+            with open(oszicar,"r") as fp:
+                lines = fp.readlines()
+                for line in lines:
+                    dat = [s for s in line.split() if s!=""]
+                    if len(dat) < 5: continue
+                    if dat[1]!="F=" or dat[3]!="E0=": continue
+                    eneval = dat[4]
+            if eneval == "": continue
+
+            energies.append(float(eneval))
+
+            dos_objs.append(os.path.join(yphondir, calc, self.doscar))
             structure = Structure.from_file(poscar)
             if self.structure == None:
                 self.structure = structure
@@ -1697,14 +1885,7 @@ class thelecMDB():
                 continue
             volumes.append(vol)
             dirs.append(os.path.join(yphondir,calc))
-            with open(oszicar,"r") as fp:
-                lines = fp.readlines()
-                for line in lines:
-                    dat = [s for s in line.split() if s!=""]
-                    if len(dat) < 5: continue
-                    if dat[1]!="F=" or dat[3]!="E0=": continue
-                    energies.append(float(dat[4]))
-                    break
+            print ("Handling data in ", os.path.join(yphondir,calc), vol,eneval)
 
             # get a Structure. We only need one for the masses and number of atoms in the unit cell.
             if _structure is None:
@@ -1730,30 +1911,32 @@ class thelecMDB():
                 key_comments['comments'] = 'local calculations'
                 self.key_comments = key_comments
 
-            if os.path.exists(os.path.join(yphondir, calc, 'DOSCAR.gz')) : 
-                dos_objs.append(os.path.join(yphondir, calc, 'DOSCAR.gz'))
-            elif os.path.exists(os.path.join(yphondir, calc, 'DOSCAR')) : 
-                dos_objs.append(os.path.join(yphondir, calc, 'DOSCAR'))
-            else:
-                continue
-
         # sort everything in volume order
         # note that we are doing volume last because it is the thing we are sorting by!
 
         from dfttk.utils import sort_x_by_y
-        self.energies = sort_x_by_y(energies, volumes)
-        self.dos_objs = sort_x_by_y(dos_objs, volumes)
-        self.dirs = sort_x_by_y(dirs,volumes)
-        self.volumes = sort_x_by_y(volumes,volumes)
-        self.key_comments['E-V'] = {'lattices':sort_x_by_y(lattices, volumes),
+        _energies = sort_x_by_y(energies, volumes)
+        _dos_objs = sort_x_by_y(dos_objs, volumes)
+        _dirs = sort_x_by_y(dirs,volumes)
+        _lattices = sort_x_by_y(lattices, volumes)
+        _volumes = sort_x_by_y(volumes,volumes)
+        val, idx = min((val, idx) for (idx, val) in enumerate(_energies))
+        iB = max(0, idx-3)
+        iE = min(len(_energies), idx+4)
+        self.energies = _energies[iB:iE]
+        self.dos_objs = _dos_objs[iB:iE]
+        self.dirs = _dirs[iB:iE]
+        self.volumes = _volumes[iB:iE]
+        self.volsave = copy.deepcopy(self.volumes)
+        self.key_comments['E-V'] = {'lattices':_lattices[iB:iE],
             'volumes':self.volumes, 'energies':self.energies,
             'natoms':self.natoms}
         print ("found volumes from static calculations:", self.volumes)
+        print ("found energies from static calculations:", self.energies)
 
         if self.phasename is None: self.phasename = self.formula_pretty+'_'+self.phase
         if not os.path.exists(self.phasename):
             os.mkdir(self.phasename)
-
 
 
     # get the energies, volumes and DOS objects by searching for the tag
@@ -1993,24 +2176,24 @@ class thelecMDB():
             return
         self.from_phonon_collection = False
         if self.qhamode=="debye":
-            self.qha_items = self.vasp_db.db['qha'].find({'metadata.tag': self.tag})
+            self.qha_items = self.vasp_db.db['qha'].find({'$and':[ {'metadata': {'tag':self.tag}}, {'S_vib': {'$exists': True}} ]})
         elif self.qhamode=="phonon":
-            self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata.tag': self.tag})
+            self.qha_items = self.vasp_db.db['qha_phonon'].find({'$and':[ {'metadata': {'tag':self.tag}}, {'S_vib': {'$exists': True}} ]})
         else:
             try:
                 self.qhamode='phonon'
-                self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata.tag': self.tag})
+                self.qha_items = self.vasp_db.db['qha_phonon'].find({'$and':[ {'metadata': {'tag':self.tag}}, {'S_vib': {'$exists': True}} ]})
             except:
                 self.qhamode='debye'
-                self.qha_items = self.vasp_db.db['qha'].find({'metadata.tag': self.tag})
+                self.qha_items = self.vasp_db.db['qha'].find({'$and':[ {'metadata': {'tag':self.tag}}, {'S_vib': {'$exists': True}} ]})
         # check compatibility with vasp6
         if self.qhamode=='phonon':
-            for i in (self.vasp_db).db['phonon'].find({'metadata.tag': self.tag}):
+            for i in (self.vasp_db).db['phonon'].find({'$and':[ {'metadata.tag': self.tag}, {'S_vib': {'$exists': True}} ]}):
                 try:
                     self.force_constant_factor = i['force_constant_factor']
                 except:
                     if self.static_vasp_version[0:1] >= '6':
-                        print("\n**************FETAL ERROR! force constant not compatible for :", self.tag, "by default phonopy with vasp6\n")
+                        print("\n**************Warning! force constant may not compatible for :", self.tag, "by default phonopy with vasp6\n")
                         
 
         try:
@@ -2019,12 +2202,12 @@ class thelecMDB():
             #print("xxxx=",self.T_vib)
         except:
             try:
-                self.qha_items = self.vasp_db.db['qha_phonon'].find({'metadata': self.tag})
+                self.qha_items = self.vasp_db.db['qha_phonon'].find({'$and':[ {'metadata.tag': self.tag}, {'S_vib': {'$exists': True}} ]})
                 self.T_vib = self.qha_items[0][self.qhamode]['temperatures'][::self.everyT]
             except:
                 try:
                     self.qhamode = 'phonon'
-                    self.qha_items = self.vasp_db.db[self.qhamode].find({'metadata.tag': self.tag})
+                    self.qha_items = self.vasp_db.db[self.qhamode].find({'$and':[ {'metadata.tag': self.tag}, {'S_vib': {'$exists': True}} ]})
                     self.T_vib = self.qha_items[0]['temperatures'][::self.everyT]
                     self.from_phonon_collection = True
                 except:
@@ -2041,10 +2224,11 @@ class thelecMDB():
             _Flat = []
 
             for i in self.qha_items:
-                _Vlat.append(i['volume'])
                 _Slat.append(i['S_vib'][::self.everyT])
                 _Clat.append(i['CV_vib'][::self.everyT])
                 _Flat.append(i['F_vib'][::self.everyT])
+                _Vlat.append(i['volume'])
+
             self.volT = np.zeros(len(self.T_vib))
             self.GibT = np.zeros(len(self.T_vib))
             _Dlat = np.full((len(_Vlat)), 400.)
@@ -2070,9 +2254,10 @@ class thelecMDB():
         Flat = []
         Dlat = []
         for i, vol in enumerate(_Vlat):
-            if vol_within(vol, Vlat): continue
+            if vol_within(vol, Vlat, thr=1.e-6): continue
             #if vol in Vlat: continue
-            if vol not in self.volumes: continue
+            if not vol_within(vol, self.volumes, thr=1.e-6): continue
+            #if vol not in self.volumes: continue
             Vlat.append(vol)
             Slat.append(_Slat[i])
             Clat.append(_Clat[i])
@@ -2210,7 +2395,7 @@ class thelecMDB():
                             self.blat[i], self.beta[i] = self.calc_TE_V_general(i, kind='cubic')
                         if self.blat[i] < 0:
                             nT = i
-                            print ("\nblat<0! Perhaps it has reached the upvolume limit at T =", self.T[i], "\n")
+                            print ("\nat point1 blat<0! Perhaps it has reached the upvolume limit at T =", self.T[i], "\n")
                             break
                 """
                     _beta = copy.deepcopy(self.beta)
@@ -2263,7 +2448,7 @@ class thelecMDB():
                     blat, beta = self.blat[i], self.beta[i]
                     if blat < 0:
                         self.TupLimit = self.T[i-1]
-                        print ("\nblat<0! Perhaps it has reached the upvolume limit at T =", self.T[i], "\n")
+                        print ("\nat point2: blat<0! Perhaps it has reached the upvolume limit at T =", self.T[i], "\n")
                         break
                     try:
                         slat = interp1d(self.volumes, self.Slat[:,i])(self.volT[i])
@@ -2273,9 +2458,9 @@ class thelecMDB():
                         cplat = clat+beta*beta*blat*self.volT[i]*self.T[i]
                     except:
                         self.TupLimit = self.T[i-1]
-                        print ("\nPerhaps it has reached the upvolume limit at T =", self.T[i], "\n")
+                        print ("\nat pooint3: Perhaps it has reached the upvolume limit at T =", self.T[i], "\n")
                         break
-                #print("xxxxxxxxxxxxxxx",self.T[i], blat, self.volT[i])
+                #print("T=",self.T[i], "Bulk Modulus=", blat*toGPa, "Veq=", self.volT[i])
                 prp_T = np.zeros((self.theall.shape[0]))
                 for j in range(len(prp_T)):
                     prp_T[j] = interp1d(self.volumes, self.theall[j,i,:], kind='cubic')(self.volT[i])
@@ -2337,6 +2522,7 @@ class thelecMDB():
 
     def datasm(self, fname):
         data = np.loadtxt(fname, comments="#", dtype=float)
+        data_orig = copy.deepcopy(data)
         nT = data.shape[0]
         nF = data.shape[1]
         nSmooth = 11
@@ -2346,7 +2532,8 @@ class thelecMDB():
         for i in range(1,nF):
             #data[:,i]=np.convolve(data[:,i], box, mode='same')
             data[:,i]=savgol_filter(data[:,i], nSmooth, 3)
-        with open(fname+'_sm', 'w') as fout:
+
+        with open(fname+'_sm.csv', 'w') as fout:
             with open(fname, 'r') as fin:
                 lines = fin.readlines()
                 for line in lines:
@@ -2355,9 +2542,19 @@ class thelecMDB():
             for i in range(0,nT):
                 for j in range(0,nF):
                     if j==nF-1: fout.write('{}\n'.format(data[i,j]))
-                    else: fout.write('{} '.format(data[i,j])) 
+                    else: fout.write('{}, '.format(data[i,j])) 
     
+            
+        with open(fname+'.csv', 'w') as fout:
+            with open(fname, 'r') as fin:
+                lines = fin.readlines()
+                for line in lines:
+                    if line.startswith('#'): print(line.strip(),file=fout)
 
+            for i in range(0,nT):
+                for j in range(0,nF):
+                    if j==nF-1: fout.write('{}\n'.format(data_orig[i,j]))
+                    else: fout.write('{}, '.format(data_orig[i,j])) 
 
     def add_comput_inf(self):
         if self.vasp_db!=None:
@@ -2526,18 +2723,35 @@ class thelecMDB():
 
 
     def calc_Cij(self):
-        if len(self.VCij) == 0: return
+        if len(self.VCij) < 5: return
         T = self.T[self.T <=self.TupLimit]
         nT = len(T)
-        if min(self.volT[0:nT]) < min(self.VCij) or max(self.volT[0:nT]) > max(self.VCij): return
+        if min(self.volT[0:nT]) < min(self.VCij): return
+        if max(self.volT[0:nT]) > max(self.VCij):
+            for i,vol in enumerate(self.volT[0:nT]):
+                if vol > max(self.VCij):
+                    nT = i - 1
+                    break
         self.Cij_T = np.zeros((nT, 6, 6), dtype=float)
         electron_volt = physical_constants["electron volt"][0]
         angstrom = 1e-30
         toGPa = electron_volt/angstrom*1.e-9
         for i in range(6):
             for j in range(6):
-                f2 = splrep(self.VCij, self.Cij[:,i,j])
-                self.Cij_T[:,i,j] = splev(self.volT[0:nT], f2)
+                if len(self.VCij)==1:
+                    self.Cij_T[:,i,j] = self.Cij[0,i,j]
+                elif len(self.VCij)==2:
+                    f2 = interp1d(self.VCij, self.Cij[:,i,j], kind='slinear')
+                    self.Cij_T[:,i,j] = f2(self.volT[0:nT])
+                elif len(self.VCij)==3:
+                    f2 = interp1d(self.VCij, self.Cij[:,i,j], kind='quadratic')
+                    self.Cij_T[:,i,j] = f2(self.volT[0:nT])
+                elif len(self.VCij)==4:
+                    f2 = interp1d(self.VCij, self.Cij[:,i,j], kind='cubic')
+                    self.Cij_T[:,i,j] = f2(self.volT[0:nT])
+                else:
+                    f2 = splrep(self.VCij, self.Cij[:,i,j])
+                    self.Cij_T[:,i,j] = splev(self.volT[0:nT], f2)
         """
         if True:
                     print ("db_file",self.VCij)
@@ -2634,11 +2848,16 @@ class thelecMDB():
 
 
     def calc_Cij_S(self):
-        if len(self.VCij) == 0: return
+        if len(self.VCij) < 5: return
         T = self.T[self.T <=self.TupLimit]
         nT = len(T)
+        if min(self.volT[0:nT]) < min(self.VCij): return
+        if max(self.volT[0:nT]) > max(self.VCij):
+            for i,vol in enumerate(self.volT[0:nT]):
+                if vol > max(self.VCij):
+                    nT = i - 1
+                    break
         #if min(self.volT) < min(self.VCij) or max(self.volT) > max(self.VCij): return
-        if min(self.volT[0:nT]) < min(self.VCij) or max(self.volT[0:nT]) > max(self.VCij): return
         self.Cij_S = np.zeros((nT, 6, 6), dtype=float)
         electron_volt = physical_constants["electron volt"][0]
         angstrom = 1e-30
@@ -2757,7 +2976,10 @@ class thelecMDB():
 
 
     def run_console(self):
-        finished_tags = finished_calc()
+        try:
+            finished_tags = finished_calc()
+        except:
+            finished_tags = {}
         if not self.renew:
             if self.tag is not None:
                 if self.tag in finished_tags:
@@ -2800,8 +3022,12 @@ class thelecMDB():
         self.hasSCF = True
         if not self.check_vol(): return None, None, None, None
         if self.local!="":
+            self.has_Cij = self.get_Cij_local(self.local, pinv=False)
+            self.has_btp2 = self.get_btp2_local(self.local)
+            """
             self.has_Cij = self.get_Cij(self.phasename, pinv=False)
             self.has_btp2 = self.get_btp2(self.local)
+            """
         else:
             self.has_Cij = self.get_Cij(os.path.join(self.phasename,'Yphon'), pinv=False)
             self.has_btp2 = self.get_btp2(self.phasename)
@@ -2926,7 +3152,7 @@ class thelecMDB():
         if self.vdos is not None:
             with open(self.vdos, "r") as fp:
                 Flat, U_ph, Slat, Clat, C_ph_n, Sound_ph, Sound_nn, N_ph, NN_ph, debyeT, quality, vdos_natoms \
-                    = ywpyphon.vibrational_contributions(self.T, dos_input=fp, energyunit='eV')
+                    = ywpyphon.vibrational_contributions(self.T, dos_input=fp, energyunit='eV', natom_Static=self.natoms)
         else:
             vdos_natoms = 1
             Flat = np.zeros((len(self.T)), type=float)

@@ -42,7 +42,7 @@ def isint(value):
 
 
 # read phonon density of state from file f
-def getdos(f): # Line 186
+def getdos(f,natom_Static=None): # Line 186
     """
 
     Parameters
@@ -94,6 +94,8 @@ def getdos(f): # Line 186
     pnew.extend(pdos[Nlow:])
     good = trapz(pnew,fnew)
     natom = int(quality+0.5)//3
+    if natom_Static is not None:
+        natom = natom_Static
     quality = good/quality
     pnew = 3*natom/good*np.array(pnew)
 
@@ -220,8 +222,8 @@ def caclf(_freq, _pdos, T, dmu=0.0, energyunit='J'):
         return u-T*s, u, s, cv, cv_n, sound_ph, u_nn/nn/h, n, nn, debye
 
 
-def vibrational_contributions(T, dos_input=sys.stdin, _dmu=0.0, energyunit='J'):
-    freq, pdos, quality, natom = getdos(dos_input)
+def vibrational_contributions(T, dos_input=sys.stdin, _dmu=0.0, energyunit='J', natom_Static=None):
+    freq, pdos, quality, natom = getdos(dos_input, natom_Static=natom_Static)
     #print ("eeeeeeee", natom)
     nT = T.size
     F_ph = np.zeros(nT)
@@ -292,15 +294,15 @@ if __name__ == '__main__':
 
     sys.stderr.write ("\nThe phonon quality= {:08.6f}\n\n".format(quality))
 
-    for i in range(T.size):
+    for i in range(1, T.size):
         tmp0 = 0.0
         tmp1 = 0.0
         if N_ph[i]!=0.:
             tmp0 = C_ph_mu[i]/N_ph[i]
             tmp1 = C_ph_n[i]/N_ph[i]
 
-        sys.stdout.write('{:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} \
-        {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g}\n'.format(\
-        T[i], F_ph[i]*unit, U_ph[i]*unit, S_ph[i]*unit, C_ph_mu[i]*unit, C_ph_n[i], \
+        sys.stdout.write('{:10.7g} {:10.2f} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} \
+        {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} {:10.7g} \n'.format(\
+        T[i], debyeT[i], F_ph[i]*unit, U_ph[i]*unit, S_ph[i]*unit, C_ph_mu[i]*unit, C_ph_n[i], \
         tmp0, tmp1, Sound_ph[i], Sound_nn[i], \
         N_ph[i], NN_ph[i], debyeT[i]))

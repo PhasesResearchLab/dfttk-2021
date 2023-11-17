@@ -1,0 +1,15 @@
+host: 
+port: 27017
+name: 
+username: 
+password: 
+ssl_ca_certs:
+logdir:
+strm_lvl: INFO
+user_indices: []
+wf_user_indices: []
+ssl: true
+authsource: admin
+
+
+

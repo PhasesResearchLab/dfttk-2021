@@ -11,6 +11,7 @@ to clean up and use the proper Gruneisen parameter and to factor out the Debye p
 from __future__ import unicode_literals, division, print_function
 
 import numpy as np
+from scipy.interpolate import splrep, splev
 
 from scipy.constants import physical_constants
 import scipy.constants as scipy_constants
@@ -65,19 +66,26 @@ class DebyeModel(object):
         Either 'arithmetic' or 'geometric'. Default is 'arithmetic'
 
     """
-    def __init__(self, energies, volumes, structure, t_min=5, t_step=5,
-                 t_max=2000.0, eos="vinet", poisson=0.363615,
+    def __init__(self, energies, volumes, structure, T=None, t_min=5, t_step=5,
+                 t_max=2000.0, gruneisen_T0 = 0.0, gruneisen_T1 = 0.0, debye_T0 = -1.0,
+                 eos="vinet", poisson=0.363615,
                  gruneisen=True, bp2gru=2./3., mass_average_mode='arithmetic'):
         self.energies = energies
         self.volumes = volumes
         self.structure = structure
-        self.temperatures = np.arange(t_min, t_max+t_step, t_step)
+        if T is None: self.temperatures = np.arange(t_min, t_max+t_step, t_step)
+        else: self.temperatures = T
         self.eos_name = eos
         self.poisson = poisson
         self.bp2gru = bp2gru
         self.gruneisen = gruneisen
         self.natoms = self.structure.composition.num_atoms
         self.kb = physical_constants["Boltzmann constant in eV/K"][0]
+        self.gruneisen_T0 = gruneisen_T0
+        if self.gruneisen_T0 is not None:
+            if self.gruneisen_T0 < -99.0: self.gruneisen = False
+        self.gruneisen_T1 = gruneisen_T1
+        self.debye_T0 = debye_T0
         # calculate the average masses
         masses = np.array([e.atomic_mass for e in self.structure.species]) * physical_constants["atomic mass constant"][0]
         if mass_average_mode == 'arithmetic':
@@ -122,6 +130,7 @@ class DebyeModel(object):
         Returns:
             float: vibrational free energy in eV
         """
+        if temperature <= 0.0: return self.kb * self.natoms * self.debye_temperature(volume) * 9./8.
         y = self.debye_temperature(volume) / temperature
         return self.kb * self.natoms * temperature * (9./8. * y + 3 * np.log(1 - np.exp(-y)) - self.debye_integral(y))
 
@@ -137,6 +146,7 @@ class DebyeModel(object):
         Returns:
             float: vibrational entropy in eV/K
         """
+        if temperature <= 0.0: return 0.0
         y = self.debye_temperature(volume) / temperature
         return self.kb * self.natoms * ( -3 * np.log(1 - np.exp(-y)) + 4*self.debye_integral(y))
 
@@ -152,6 +162,7 @@ class DebyeModel(object):
         Returns:
             float: vibrational heat capacity in eV/K
         """
+        if temperature <= 0.0: return 0.0
         y = self.debye_temperature(volume) / temperature
         factor = 3. / y ** 3
         if y < 155:
@@ -160,6 +171,15 @@ class DebyeModel(object):
         else:
             return self.kb * self.natoms * 4./5.*scipy_constants.pi**4 * factor
 
+
+    def derivative(self, volume, der=1):
+        vmin, vmax = min(self.volumes), max(self.volumes)
+        vmin, vmax = (vmin - 0.01 * abs(vmin), vmax + 0.01 * abs(vmax))
+        vfit = np.linspace(vmin, vmax, 100)
+
+        spl = splrep(vfit,self.ev_eos_fit.func(vfit),k=5, s=3) # no smoothing, 3rd order spline
+        ddy = splev(volume,spl,der=der) # use those knots to get second derivative
+        return ddy
 
     def debye_temperature(self, volume):
         """
@@ -195,17 +215,46 @@ class DebyeModel(object):
         term1 = (2./3. * (1. + self.poisson) / (1. - 2. * self.poisson))**1.5
         term2 = (1./3. * (1. + self.poisson) / (1. - self.poisson))**1.5
         s = (3. / (2. * term1 + term2))**(1. / 3.) #0.6170015756491913 by default 
-        debye = s*A * (volume*1.e-30/self.natoms) ** (1. / 6.) * np.sqrt(self.bulk_modulus*1e9/self.avg_mass)
+
         if self.gruneisen:
-            # bp2gru should be the correction to the Gruneisen constant.
-            # High temperature limit: 2/3
-            # Low temperature limit: 1
-            # take 0 K E-V curve properties
-            dBdP = self.ev_eos_fit.b1  # bulk modulus/pressure derivative
-            gamma = (1+dBdP)/2 - self.bp2gru  # 0K equilibrium Gruneisen parameter
-            return debye * (self.ev_eos_fit.v0 / volume) ** (gamma)
+            if self.gruneisen_T0 is not None:
+                gamma = self.gruneisen_T0
+            else:
+                # take 0 K E-V curve properties
+                # bp2gru should be the correction to the Gruneisen constant.
+                # High temperature limit: 2/3
+                # Low temperature limit: 1
+                dBdP = self.ev_eos_fit.b1  # bulk modulus/pressure derivative
+                gamma = (1+dBdP)/2 - self.bp2gru  # 0K equilibrium Gruneisen parameter
+
+            if self.debye_T0 > 0.0:
+                debye = self.debye_T0
+            else:
+                debye = s*A * (self.ev_eos_fit.v0*1.e-30/self.natoms) ** (1. / 6.) * np.sqrt(self.bulk_modulus*1e9/self.avg_mass)
+            #gamma *= volume/self.ev_eos_fit.v0
+            vv = volume/self.ev_eos_fit.v0
+            """
+            if self.gruneisen_T1==0.0:
+                #gamma = gamma*vv + self.gruneisen_T1*vv**3
+                gamma = gamma*vv
+            else:
+                gamma = gamma*vv**self.gruneisen_T1
+            """
+            gamma = gamma*vv**self.gruneisen_T1
+            debye = debye*(self.ev_eos_fit.v0 / volume) ** (gamma)
+            return debye 
         else:
-            return debye
+            bulk_modulus=160.2176621*volume*self.derivative(volume, der=2)
+            pressure=-160.2176621*self.derivative(volume, der=1)
+            #V^(1/3) [((1+λ)2)/3*∂E/∂V + V (∂^2 E)/(∂V^2 )]
+            #V^(1/3) [((1+3*(x-1))2)/3*∂E/∂V + V (∂^2 E)/(∂V^2 )]
+            shift_pressure = -(1+3*(self.bp2gru-1))*2/3*pressure
+            #print ("xxxxxxxxxxxxxxxxx", shift_pressure, bulk_modulus, "bp2gru=", self.bp2gru)
+            if self.debye_T0 > 0.0: return self.debye_T0*(volume/self.ev_eos_fit.v0)**(1./6.)* \
+                np.sqrt((shift_pressure+bulk_modulus)/self.bulk_modulus)
+            return s*A * (volume*1.e-30/self.natoms) ** (1. / 6.) * np.sqrt((shift_pressure+bulk_modulus)*1e9/self.avg_mass)
+                #t0 = s*A * (self.ev_eos_fit.v0*1.e-30/self.natoms) ** (1. / 6.) * np.sqrt(self.bulk_modulus*1e9/self.avg_mass)
+                #debye *= self.debye_T0/t0
 
 
     @staticmethod

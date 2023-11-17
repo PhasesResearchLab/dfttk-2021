@@ -283,6 +283,15 @@ def shared_aguments(pthelec):
     pthelec.add_argument("-dgx", "--debye_gruneisen_x", dest="debye_gruneisen_x", nargs="?", type=float, default=2./3,
                       help="Value of x for the Debye gruneisen model. \n"
                            "Default: 2/3")
+    pthelec.add_argument("-debT0", "--debyeT0", dest="debye_T0", nargs="?", type=float, default=-1.0,
+                      help="User defined Debye temperature at static eq volume for the Debye gruneisen model. \n"
+                           "Default: -1.0")
+    pthelec.add_argument("-gruT0", "--gruneisenT0", dest="gruneisen_T0", nargs="?", type=float, default=None,
+                      help="User defined Gruneisen parameter for the Debye gruneisen model. \n"
+                           "Default: None")
+    pthelec.add_argument("-gruT1", "--gruneisenT1", dest="gruneisen_T1", nargs="?", type=float, default=0.0,
+                      help="User defined coef for higher order Gruneisen parameter for the Debye gruneisen model. \n"
+                           "Default: None")
     pthelec.add_argument("-db_repair", "--db_repair", dest="db_repair", action='store_true', default=False,
                       help="repair database for prebiously FIZZLED calculation. \n"
                            "Default: False")
@@ -391,11 +400,14 @@ def shared_aguments(pthelec):
     pthelec.add_argument("-xlim", "-xlim", dest="xlim", nargs="?", type=float, default=None,
                       help="Up temperature limit for plot. \n"
                            "Default: None")
-    pthelec.add_argument("-dos", "--doscar", dest="doscar", nargs="?", type=str, default=None,
+    pthelec.add_argument("-dos", "-DOSCAR", dest="doscar", nargs="?", type=str, default="DOSCAR",
                       help="file path to DOSCAR file. Run thelec in single volume shot only. \n"
                            "Default: None")
-    pthelec.add_argument("-pos", "--poscar", dest="poscar", nargs="?", type=str, default=None,
-                      help="file path to POSCAR file. Run thelec in single volume shot only. \n"
+    pthelec.add_argument("-con", "-CONTCAR", dest="contcar", nargs="?", type=str, default="CONTCAR",
+                      help="file path to CONTCAR file. Run thelec in single volume shot only. \n"
+                           "Default: None")
+    pthelec.add_argument("-osz", "-OSZICAR", dest="oszicar", nargs="?", type=str, default="OSZICAR",
+                      help="file path to OSZICAR file. Run thelec in single volume shot only. \n"
                            "Default: None")
     pthelec.add_argument("-vdos", "--vdos", dest="vdos", nargs="?", type=str, default=None,
                       help="file path to phonon DOS file produced by Yphon. Run thelec in single volume shot only. \n"

@@ -164,6 +164,7 @@ def get_expt(expt, formula):
     data = []
     for ee in _expt:
         #print ("eeeeeee", ee, f0)
+        if ee['Compound']=="Unknown": continue
         if reduced_formula(ee['Compound'])!=f0: continue
         #print ("eeeeeee ee['Compound']", ee['Compound'])
         data.append(ee)
@@ -227,10 +228,19 @@ def get_Magnetic_State(calc):
     magmoms = [k for k in magmoms]
     magmoms = np.array(magmoms)
     fmax = max(magmoms)
+    sdw = magmoms[magmoms>0.1]
+    if len(sdw)>0:
+        smin = min(sdw)
+        smax = max(sdw)
+    else:
+        smin = 0.0
+        smax = 0.0
+    fmax = max(magmoms)
     fmin = min(magmoms)
     fsum = sum(magmoms)
     if fmax>0.1 and fmin<=-0.1:
         if abs(fsum) > 0.1: return "_FIM"
+        elif smax-smin > 0.1: return "_SDW"
         else: return "_AFM"
     elif fmax>0.1 or fmin<=-0.1: return "_FM"
     else: return ""
@@ -262,7 +272,7 @@ def get_rec_from_metatag(vasp_db,m, test=False):
     for calc in static_calculations:
         vol = calc['output']['structure']['lattice']['volume']
         if kpoints is None: kpoints = calc['orig_inputs']['kpoints']['kpoints']
-        if vol_within(vol, volumes): continue
+        if vol_within(vol, volumes, thr=1.e-6): continue
         natoms = len(calc['output']['structure']['sites'])
         try:
             sites = calc['output']['structure']['sites']
@@ -288,8 +298,8 @@ def get_rec_from_metatag(vasp_db,m, test=False):
         else: pressures.append(None)
         if not gapfound: gapfound = float(gap) > 0.0
     tvolumes = np.array(sorted(volumes))
-    if len(tvolumes)>1:
-        dvolumes = tvolumes[1:-1] - tvolumes[0:-2]
+    if len(tvolumes)>=3:
+        dvolumes = tvolumes[1:] - tvolumes[0:-1]
         dvolumes = sorted(dvolumes)
         if abs(dvolumes[-1]-dvolumes[-2]) > 0.01*dvolumes[-1]:
             all_static_calculations = vasp_db.collection.\
@@ -297,7 +307,7 @@ def get_rec_from_metatag(vasp_db,m, test=False):
             for calc in all_static_calculations:
                 if len(calc['metadata'])<=1:continue # only check constrained calculation
                 vol = calc['output']['structure']['lattice']['volume']
-                if vol_within(vol, volumes): continue
+                if vol_within(vol, volumes, thr=1.e-6): continue
                 natoms = len(calc['output']['structure']['sites'])
                 try:
                     sites = calc['output']['structure']['sites']
