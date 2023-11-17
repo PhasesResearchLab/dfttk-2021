@@ -42,7 +42,7 @@ def isint(value):
 
 
 # read phonon density of state from file f
-def getdos(f): # Line 186
+def getdos(f,natom_Static=None): # Line 186
     """
 
     Parameters
@@ -94,6 +94,8 @@ def getdos(f): # Line 186
     pnew.extend(pdos[Nlow:])
     good = trapz(pnew,fnew)
     natom = int(quality+0.5)//3
+    if natom_Static is not None:
+        natom = natom_Static
     quality = good/quality
     pnew = 3*natom/good*np.array(pnew)
 
@@ -220,8 +222,8 @@ def caclf(_freq, _pdos, T, dmu=0.0, energyunit='J'):
         return u-T*s, u, s, cv, cv_n, sound_ph, u_nn/nn/h, n, nn, debye
 
 
-def vibrational_contributions(T, dos_input=sys.stdin, _dmu=0.0, energyunit='J'):
-    freq, pdos, quality, natom = getdos(dos_input)
+def vibrational_contributions(T, dos_input=sys.stdin, _dmu=0.0, energyunit='J', natom_Static=None):
+    freq, pdos, quality, natom = getdos(dos_input, natom_Static=natom_Static)
     #print ("eeeeeeee", natom)
     nT = T.size
     F_ph = np.zeros(nT)

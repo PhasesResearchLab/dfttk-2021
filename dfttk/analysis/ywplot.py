@@ -865,8 +865,6 @@ def plot_theory (theory, ax):
     #global mindex
     lindex = -1
     cindex = -1
-    n_lines = len(linestyles)
-    n_colors = len(colors)
     for rec in theory:
         try:
             xval = np.array(rec['x'])
@@ -953,7 +951,7 @@ def plot_expt (expt, prp, ax, CoT=False, xlim=None):
                     """
                 else:
                     ax.plot(xx,yy, marker=markers[mindex%len(markers)], markersize=8,
-                        linestyle='None', label=Author.split(',')[0])
+                        linestyle='None', color=colors[mindex%n_colors],label=Author.split(',')[0])
                 ymax = max(yy.max(), ymax)
             mindex += 1
     return ymax
@@ -1874,6 +1872,8 @@ linestyle_tuple = [
      ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))]
 
 linestyles = [linestyle_tuple[i][1] for i, (name, linestyle) in enumerate(linestyle_tuple)]
+n_lines = len(linestyles)
+n_colors = len(colors)
 
 k_B = 8.6173303e-5
 R = 8.3144598

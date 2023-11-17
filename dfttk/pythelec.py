@@ -1580,7 +1580,7 @@ class thelecMDB():
                 print ("Calling yphon to get f_vib, s_vib, cv_vib at ", phdir)
             with open("vdos.out", "r") as fp:
                 f_vib, U_ph, s_vib, cv_vib, C_ph_n, Sound_ph, Sound_nn, N_ph, NN_ph, debyeT, quality, natoms \
-                    = ywpyphon.vibrational_contributions(self.T_vib, dos_input=fp, energyunit='eV')
+                    = ywpyphon.vibrational_contributions(self.T_vib, dos_input=fp, energyunit='eV', natom_Static=self.natoms)
                 self.quality.append(quality)
 
             self.Flat.append(f_vib)
@@ -1639,7 +1639,7 @@ class thelecMDB():
 
             with open("vdos.out", "r") as fp:
                 f_vib, U_ph, s_vib, cv_vib, C_ph_n, Sound_ph, Sound_nn, N_ph, NN_ph, debyeT, quality, natoms \
-                    = ywpyphon.vibrational_contributions(self.T_vib, dos_input=fp, energyunit='eV')
+                    = ywpyphon.vibrational_contributions(self.T_vib, dos_input=fp, energyunit='eV', natom_Static=self.natoms)
                 self.Vlat.append(float(self.volsave[i]))
                 self.quality.append(quality)
 
@@ -2723,7 +2723,7 @@ class thelecMDB():
 
 
     def calc_Cij(self):
-        if len(self.VCij) == 0: return
+        if len(self.VCij) < 5: return
         T = self.T[self.T <=self.TupLimit]
         nT = len(T)
         if min(self.volT[0:nT]) < min(self.VCij): return
@@ -2848,11 +2848,16 @@ class thelecMDB():
 
 
     def calc_Cij_S(self):
-        if len(self.VCij) == 0: return
+        if len(self.VCij) < 5: return
         T = self.T[self.T <=self.TupLimit]
         nT = len(T)
+        if min(self.volT[0:nT]) < min(self.VCij): return
+        if max(self.volT[0:nT]) > max(self.VCij):
+            for i,vol in enumerate(self.volT[0:nT]):
+                if vol > max(self.VCij):
+                    nT = i - 1
+                    break
         #if min(self.volT) < min(self.VCij) or max(self.volT) > max(self.VCij): return
-        if min(self.volT[0:nT]) < min(self.VCij) or max(self.volT[0:nT]) > max(self.VCij): return
         self.Cij_S = np.zeros((nT, 6, 6), dtype=float)
         electron_volt = physical_constants["electron volt"][0]
         angstrom = 1e-30
@@ -3147,7 +3152,7 @@ class thelecMDB():
         if self.vdos is not None:
             with open(self.vdos, "r") as fp:
                 Flat, U_ph, Slat, Clat, C_ph_n, Sound_ph, Sound_nn, N_ph, NN_ph, debyeT, quality, vdos_natoms \
-                    = ywpyphon.vibrational_contributions(self.T, dos_input=fp, energyunit='eV')
+                    = ywpyphon.vibrational_contributions(self.T, dos_input=fp, energyunit='eV', natom_Static=self.natoms)
         else:
             vdos_natoms = 1
             Flat = np.zeros((len(self.T)), type=float)
